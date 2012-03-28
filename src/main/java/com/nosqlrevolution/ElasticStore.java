@@ -1,6 +1,7 @@
 package com.nosqlrevolution;
 
 import com.google.common.base.Joiner;
+import java.lang.reflect.Type;
 import java.net.InetSocketAddress;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
@@ -132,6 +133,14 @@ public class ElasticStore {
             throw new Exception("ElasticStore is not executed");
         }
         
-        return new Index(this, indexes);
+        return new StringTypedIndex(this, indexes);
+    }
+    
+    public Index getIndex(Type t, String... indexes) throws Exception {
+        if (client == null) {
+            throw new Exception("ElasticStore is not executed");
+        }
+        
+        return new TypedIndex(t, this, indexes);
     }
 }

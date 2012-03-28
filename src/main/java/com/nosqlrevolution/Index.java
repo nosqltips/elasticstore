@@ -1,10 +1,12 @@
 package com.nosqlrevolution;
 
+import java.util.List;
+
 /**
  * This class represents all of the fun things we can do with an ElasticSearch index
  * @author cbrown
  */
-public class Index {
+public abstract class Index<T> {
     private ElasticStore store;
     private String[] indexes;
     private String[] types;
@@ -26,55 +28,66 @@ public class Index {
     }
     
     public Cursor find() {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     public Cursor find(QueryBuilder qb) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     public Cursor find(QueryBuilder qb, Class clazz) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    public Object findById(String id) {
-        return null;
+    public T findById(Object id) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
     
-    public Class findById(String id, Class clazz) {
-        return null;
+    public Class findById(Object id, Class clazz) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
     
-    public Object findOne() {
-        return null;
+    public T findOne() {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
     
-    public Object findOne(QueryBuilder qb) {
-        return null;
+    public Class findOne(Class clazz) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+    
+    public T findOne(QueryBuilder qb) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
     
     public Class findOne(QueryBuilder qb, Class clazz) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+        
+    public OperationStatus write(T t) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
     
-    // TODO: can do this type safety? inflection? json?
-    public Object findAndModify(QueryBuilder qb, Object update) {
-        return null;
-    }
-
-    // TODO: can do this type safety? inflection? json?
-    public Class findAndModify(QueryBuilder qb, Object update, Class clazz) {
-        return null;
+    public OperationStatus write(T t, WriteBuilder builder) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
     
-    public Object findAndDelete(QueryBuilder qb) {
-        return null;
-    }
-
-    public Class findAndDelete(QueryBuilder qb, Class clazz) {
-        return null;
+    public OperationStatus write(T[] t) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
     
+    public OperationStatus write(T[] t, WriteBuilder builder) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+    
+    public OperationStatus write(List<? extends T> t) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+    
+    public OperationStatus write(List<? extends T> t, WriteBuilder builder) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+    
+    // Accessor methods
     public String[] getIndexes() {
         return indexes;
     }
