@@ -56,7 +56,33 @@ public class StringTypedIndex extends Index<String> {
     public Class findOne(QueryBuilder qb, Class clazz) {
         return super.findOne(qb, clazz);
     }
-        
+            
+    @Override
+    public OperationStatus removeById(Object id) {
+        return super.removeById(id);
+    }
+    
+    @Override
+    public OperationStatus removeById(Object[] id) {
+        return super.removeById(id);
+    }
+    
+    @Override
+    public OperationStatus removeById(List<Object> id) {
+        return super.removeById(id);
+    }
+    
+    // These remove may not actually work for json because we don't know what the id is
+    @Override
+    public OperationStatus remove(String json) {
+        return super.remove(json);
+    }
+    
+    @Override
+    public OperationStatus remove(QueryBuilder qb) {
+        return super.remove(qb);
+    }
+
     @Override
     public OperationStatus write(String json) {
         return super.write(json);

@@ -62,7 +62,27 @@ public abstract class Index<T> {
     public Class findOne(QueryBuilder qb, Class clazz) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
-        
+
+    public OperationStatus removeById(Object id) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+    
+    public OperationStatus removeById(Object[] ids) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+    
+    public OperationStatus removeById(List<Object> ids) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+    
+    public OperationStatus remove(T t) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+    
+    public OperationStatus remove(QueryBuilder qb) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+    
     public OperationStatus write(T t) {
         throw new UnsupportedOperationException("Not supported yet.");
     }

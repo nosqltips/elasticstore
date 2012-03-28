@@ -60,6 +60,31 @@ public class TypedIndex<T> extends Index<T> {
     }
     
     @Override
+    public OperationStatus removeById(Object id) {
+        return super.removeById(id);
+    }
+    
+    @Override
+    public OperationStatus removeById(Object[] id) {
+        return super.removeById(id);
+    }
+    
+    @Override
+    public OperationStatus removeById(List<Object> id) {
+        return super.removeById(id);
+    }
+    
+    @Override
+    public OperationStatus remove(T t) {
+        return super.remove(t);
+    }
+    
+    @Override
+    public OperationStatus remove(QueryBuilder qb) {
+        return super.remove(qb);
+    }
+    
+    @Override
     public OperationStatus write(T t) {
         return super.write(t);
     }
