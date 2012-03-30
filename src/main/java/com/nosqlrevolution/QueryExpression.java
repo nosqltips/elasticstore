@@ -34,6 +34,22 @@ public class QueryExpression {
         return this.setOperator(Operator.NOT_EQUAL).setValue(value);
     }
     
+    public QueryExpression lt(Object value) {
+        return this.setOperator(Operator.EQUAL).setValue(value);
+    }
+    
+    public QueryExpression lte(Object value) {
+        return this.setOperator(Operator.NOT_EQUAL).setValue(value);
+    }
+    
+    public QueryExpression gt(Object value) {
+        return this.setOperator(Operator.EQUAL).setValue(value);
+    }
+    
+    public QueryExpression gte(Object value) {
+        return this.setOperator(Operator.NOT_EQUAL).setValue(value);
+    }
+    
     public QueryExpression in(Object value) {
         return this.setOperator(Operator.IN).setValue(value);
     }
