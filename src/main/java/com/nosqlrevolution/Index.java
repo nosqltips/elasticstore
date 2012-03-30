@@ -63,11 +63,7 @@ public abstract class Index<T> {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    public OperationStatus removeById(Object id) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-    
-    public OperationStatus removeById(Object[] ids) {
+    public OperationStatus removeById(Object... id) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     
@@ -83,19 +79,11 @@ public abstract class Index<T> {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     
-    public OperationStatus write(T t) {
+    public OperationStatus write(T... t) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     
-    public OperationStatus write(T t, WriteBuilder builder) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-    
-    public OperationStatus write(T[] t) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-    
-    public OperationStatus write(T[] t, WriteBuilder builder) {
+    public OperationStatus write(WriteBuilder builder, T... t) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     
@@ -103,7 +91,7 @@ public abstract class Index<T> {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     
-    public OperationStatus write(List<? extends T> t, WriteBuilder builder) {
+    public OperationStatus write(WriteBuilder builder, List<? extends T> t) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     

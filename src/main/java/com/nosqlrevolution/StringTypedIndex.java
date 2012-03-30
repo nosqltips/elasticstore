@@ -58,12 +58,7 @@ public class StringTypedIndex extends Index<String> {
     }
             
     @Override
-    public OperationStatus removeById(Object id) {
-        return super.removeById(id);
-    }
-    
-    @Override
-    public OperationStatus removeById(Object[] id) {
+    public OperationStatus removeById(Object... id) {
         return super.removeById(id);
     }
     
@@ -73,6 +68,7 @@ public class StringTypedIndex extends Index<String> {
     }
     
     // These remove may not actually work for json because we don't know what the id is
+    // Assume _id? Just stuff it in and ES will create the id?
     @Override
     public OperationStatus remove(String json) {
         return super.remove(json);
@@ -84,23 +80,13 @@ public class StringTypedIndex extends Index<String> {
     }
 
     @Override
-    public OperationStatus write(String json) {
+    public OperationStatus write(String... json) {
         return super.write(json);
     }
     
     @Override
-    public OperationStatus write(String json, WriteBuilder builder) {
-        return super.write(json, builder);
-    }
-    
-    @Override
-    public OperationStatus write(String[] json) {
-        return super.write(json);
-    }
-    
-    @Override
-    public OperationStatus write(String[] json, WriteBuilder builder) {
-        return super.write(json, builder);
+    public OperationStatus write(WriteBuilder builder, String... json) {
+        return super.write(builder, json);
     }
     
     @Override
@@ -109,7 +95,7 @@ public class StringTypedIndex extends Index<String> {
     }
     
     @Override
-    public OperationStatus write(List<? extends String> json, WriteBuilder builder) {
-        return super.write(json, builder);
+    public OperationStatus write(WriteBuilder builder, List<? extends String> json) {
+        return super.write(builder, json);
     }
 }

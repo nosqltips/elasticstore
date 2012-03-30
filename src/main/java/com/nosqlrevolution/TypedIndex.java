@@ -60,12 +60,7 @@ public class TypedIndex<T> extends Index<T> {
     }
     
     @Override
-    public OperationStatus removeById(Object id) {
-        return super.removeById(id);
-    }
-    
-    @Override
-    public OperationStatus removeById(Object[] id) {
+    public OperationStatus removeById(Object... id) {
         return super.removeById(id);
     }
     
@@ -85,24 +80,15 @@ public class TypedIndex<T> extends Index<T> {
     }
     
     @Override
-    public OperationStatus write(T t) {
+    public OperationStatus write(T... t) {
         return super.write(t);
     }
     
     @Override
-    public OperationStatus write(T t, WriteBuilder builder) {
-        return super.write(t, builder);
+    public OperationStatus write(WriteBuilder builder, T... t) {
+        return super.write(builder, t);
     }
     
-    @Override
-    public OperationStatus write(T[] t) {
-        return super.write(t);
-    }
-    
-    @Override
-    public OperationStatus write(T[] t, WriteBuilder builder) {
-        return super.write(t, builder);
-    }
     
     @Override
     public OperationStatus write(List<? extends T> t) {
@@ -110,7 +96,7 @@ public class TypedIndex<T> extends Index<T> {
     }
     
     @Override
-    public OperationStatus write(List<? extends T> t, WriteBuilder builder) {
-        return super.write(t, builder);
+    public OperationStatus write(WriteBuilder builder, List<? extends T> t) {
+        return super.write(builder, t);
     }
 }
