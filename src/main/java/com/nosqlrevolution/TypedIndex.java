@@ -30,15 +30,25 @@ public class TypedIndex<T> extends Index<T> {
     }
 
     @Override
-    public T findById(Object id) {
-        return super.findById(id);
+    public T findOneById(Object id) {
+        return super.findOneById(id);
     }
     
     @Override
-    public Class findById(Object id, Class clazz) {
-        return super.findById(id, clazz);
+    public Class findOneById(Object id, Class clazz) {
+        return super.findOneById(id, clazz);
     }
 
+    @Override
+    public T findManyById(Object... ids) {
+        return super.findManyById(ids);
+    }
+    
+    @Override
+    public Class findManyById(Class clazz, Object... ids) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+    
    @Override
     public T findOne() {
         return super.findOne();
@@ -60,13 +70,13 @@ public class TypedIndex<T> extends Index<T> {
     }
     
     @Override
-    public OperationStatus removeById(Object... id) {
-        return super.removeById(id);
+    public OperationStatus removeById(Object... ids) {
+        return super.removeById(ids);
     }
     
     @Override
-    public OperationStatus removeById(List<Object> id) {
-        return super.removeById(id);
+    public OperationStatus removeById(List<Object> ids) {
+        return super.removeById(ids);
     }
     
     @Override

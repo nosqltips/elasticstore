@@ -39,11 +39,19 @@ public abstract class Index<T> {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    public T findById(Object id) {
+    public T findOneById(Object id) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     
-    public Class findById(Object id, Class clazz) {
+    public Class findOneById(Object id, Class clazz) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+    
+    public T findManyById(Object... ids) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+    
+    public Class findManyById(Class clazz, Object... ids) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     
@@ -63,7 +71,7 @@ public abstract class Index<T> {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    public OperationStatus removeById(Object... id) {
+    public OperationStatus removeById(Object... ids) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     

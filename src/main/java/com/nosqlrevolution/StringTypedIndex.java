@@ -28,13 +28,23 @@ public class StringTypedIndex extends Index<String> {
     }
 
     @Override
-    public String findById(Object id) {
-        return super.findById(id);
+    public String findOneById(Object id) {
+        return super.findOneById(id);
     }
     
     @Override
-    public Class findById(Object id, Class clazz) {
-        return super.findById(id, clazz);
+    public Class findOneById(Object id, Class clazz) {
+        return super.findOneById(id, clazz);
+    }
+    
+    @Override
+    public String findManyById(Object... ids) {
+        return super.findManyById(ids);
+    }
+    
+    @Override
+    public Class findManyById(Class clazz, Object... ids) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
     
     @Override
