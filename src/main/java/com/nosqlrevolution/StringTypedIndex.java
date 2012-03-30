@@ -44,7 +44,7 @@ public class StringTypedIndex extends Index<String> {
     
     @Override
     public Class findManyById(Class clazz, Object... ids) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return super.findManyById(clazz, ids);
     }
     
     @Override
