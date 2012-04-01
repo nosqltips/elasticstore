@@ -1,4 +1,4 @@
-package com.nosqlrevolution;
+package com.nosqlrevolution.query;
 
 /**
  *

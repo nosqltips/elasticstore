@@ -1,5 +1,6 @@
 package com.nosqlrevolution;
 
+import com.nosqlrevolution.query.Query;
 import java.util.List;
 
 /**
@@ -23,7 +24,7 @@ public abstract class Index<T> {
         return 0;
     }
     
-    public long count(QueryBuilder qb) {
+    public long count(Query qb) {
         return 0;
     }
     
@@ -31,11 +32,11 @@ public abstract class Index<T> {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    public Cursor find(QueryBuilder qb) {
+    public Cursor find(Query qb) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    public Cursor find(QueryBuilder qb, Class clazz) {
+    public Cursor find(Query qb, Class clazz) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -63,11 +64,11 @@ public abstract class Index<T> {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     
-    public T findOne(QueryBuilder qb) {
+    public T findOne(Query qb) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     
-    public Class findOne(QueryBuilder qb, Class clazz) {
+    public Class findOne(Query qb, Class clazz) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -83,7 +84,7 @@ public abstract class Index<T> {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     
-    public OperationStatus remove(QueryBuilder qb) {
+    public OperationStatus remove(Query qb) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     

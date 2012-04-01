@@ -1,5 +1,6 @@
 package com.nosqlrevolution;
 
+import com.nosqlrevolution.query.Query;
 import java.util.List;
 
 /**
@@ -20,12 +21,12 @@ public class TypedIndex<T> extends Index<T> {
     }
 
     @Override
-    public Cursor find(QueryBuilder qb) {
+    public Cursor find(Query qb) {
         return super.find(qb);
     }
 
     @Override
-    public Cursor find(QueryBuilder qb, Class clazz) {
+    public Cursor find(Query qb, Class clazz) {
         return super.find(qb, clazz);
     }
 
@@ -60,12 +61,12 @@ public class TypedIndex<T> extends Index<T> {
     }
     
     @Override
-    public T findOne(QueryBuilder qb) {
+    public T findOne(Query qb) {
         return super.findOne(qb);
     }
     
     @Override
-    public Class findOne(QueryBuilder qb, Class clazz) {
+    public Class findOne(Query qb, Class clazz) {
         return super.findOne(qb, clazz);
     }
     
@@ -85,7 +86,7 @@ public class TypedIndex<T> extends Index<T> {
     }
     
     @Override
-    public OperationStatus remove(QueryBuilder qb) {
+    public OperationStatus remove(Query qb) {
         return super.remove(qb);
     }
     
