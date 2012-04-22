@@ -20,13 +20,9 @@ public abstract class Index<T> {
         this.indexes = indexes;
     }
 
-    public long count() {
-        return 0;
-    }
+    public abstract long count();
     
-    public long count(Query qb) {
-        return 0;
-    }
+    public abstract long count(Query qb);
     
     public Cursor find() {
         throw new UnsupportedOperationException("Not supported yet.");
@@ -40,19 +36,19 @@ public abstract class Index<T> {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    public T findOneById(Object id) {
+    public T findOneById(String id) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     
-    public Class findOneById(Object id, Class clazz) {
+    public Class findOneById(String id, Class clazz) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     
-    public T findManyById(Object... ids) {
+    public T[] findManyById(String... ids) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     
-    public Class findManyById(Class clazz, Object... ids) {
+    public Class[] findManyById(Class clazz, String... ids) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     
@@ -72,11 +68,11 @@ public abstract class Index<T> {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    public OperationStatus removeById(Object... ids) {
+    public OperationStatus removeById(String... ids) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     
-    public OperationStatus removeById(List<Object> ids) {
+    public OperationStatus removeById(List<String> ids) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     
@@ -109,6 +105,10 @@ public abstract class Index<T> {
         return indexes;
     }
     
+    public String getFirstIndex() {
+        return indexes[0];
+    }
+
     public String[] getTypes() {
         return types;
     }
@@ -116,6 +116,10 @@ public abstract class Index<T> {
     public Index setTypes(String... types) {
         this.types = types;
         return this;
+    }
+
+    public String getFirstType() {
+        return types == null ? null : types[0];
     }
 
     public Index addType(String type) {

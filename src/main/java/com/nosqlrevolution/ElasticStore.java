@@ -20,6 +20,7 @@ public class ElasticStore {
     private static String DEFAULT_CLUSTER_NAME = "elasticsearch";
     private static boolean multicast = true;
     private static boolean node = true;
+    private static boolean local = false;
     
     private Client client = null;
     private String[] hosts = null;
@@ -27,8 +28,6 @@ public class ElasticStore {
     private String clusterName = DEFAULT_CLUSTER_NAME;
     private int port = DEFAULT_PORT;
     private String timeout = DEFAULT_TIMEOUT;
-    
-    public ElasticStore() {}
 
     public ElasticStore asNode() {
         node = true;
@@ -37,6 +36,11 @@ public class ElasticStore {
     
     public ElasticStore asTransport() {
         node = false;
+        return this;
+    }
+        
+    public ElasticStore asLocal() {
+        local = true;
         return this;
     }
         
@@ -78,7 +82,13 @@ public class ElasticStore {
     }
         
     public ElasticStore execute() {
-        if (node) {
+        if (local) {
+            client = nodeBuilder()
+                .local(true)
+                .data(true)
+                .node()
+                .client();
+        } else if (node) {
             ImmutableSettings.Builder builder = ImmutableSettings.settingsBuilder()
                 .put("cluster.name", clusterName)
                 .put("discovery.zen.ping.timeout", timeout)
@@ -128,12 +138,20 @@ public class ElasticStore {
         return client != null;
     }
     
-    public Index getIndex(String... indexes) throws Exception {
+    public Client getClient() {
+        return client;
+    }
+    
+    public void close() {
+        client.close();
+    }
+    
+    public JsonIndex getIndex(String... indexes) throws Exception {
         if (client == null) {
             throw new Exception("ElasticStore is not executed");
         }
         
-        return new StringTypedIndex(this, indexes);
+        return new JsonIndex(this, indexes);
     }
     
     public Index getIndex(Type t, String... indexes) throws Exception {

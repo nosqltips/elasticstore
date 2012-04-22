@@ -1,18 +1,38 @@
 package com.nosqlrevolution;
 
 import com.nosqlrevolution.query.Query;
+import com.nosqlrevolution.service.QueryService;
+import java.io.IOException;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.codehaus.jackson.map.ObjectMapper;
 
 /**
  * Accept and return json strings
  * 
  * @author cbrown
  */
-public class StringTypedIndex extends Index<String> {
-    public StringTypedIndex(ElasticStore store, String[] indexes) throws Exception {
+public class JsonIndex extends Index<String> {
+    private QueryService service;
+    private ObjectMapper mapper = new ObjectMapper();
+    
+    public JsonIndex(ElasticStore store, String[] indexes) throws Exception {
         super(store, indexes);
+        service = new QueryService(store.getClient());
     }
 
+    @Override
+    public long count() {
+        return service.count(getIndexes(), getTypes());
+    }
+    
+    @Override
+    public long count(Query qb) {
+        // TODO need to finish this;
+        return 0;
+    }
+    
     @Override
     public Cursor find() {
         return super.find();
@@ -29,22 +49,29 @@ public class StringTypedIndex extends Index<String> {
     }
 
     @Override
-    public String findOneById(Object id) {
-        return super.findOneById(id);
+    public String findOneById(String id) {
+        return service.realTimeGet(getFirstIndex(), getFirstType(), id.toString());
     }
     
     @Override
-    public Class findOneById(Object id, Class clazz) {
-        return super.findOneById(id, clazz);
+    public Class findOneById(String id, Class clazz) {
+        try {
+            String s = service.realTimeGet(getFirstIndex(), getFirstType(), id);
+            // Todo probably put this into a util class for broad use
+            return (Class) (mapper.readValue(s, clazz.getClass()));
+        } catch (IOException ex) {
+            Logger.getLogger(JsonIndex.class.getName()).log(Level.SEVERE, null, ex);
+            return null;
+        }
     }
     
     @Override
-    public String findManyById(Object... ids) {
-        return super.findManyById(ids);
+    public String[] findManyById(String... ids) {
+        return service.realTimeMultiGet(getFirstIndex(), getFirstType(), ids);
     }
     
     @Override
-    public Class findManyById(Class clazz, Object... ids) {
+    public Class[] findManyById(Class clazz, String... ids) {
         return super.findManyById(clazz, ids);
     }
     
@@ -69,17 +96,18 @@ public class StringTypedIndex extends Index<String> {
     }
             
     @Override
-    public OperationStatus removeById(Object... id) {
+    public OperationStatus removeById(String... id) {
         return super.removeById(id);
     }
     
     @Override
-    public OperationStatus removeById(List<Object> id) {
+    public OperationStatus removeById(List<String> id) {
         return super.removeById(id);
     }
     
     // These remove may not actually work for json because we don't know what the id is
     // Assume _id? Just stuff it in and ES will create the id?
+    // Maybe look for _id or id?
     @Override
     public OperationStatus remove(String json) {
         return super.remove(json);

@@ -34,5 +34,17 @@
       <version>11.0.1</version>
       <type>jar</type>
     </dependency>
+    <dependency>
+      <groupId>org.codehaus.jackson</groupId>
+      <artifactId>jackson-core-lgpl</artifactId>
+      <version>1.9.6</version>
+      <type>jar</type>
+    </dependency>
+    <dependency>
+      <groupId>org.codehaus.jackson</groupId>
+      <artifactId>jackson-mapper-lgpl</artifactId>
+      <version>1.9.6</version>
+      <type>jar</type>
+    </dependency>
   </dependencies>
 </project>
