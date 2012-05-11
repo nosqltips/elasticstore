@@ -17,14 +17,14 @@ public class JsonIndex extends Index<String> {
     private QueryService service;
     private ObjectMapper mapper = new ObjectMapper();
     
-    public JsonIndex(ElasticStore store, String[] indexes) throws Exception {
-        super(store, indexes);
+    public JsonIndex(ElasticStore store, String index, String type) throws Exception {
+        super(store, index, type);
         service = new QueryService(store.getClient());
     }
 
     @Override
     public long count() {
-        return service.count(getIndexes(), getTypes());
+        return service.count(getIndex(), getType());
     }
     
     @Override
@@ -50,13 +50,13 @@ public class JsonIndex extends Index<String> {
 
     @Override
     public String findOneById(String id) {
-        return service.realTimeGet(getFirstIndex(), getFirstType(), id.toString());
+        return service.realTimeGet(getIndex(), getType(), id.toString());
     }
     
     @Override
     public Class findOneById(String id, Class clazz) {
         try {
-            String s = service.realTimeGet(getFirstIndex(), getFirstType(), id);
+            String s = service.realTimeGet(getIndex(), getType(), id);
             // Todo probably put this into a util class for broad use
             return (Class) (mapper.readValue(s, clazz.getClass()));
         } catch (IOException ex) {
@@ -67,7 +67,7 @@ public class JsonIndex extends Index<String> {
     
     @Override
     public String[] findManyById(String... ids) {
-        return service.realTimeMultiGet(getFirstIndex(), getFirstType(), ids);
+        return service.realTimeMultiGet(getIndex(), getType(), ids);
     }
     
     @Override

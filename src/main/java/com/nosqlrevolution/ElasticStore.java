@@ -146,19 +146,19 @@ public class ElasticStore {
         client.close();
     }
     
-    public JsonIndex getIndex(String... indexes) throws Exception {
+    public JsonIndex getIndex(String index, String type) throws Exception {
         if (client == null) {
             throw new Exception("ElasticStore is not executed");
         }
         
-        return new JsonIndex(this, indexes);
+        return new JsonIndex(this, index, type);
     }
     
-    public Index getIndex(Type t, String... indexes) throws Exception {
+    public Index getIndex(Type t, String index, String type) throws Exception {
         if (client == null) {
             throw new Exception("ElasticStore is not executed");
         }
         
-        return new TypedIndex(t, this, indexes);
+        return new TypedIndex(t, this, index, type);
     }
 }

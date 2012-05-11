@@ -1,5 +1,8 @@
 package com.nosqlrevolution;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.codehaus.jackson.JsonNode;
 import org.junit.*;
 import static org.junit.Assert.*;
 
@@ -8,28 +11,26 @@ import static org.junit.Assert.*;
  * @author cbrown
  */
 public class TypedIndexTest {
+    private static ElasticStore elasticStore;
     
-    public TypedIndexTest() {
-    }
-
     @BeforeClass
     public static void setUpClass() throws Exception {
+         elasticStore = new ElasticStore().asLocal().execute();
+         assertNotNull(elasticStore);
+         assertNotNull(elasticStore.getClient());
     }
 
     @AfterClass
     public static void tearDownClass() throws Exception {
+         elasticStore.close();
     }
     
-    @Before
-    public void setUp() {
-    }
-    
-    @After
-    public void tearDown() {
-    }
-    // TODO add test methods here.
-    // The methods must be annotated with annotation @Test. For example:
-    //
-    // @Test
-    // public void hello() {}
+     @Test
+     public void createSingleIndex() {
+        try {
+            Index<JsonNode> index = elasticStore.getIndex(JsonNode.class, "index", "type");
+        } catch (Exception ex) {
+            Logger.getLogger(TypedIndexTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+     }
 }

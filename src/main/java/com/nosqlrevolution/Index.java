@@ -9,15 +9,16 @@ import java.util.List;
  */
 public abstract class Index<T> {
     private ElasticStore store;
-    private String[] indexes;
-    private String[] types;
+    private String index;
+    private String type;
     
-    public Index(ElasticStore store, String... indexes) throws Exception {
+    public Index(ElasticStore store, String index, String type) throws Exception {
         if ((store == null) || (! store.isInitialized())) {
             throw new Exception("ElasticStore is not initialized!!!!");
         }
         this.store = store;
-        this.indexes = indexes;
+        this.index = index;
+        this.type = type;
     }
 
     public abstract long count();
@@ -101,25 +102,17 @@ public abstract class Index<T> {
     }
     
     // Accessor methods
-    public String[] getIndexes() {
-        return indexes;
-    }
-    
-    public String getFirstIndex() {
-        return indexes[0];
+    public String getIndex() {
+        return index;
     }
 
-    public String[] getTypes() {
-        return types;
+    public String getType() {
+        return type;
     }
     
-    public Index setTypes(String... types) {
-        this.types = types;
+    public Index setType(String type) {
+        this.type = type;
         return this;
-    }
-
-    public String getFirstType() {
-        return types == null ? null : types[0];
     }
 
     public Index addType(String type) {

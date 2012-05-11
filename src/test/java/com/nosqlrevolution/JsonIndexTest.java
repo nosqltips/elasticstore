@@ -27,7 +27,7 @@ public class JsonIndexTest {
      @Test
      public void createSingleIndex() {
         try {
-            JsonIndex index = elasticStore.getIndex("test");
+            JsonIndex index = elasticStore.getIndex("index", "type");
         } catch (Exception ex) {
             Logger.getLogger(JsonIndexTest.class.getName()).log(Level.SEVERE, null, ex);
         }

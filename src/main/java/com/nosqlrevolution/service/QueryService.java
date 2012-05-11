@@ -58,7 +58,16 @@ public class QueryService {
     public long count(String[] indexes, String[] types) {
         CountRequestBuilder builder = client.prepareCount()
                 .setIndices(indexes)
-                .setTypes(indexes);
+                .setTypes(types);
+        
+        CountResponse response = builder.execute().actionGet();
+        return response.getCount();
+    }
+
+    public long count(String index, String type) {
+        CountRequestBuilder builder = client.prepareCount()
+                .setIndices(index)
+                .setTypes(type);
         
         CountResponse response = builder.execute().actionGet();
         return response.getCount();

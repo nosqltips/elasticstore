@@ -19,15 +19,15 @@ public class TypedIndex<T> extends Index<T> {
     private QueryService service;
     private ObjectMapper mapper = new ObjectMapper();
     
-    public TypedIndex(T type, ElasticStore store, String... indexes) throws Exception {
-        super (store, indexes);
+    public TypedIndex(T type, ElasticStore store, String index, String iType) throws Exception {
+        super (store, index, iType);
         this.type = type;
         service = new QueryService(store.getClient());
     }
 
     @Override
     public long count() {
-        return service.count(getIndexes(), getTypes());
+        return service.count(getIndex(), getType());
     }
     
     @Override
@@ -53,14 +53,14 @@ public class TypedIndex<T> extends Index<T> {
 
     @Override
     public T findOneById(String id) {
-        String s = service.realTimeGet(getFirstIndex(), getFirstType(), id.toString());
+        String s = service.realTimeGet(getIndex(), getType(), id.toString());
         return getMapping(s);
     }
     
     @Override
     public Class findOneById(String id, Class clazz) {
         try {
-            String s = service.realTimeGet(getFirstIndex(), getFirstType(), id);
+            String s = service.realTimeGet(getIndex(), getType(), id);
             // Todo probably put this into a util class for broad use
             return (Class) (mapper.readValue(s, clazz.getClass()));
         } catch (IOException ex) {
@@ -71,7 +71,7 @@ public class TypedIndex<T> extends Index<T> {
 
     @Override
     public T[] findManyById(String... ids) {
-        String[] s = service.realTimeMultiGet(getFirstIndex(), getFirstType(), ids);
+        String[] s = service.realTimeMultiGet(getIndex(), getType(), ids);
         T[] out = (T[]) Array.newInstance(type.getClass(), s.length);
         for (int i=0; i<s.length; i++) {
             out[i] = getMapping(s[i]);
