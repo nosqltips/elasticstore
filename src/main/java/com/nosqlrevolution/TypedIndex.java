@@ -2,6 +2,7 @@ package com.nosqlrevolution;
 
 import com.nosqlrevolution.query.Query;
 import com.nosqlrevolution.service.QueryService;
+import com.nosqlrevolution.util.ReflectionUtil;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.List;
@@ -14,14 +15,14 @@ import org.codehaus.jackson.map.ObjectMapper;
  * 
  * @author cbrown
  */
-public class TypedIndex<T> extends Index<T> {    
-    private T type;
+public class TypedIndex<T> extends Index<T> {
+    private T t;
     private QueryService service;
     private ObjectMapper mapper = new ObjectMapper();
     
-    public TypedIndex(T type, ElasticStore store, String index, String iType) throws Exception {
+    public TypedIndex(T t, ElasticStore store, String index, String iType) throws Exception {
         super (store, index, iType);
-        this.type = type;
+        this.t = t;
         service = new QueryService(store.getClient());
     }
 
@@ -53,7 +54,7 @@ public class TypedIndex<T> extends Index<T> {
 
     @Override
     public T findOneById(String id) {
-        String s = service.realTimeGet(getIndex(), getType(), id.toString());
+        String s = service.realTimeGet(getIndex(), getType(), id);
         return getMapping(s);
     }
     
@@ -72,7 +73,7 @@ public class TypedIndex<T> extends Index<T> {
     @Override
     public T[] findManyById(String... ids) {
         String[] s = service.realTimeMultiGet(getIndex(), getType(), ids);
-        T[] out = (T[]) Array.newInstance(type.getClass(), s.length);
+        T[] out = (T[]) Array.newInstance(t.getClass(), s.length);
         for (int i=0; i<s.length; i++) {
             out[i] = getMapping(s[i]);
         }
@@ -126,7 +127,13 @@ public class TypedIndex<T> extends Index<T> {
     
     @Override
     public OperationStatus write(T... t) {
-        return super.write(t);
+        // Optimize for single value
+        try {
+            service.index(getIndex(), getType(), mapper.writeValueAsString(t[0]), ReflectionUtil.getId(t[0]));
+        } catch (IOException ex) {
+            Logger.getLogger(TypedIndex.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
     }
     
     @Override
@@ -145,9 +152,13 @@ public class TypedIndex<T> extends Index<T> {
     }
     
     private T getMapping(String s) {
+        if (s == null) { return null; }
+        
         try {
-            return (T) mapper.readValue(s, type.getClass());
+            return (T) mapper.readValue(s, t.getClass());
         } catch (IOException e) {
+            // TODO: may want to have some debug output here
+            //e.printStackTrace();
             return null;
         }
     }

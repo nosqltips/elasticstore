@@ -85,10 +85,13 @@ public class QueryService {
                 //.setRefresh(true)
         
         IndexResponse response = builder.execute().actionGet();
-        
+
         // TODO: could return version of the object
         //response.version();
-    }
+
+        // TODO: could return id of the object
+        //response.id();
+}
 
     public void bulkIndex(String index, String type, String[] source) {
         BulkRequestBuilder builder = client.prepareBulk();

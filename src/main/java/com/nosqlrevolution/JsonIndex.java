@@ -50,7 +50,7 @@ public class JsonIndex extends Index<String> {
 
     @Override
     public String findOneById(String id) {
-        return service.realTimeGet(getIndex(), getType(), id.toString());
+        return service.realTimeGet(getIndex(), getType(), id);
     }
     
     @Override
@@ -120,7 +120,14 @@ public class JsonIndex extends Index<String> {
 
     @Override
     public OperationStatus write(String... json) {
-        return super.write(json);
+        // TODO: need to look at list, optimize for 1
+        // TODO: need to pull out the id for indexing
+        try {
+            service.index(getIndex(), getType(), mapper.writeValueAsString(json[0]), "1");
+        } catch (IOException ex) {
+            Logger.getLogger(TypedIndex.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
     }
     
     @Override

@@ -25,8 +25,8 @@ public class TypedIndexTest {
          elasticStore.close();
     }
     
-     @Test
-     public void createSingleIndex() {
+    @Test
+    public void createSingleIndex() {
         try {
             Index<JsonNode> index = elasticStore.getIndex(JsonNode.class, "index", "type");
         } catch (Exception ex) {
