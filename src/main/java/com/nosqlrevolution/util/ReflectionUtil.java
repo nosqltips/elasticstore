@@ -25,7 +25,7 @@ public class ReflectionUtil {
         // Check for a field of id or _id
         for (Field f: fields) {
             String name = f.getName();
-            if (name.equals("id") || name.equals("_id")) {
+            if (name.toLowerCase().equals("id") || name.toLowerCase().equals("_id")) {
                 return getFieldValue(f, o);
             }
         }

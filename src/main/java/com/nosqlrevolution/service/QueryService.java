@@ -114,7 +114,7 @@ public class QueryService {
         // TODO: Need to return failures at some point
     }
     
-    public void delete(String index, String type, String id) {
+    public boolean delete(String index, String type, String id) {
         DeleteRequestBuilder builder = client.prepareDelete()
                 .setIndex(index)
                 .setType(type)
@@ -126,7 +126,7 @@ public class QueryService {
                 //.setConsistencyLevel()
         
         DeleteResponse response = builder.execute().actionGet();
-        
+        return ! response.notFound();
         // TODO: Could return if found.
         //response.notFound();
     }

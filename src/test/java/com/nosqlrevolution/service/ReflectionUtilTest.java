@@ -1,7 +1,6 @@
 package com.nosqlrevolution.service;
 
 import com.nosqlrevolution.annotation.Id;
-import com.nosqlrevolution.model.*;
 import com.nosqlrevolution.util.ReflectionUtil;
 import org.junit.*;
 import static org.junit.Assert.*;
@@ -15,81 +14,77 @@ public class ReflectionUtilTest {
      public void withId() {
          TestId t = new TestId();
          t.setId("1234");
-         
-         String id = ReflectionUtil.getId(t);
-         assertEquals("1234", id);                 
+         assertEquals("1234", ReflectionUtil.getId(t));                 
      }
 
      @Test
      public void with_Id() {
          Test_Id t = new Test_Id();
          t.setId("1234");
-         
-         String id = ReflectionUtil.getId(t);
-         assertEquals("1234", id);                 
+         assertEquals("1234", ReflectionUtil.getId(t));                 
      }
 
      @Test
      public void withAnnotation() {
          TestIdAnnotation t = new TestIdAnnotation();
          t.setId("1234");
-         
-         String id = ReflectionUtil.getId(t);
-         assertEquals("1234", id);                 
+         assertEquals("1234", ReflectionUtil.getId(t));                 
      }
 
      @Test
      public void withLongId() {
          TestLongId t = new TestLongId();
          t.setId(1234L);
-         
-         String id = ReflectionUtil.getId(t);
-         assertEquals("1234", id);                 
+         assertEquals("1234", ReflectionUtil.getId(t));                 
      }
 
      @Test
      public void withlongId() {
          TestlongId t = new TestlongId();
          t.setId(1234L);
-         
-         String id = ReflectionUtil.getId(t);
-         assertEquals("1234", id);                 
+         assertEquals("1234", ReflectionUtil.getId(t));                 
      }
 
      @Test
      public void withIntegerId() {
          TestIntegerId t = new TestIntegerId();
          t.setId(1234);
-         
-         String id = ReflectionUtil.getId(t);
-         assertEquals("1234", id);                 
+         assertEquals("1234", ReflectionUtil.getId(t));                 
      }
 
      @Test
      public void withintId() {
          TestintId t = new TestintId();
          t.setId(1234);
-         
-         String id = ReflectionUtil.getId(t);
-         assertEquals("1234", id);                 
+         assertEquals("1234", ReflectionUtil.getId(t));                 
      }
      
      @Test
      public void withPublicId() {
          TestPublicId t = new TestPublicId();
          t.setId("1234");
-         
-         String id = ReflectionUtil.getId(t);
-         assertEquals("1234", id);                 
+         assertEquals("1234", ReflectionUtil.getId(t));                 
      }
 
      @Test
      public void withDefaultId() {
          TestDefaultId t = new TestDefaultId();
          t.setId("1234");
-         
-         String id = ReflectionUtil.getId(t);
-         assertEquals("1234", id);                 
+         assertEquals("1234", ReflectionUtil.getId(t));                 
+     }
+
+     @Test
+     public void withUpperCaseId() {
+         TestUpperCaseId t = new TestUpperCaseId();
+         t.setId("1234");
+         assertEquals("1234", ReflectionUtil.getId(t));                 
+     }
+
+     @Test
+     public void withMixedCaseId() {
+         TestMixedCaseId t = new TestMixedCaseId();
+         t.setId("1234");
+         assertEquals("1234", ReflectionUtil.getId(t));                 
      }
      
      // Test classes     
@@ -137,5 +132,15 @@ public class ReflectionUtilTest {
      private class TestDefaultId {
          String id;
          public void setId(String id) { this.id = id; }
+     }
+     
+     private class TestUpperCaseId {
+         String ID;
+         public void setId(String ID) { this.ID = ID; }
+     }
+     
+     private class TestMixedCaseId {
+         String _Id;
+         public void setId(String _Id) { this._Id = _Id; }
      }
 }

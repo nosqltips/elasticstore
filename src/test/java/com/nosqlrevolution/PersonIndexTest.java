@@ -6,6 +6,7 @@ import java.util.logging.Logger;
 import org.junit.AfterClass;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -31,20 +32,43 @@ public class PersonIndexTest {
     }
     
      @Test
-     public void createSingleIndex() {
+     public void testCRUD() {
         try {
             index = elasticStore.getIndex(Person.class, "index", "type");
+            
+            // Create
             Person p = new Person()
                     .setId("1")
                     .setName("Homer Simpson")
                     .setUsername("hsimpson");
             index.write(p);
-            Person get = index.findOneById("1");
             
-            assertNotNull(get);
-            assertEquals(get.getId(), "1");
-            assertEquals(get.getName(), "Homer Simpson");
-            assertEquals(get.getUsername(), "hsimpson");               
+            // Read
+            Person p2 = index.findOneById("1");
+            
+            assertNotNull(p2);
+            assertEquals(p2.getId(), "1");
+            assertEquals(p2.getName(), "Homer Simpson");
+            assertEquals(p2.getUsername(), "hsimpson");   
+            
+            // Update
+            p.setName("Marge Simpson");
+            p.setUsername("msimpson");
+            index.write(p);
+            Person p3 = index.findOneById("1");
+            
+            assertNotNull(p3);
+            assertEquals(p3.getId(), "1");
+            assertEquals(p3.getName(), "Marge Simpson");
+            assertEquals(p3.getUsername(), "msimpson");   
+            
+            // Delete
+            index.remove(p);
+            Person p4 = index.findOneById("1");
+            
+            assertNull(p4);
+            
+            
         } catch (Exception ex) {
             Logger.getLogger(PersonIndexTest.class.getName()).log(Level.SEVERE, null, ex);
         }

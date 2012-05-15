@@ -117,7 +117,8 @@ public class TypedIndex<T> extends Index<T> {
     
     @Override
     public OperationStatus remove(T t) {
-        return super.remove(t);
+       boolean r = service.delete(getIndex(), getType(), ReflectionUtil.getId(t));
+       return null;
     }
     
     @Override
