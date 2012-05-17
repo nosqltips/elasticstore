@@ -28,9 +28,11 @@ public class TypedIndexTest {
     @Test
     public void createSingleIndex() {
         try {
-            Index<JsonNode> index = elasticStore.getIndex(JsonNode.class, "index", "type");
+            Index<Object> index = elasticStore.getIndex(Object.class, "index", "type");
         } catch (Exception ex) {
             Logger.getLogger(TypedIndexTest.class.getName()).log(Level.SEVERE, null, ex);
         }
      }
+    
+    // TODO add a negative test case.
 }

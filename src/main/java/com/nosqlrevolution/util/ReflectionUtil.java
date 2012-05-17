@@ -10,7 +10,8 @@ import java.util.logging.Logger;
  * @author cbrown
  */
 public class ReflectionUtil {
-    public static String getId(Object o) {
+    private static final Logger logger = Logger.getLogger(ReflectionUtil.class.getName());
+    public static String getId(Object o, String idField) {
         Class<?> clazz = o.getClass();
         Field[] fields = clazz.getDeclaredFields();
         
@@ -19,6 +20,22 @@ public class ReflectionUtil {
             Id id = f.getAnnotation(Id.class);
             if (id != null) {
                 return getFieldValue(f, o);
+            }
+        }
+        
+        // Check to see if there is a value for the specified id field
+        if (idField != null) {
+            try {
+                Field f = clazz.getDeclaredField(idField);
+                return getFieldValue(f, o);
+            } catch (NoSuchFieldException ex) {
+//                if (logger.isLoggable(Level.WARNING)) {
+//                    logger.log(Level.SEVERE, null, ex);
+//                }
+            } catch (SecurityException ex) {
+//                if (logger.isLoggable(Level.WARNING)) {
+//                    logger.log(Level.SEVERE, null, ex);
+//                }
             }
         }
         
@@ -33,7 +50,7 @@ public class ReflectionUtil {
         // No annotation or id field, return null
         return null;
     }
-    
+
     private static String getFieldValue(Field f, Object o) {
         try {
             f.setAccessible(true);
@@ -49,11 +66,17 @@ public class ReflectionUtil {
                 return Integer.toString(f.getInt(o));
             }
         } catch (SecurityException ex) {
-            Logger.getLogger(ReflectionUtil.class.getName()).log(Level.SEVERE, null, ex);
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.log(Level.SEVERE, null, ex);
+            }
         } catch (IllegalArgumentException ex) {
-            Logger.getLogger(ReflectionUtil.class.getName()).log(Level.SEVERE, null, ex);
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.log(Level.SEVERE, null, ex);
+            }
         } catch (IllegalAccessException ex) {
-            Logger.getLogger(ReflectionUtil.class.getName()).log(Level.SEVERE, null, ex);
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.log(Level.SEVERE, null, ex);
+            }
         }
         
         return null;

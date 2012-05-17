@@ -11,6 +11,7 @@ public abstract class Index<T> {
     private ElasticStore store;
     private String index;
     private String type;
+    private String idField;
     
     public Index(ElasticStore store, String index, String type) throws Exception {
         if ((store == null) || (! store.isInitialized())) {
@@ -119,4 +120,14 @@ public abstract class Index<T> {
         // TODO: Implement this call
         return this;
     }
+
+    public String getIdField() {
+        return idField;
+    }
+    
+    public Index setIdField(String idField) {
+        this.idField = idField;
+        return this;
+    }
+
 }

@@ -2,6 +2,7 @@ package com.nosqlrevolution;
 
 import com.nosqlrevolution.query.Query;
 import com.nosqlrevolution.service.QueryService;
+import com.nosqlrevolution.util.JsonUtil;
 import java.io.IOException;
 import java.util.List;
 import java.util.logging.Level;
@@ -13,12 +14,15 @@ import org.codehaus.jackson.map.ObjectMapper;
  * 
  * @author cbrown
  */
-public class JsonIndex extends Index<String> {
+public class JsonIndex<T> extends Index<String> {
+    private static final Logger logger = Logger.getLogger(JsonIndex.class.getName());
+    private T t;
     private QueryService service;
     private ObjectMapper mapper = new ObjectMapper();
     
-    public JsonIndex(ElasticStore store, String index, String type) throws Exception {
+    public JsonIndex(T t, ElasticStore store, String index, String type) throws Exception {
         super(store, index, type);
+        this.t = t;
         service = new QueryService(store.getClient());
     }
 
@@ -60,7 +64,9 @@ public class JsonIndex extends Index<String> {
             // Todo probably put this into a util class for broad use
             return (Class) (mapper.readValue(s, clazz.getClass()));
         } catch (IOException ex) {
-            Logger.getLogger(JsonIndex.class.getName()).log(Level.SEVERE, null, ex);
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.log(Level.SEVERE, null, ex);
+            }
             return null;
         }
     }
@@ -105,12 +111,10 @@ public class JsonIndex extends Index<String> {
         return super.removeById(id);
     }
     
-    // These remove may not actually work for json because we don't know what the id is
-    // Assume _id? Just stuff it in and ES will create the id?
-    // Maybe look for _id or id?
     @Override
     public OperationStatus remove(String json) {
-        return super.remove(json);
+        boolean r = service.delete(getIndex(), getType(), JsonUtil.getId(json, getIdField()));
+        return null;
     }
     
     @Override
@@ -121,12 +125,13 @@ public class JsonIndex extends Index<String> {
     @Override
     public OperationStatus write(String... json) {
         // TODO: need to look at list, optimize for 1
-        // TODO: need to pull out the id for indexing
-        try {
-            service.index(getIndex(), getType(), mapper.writeValueAsString(json[0]), "1");
-        } catch (IOException ex) {
-            Logger.getLogger(TypedIndex.class.getName()).log(Level.SEVERE, null, ex);
-        }
+//        try {
+            service.index(getIndex(), getType(), json[0], JsonUtil.getId(json[0], getIdField()));
+//        } catch (IOException ex) {
+//            if (logger.isLoggable(Level.WARNING)) {
+//                logger.log(Level.SEVERE, null, ex);
+//            }
+//        }
         return null;
     }
     

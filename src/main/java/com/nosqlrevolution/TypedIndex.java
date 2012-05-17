@@ -16,6 +16,7 @@ import org.codehaus.jackson.map.ObjectMapper;
  * @author cbrown
  */
 public class TypedIndex<T> extends Index<T> {
+    private static final Logger logger = Logger.getLogger(TypedIndex.class.getName());
     private T t;
     private QueryService service;
     private ObjectMapper mapper = new ObjectMapper();
@@ -65,7 +66,9 @@ public class TypedIndex<T> extends Index<T> {
             // Todo probably put this into a util class for broad use
             return (Class) (mapper.readValue(s, clazz.getClass()));
         } catch (IOException ex) {
-            Logger.getLogger(TypedIndex.class.getName()).log(Level.SEVERE, null, ex);
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.log(Level.SEVERE, null, ex);
+            }
             return null;
         }
     }
@@ -117,7 +120,7 @@ public class TypedIndex<T> extends Index<T> {
     
     @Override
     public OperationStatus remove(T t) {
-       boolean r = service.delete(getIndex(), getType(), ReflectionUtil.getId(t));
+       boolean r = service.delete(getIndex(), getType(), ReflectionUtil.getId(t, getIdField()));
        return null;
     }
     
@@ -130,9 +133,11 @@ public class TypedIndex<T> extends Index<T> {
     public OperationStatus write(T... t) {
         // Optimize for single value
         try {
-            service.index(getIndex(), getType(), mapper.writeValueAsString(t[0]), ReflectionUtil.getId(t[0]));
+            service.index(getIndex(), getType(), mapper.writeValueAsString(t[0]), ReflectionUtil.getId(t[0], getIdField()));
         } catch (IOException ex) {
-            Logger.getLogger(TypedIndex.class.getName()).log(Level.SEVERE, null, ex);
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.log(Level.SEVERE, null, ex);
+            }
         }
         return null;
     }
@@ -158,8 +163,9 @@ public class TypedIndex<T> extends Index<T> {
         try {
             return (T) mapper.readValue(s, t.getClass());
         } catch (IOException e) {
-            // TODO: may want to have some debug output here
-            //e.printStackTrace();
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.log(Level.SEVERE, null, e);
+            }
             return null;
         }
     }

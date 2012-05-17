@@ -1,7 +1,6 @@
 package com.nosqlrevolution;
 
 import com.google.common.base.Joiner;
-import java.lang.reflect.Type;
 import java.net.InetSocketAddress;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
@@ -148,19 +147,23 @@ public class ElasticStore {
         client.close();
     }
     
-    public JsonIndex getIndex(String index, String type) throws Exception {
-        if (client == null) {
-            throw new Exception("ElasticStore is not executed");
-        }
-        
-        return new JsonIndex(this, index, type);
-    }
+//    public JsonIndex getIndex(String index, String type) throws Exception {
+//        if (client == null) {
+//            throw new Exception("ElasticStore is not executed");
+//        }
+//        // TODO: need to catch and throw an exception here
+//        return new JsonIndex(this, index, type);
+//    }
     
     public Index getIndex(Class clazz, String index, String type) throws Exception {
         if (client == null) {
             throw new Exception("ElasticStore is not executed");
         }
-        
+
+        if (clazz == String.class) {
+            return new JsonIndex(String.class, this, index, type);
+        }
+        // TODO: need to catch and throw an exception here
         return new TypedIndex(clazz.newInstance(), this, index, type);
     }
 
