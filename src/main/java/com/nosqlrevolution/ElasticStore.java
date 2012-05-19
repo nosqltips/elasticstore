@@ -30,58 +30,119 @@ public class ElasticStore {
     private int port = DEFAULT_PORT;
     private String timeout = DEFAULT_TIMEOUT;
 
+    /**
+     * Connect to the ElasticSearch cluster as a node.
+     * 
+     * @return 
+     */
     public ElasticStore asNode() {
         node = true;
         return this;
     }
     
+    /**
+     * Connect to the ElasticSearch cluster as a TCP transport. This requires a list of address to connect to.
+     * 
+     * @return 
+     */
     public ElasticStore asTransport() {
         node = false;
         return this;
     }
-        
+
+    /**
+     * Run a local instance of ElasticSearch.
+     * This is useful for unit tests or running ElasticSearch as part of your application.
+     * 
+     * @return 
+     */
     public ElasticStore asLocal() {
         local = true;
         return this;
     }
-        
+
+    /**
+     * Specify multicast connection to a localhost cluster.
+     * 
+     * @return 
+     */
     public ElasticStore withMultiCast() {
         multicast = true;
         return this;
     }
-    
+
+    /**
+     * Specify unicast connection to a localhost cluster.
+     * 
+     * @return 
+     */
     public ElasticStore withUnicast() {
         multicast = false;
         return this;
     }
-    
+
+    /**
+     * Specify unicast connection with a list of nodes in the ElasticSearch cluster.
+     * 
+     * @param hosts
+     * @return 
+     */
     public ElasticStore withUniCast(String... hosts) {
         multicast = false;
         this.hosts = hosts;
         return this;
     }
-    
+
+    /**
+     * Specify unicast connection with a list of nodes in the ElasticSearch cluster.
+     * 
+     * @param addresses
+     * @return 
+     */
     public ElasticStore withUnicast(InetSocketAddress... addresses) {
         multicast = false;
         this.addresses = addresses;
         return this;
     }
     
+    /**
+     * Specify the port of the ElasticSearch cluster to connect to.
+     * 
+     * @param port
+     * @return 
+     */
     public ElasticStore withPort(int port) {
         this.port = port;
         return this;
     }
 
+    /**
+     * Specify the name of the ElasticSearch cluster to connect to.
+     * 
+     * @param clusterName
+     * @return 
+     */
     public ElasticStore withClusterName(String clusterName) {
         this.clusterName = clusterName;
         return this;
     }
     
+    /**
+     * Specify a timeout when connecting to the ElasticSearch cluster.
+     * 
+     * @param timeout
+     * @return 
+     */
     public ElasticStore withTimeout(String timeout) {
         this.timeout = timeout;
         return this;
     }
-        
+
+    /**
+     * Create an ElasticStore instance.
+     * 
+     * @return 
+     */
     public ElasticStore execute() {
         if (local) {
             client = nodeBuilder()
@@ -135,26 +196,39 @@ public class ElasticStore {
         return this;
     }
     
+    /**
+     * Check to see if ElasticStore has been initialized.
+     * @return 
+     */
     public boolean isInitialized() {
         return client != null;
     }
-    
+
+    /**
+     * Access the ElasticSearch client.
+     * 
+     * @return 
+     */
     public Client getClient() {
         return client;
     }
     
+    /**
+     * Close ElasticStore
+     */
     public void close() {
         client.close();
     }
-    
-//    public JsonIndex getIndex(String index, String type) throws Exception {
-//        if (client == null) {
-//            throw new Exception("ElasticStore is not executed");
-//        }
-//        // TODO: need to catch and throw an exception here
-//        return new JsonIndex(this, index, type);
-//    }
-    
+
+    /**
+     * Create strongly typed access to an index and type.
+     * 
+     * @param clazz
+     * @param index
+     * @param type
+     * @return
+     * @throws Exception 
+     */
     public Index getIndex(Class clazz, String index, String type) throws Exception {
         if (client == null) {
             throw new Exception("ElasticStore is not executed");
@@ -167,6 +241,12 @@ public class ElasticStore {
         return new TypedIndex(clazz.newInstance(), this, index, type);
     }
 
+    /**
+     * Remove an index from ElasticStore as specified by an Index.
+     * 
+     * @param index
+     * @throws Exception 
+     */
     public void removeIndex(Index index) throws Exception {
         client.admin()
                 .indices()
@@ -174,6 +254,12 @@ public class ElasticStore {
                 .actionGet();
     }
 
+    /**
+     * Remove an index from ElasticStore as specified by an index name..
+     * 
+     * @param index
+     * @throws Exception 
+     */
     public void removeIndex(String index) throws Exception {
         client.admin()
                 .indices()
@@ -181,6 +267,12 @@ public class ElasticStore {
                 .actionGet();
     }
 
+    /**
+     * Refresh the index,
+     * 
+     * @param index
+     * @throws Exception 
+     */
     public void refreshIndex(Index index) throws Exception {
         client.admin()
                 .indices()
