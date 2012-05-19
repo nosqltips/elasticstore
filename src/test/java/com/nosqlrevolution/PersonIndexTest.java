@@ -42,7 +42,7 @@ public class PersonIndexTest {
             index.write(p);
             
             // Read
-            Person p2 = index.findOneById("1");
+            Person p2 = index.findById("1");
             
             assertNotNull(p2);
             assertEquals(p2.getId(), "1");
@@ -53,7 +53,7 @@ public class PersonIndexTest {
             p.setName("Marge Simpson");
             p.setUsername("msimpson");
             index.write(p);
-            Person p3 = index.findOneById("1");
+            Person p3 = index.findById("1");
             
             assertNotNull(p3);
             assertEquals(p3.getId(), "1");
@@ -62,7 +62,7 @@ public class PersonIndexTest {
             
             // Delete
             index.remove(p);
-            Person p4 = index.findOneById("1");
+            Person p4 = index.findById("1");
             assertNull(p4);
         } catch (Exception ex) {
             Logger.getLogger(PersonIndexTest.class.getName()).log(Level.SEVERE, null, ex);

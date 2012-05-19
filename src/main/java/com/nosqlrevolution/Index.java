@@ -38,11 +38,55 @@ public abstract class Index<T> {
     public abstract long count(Query qb);
     
     /**
+     * Return a single document from the entire index.
+     * The document will be returned as specified by Type.
+     * 
+     * @return 
+     */
+    public T find() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+    
+    /**
+     * Return a single document from the entire index.
+     * The document will be returned as specified by Class.
+     * 
+     * @param clazz
+     * @return 
+     */
+    public Class find(Class clazz) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+    
+    /**
+     * Return a single document from the entire index specified by the query.
+     * The document will be returned as specified by Type.
+     * 
+     * @param qb
+     * @return 
+     */
+    public T find(Query qb) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+    
+    /**
+     * Return a single document from the entire index specified by the query.
+     * The document will be returned as specified by Class.
+     * 
+     * @param qb
+     * @param clazz
+     * @return 
+     */
+    public Class find(Query qb, Class clazz) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
      * Return a Cursor containing a list of all documents in this index or indexes.
      * 
      * @return 
      */
-    public Cursor find() {
+    public Cursor findAll() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -52,7 +96,7 @@ public abstract class Index<T> {
      * @param qb
      * @return 
      */
-    public Cursor find(Query qb) {
+    public Cursor findAll(Query qb) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -64,7 +108,7 @@ public abstract class Index<T> {
      * @param clazz
      * @return 
      */
-    public Cursor find(Query qb, Class clazz) {
+    public Cursor findAll(Query qb, Class clazz) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -75,7 +119,7 @@ public abstract class Index<T> {
      * @param id
      * @return 
      */
-    public T findOneById(String id) {
+    public T findById(String id) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     
@@ -86,7 +130,7 @@ public abstract class Index<T> {
      * @param clazz
      * @return 
      */
-    public Class findOneById(String id, Class clazz) {
+    public Class findById(String id, Class clazz) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     
@@ -96,7 +140,7 @@ public abstract class Index<T> {
      * @param ids
      * @return 
      */
-    public T[] findManyById(String... ids) {
+    public T[] findAllById(String... ids) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     
@@ -108,54 +152,10 @@ public abstract class Index<T> {
      * @param ids
      * @return 
      */
-    public Class[] findManyById(Class clazz, String... ids) {
+    public Class[] findAllById(Class clazz, String... ids) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     
-    /**
-     * Return a single document from the entire index.
-     * The document will be returned as specified by Type.
-     * 
-     * @return 
-     */
-    public T findOne() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-    
-    /**
-     * Return a single document from the entire index.
-     * The document will be returned as specified by Class.
-     * 
-     * @param clazz
-     * @return 
-     */
-    public Class findOne(Class clazz) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-    
-    /**
-     * Return a single document from the entire index specified by the query.
-     * The document will be returned as specified by Type.
-     * 
-     * @param qb
-     * @return 
-     */
-    public T findOne(Query qb) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-    
-    /**
-     * Return a single document from the entire index specified by the query.
-     * The document will be returned as specified by Class.
-     * 
-     * @param qb
-     * @param clazz
-     * @return 
-     */
-    public Class findOne(Query qb, Class clazz) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
     /**
      * Remove documents from the index specified by ids.
      * 

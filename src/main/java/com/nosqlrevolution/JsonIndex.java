@@ -38,27 +38,47 @@ public class JsonIndex<T> extends Index<String> {
     }
     
     @Override
-    public Cursor find() {
+    public String find() {
         return super.find();
     }
-
+    
     @Override
-    public Cursor find(Query qb) {
+    public Class find(Class clazz) {
+        return super.find(clazz);
+    }
+    
+    @Override
+    public String find(Query qb) {
         return super.find(qb);
     }
-
+    
     @Override
-    public Cursor find(Query qb, Class clazz) {
+    public Class find(Query qb, Class clazz) {
         return super.find(qb, clazz);
+    }
+    
+    @Override
+    public Cursor findAll() {
+        return super.findAll();
     }
 
     @Override
-    public String findOneById(String id) {
+    public Cursor findAll(Query qb) {
+        return super.findAll(qb);
+    }
+
+    @Override
+    public Cursor findAll(Query qb, Class clazz) {
+        return super.findAll(qb, clazz);
+    }
+
+    @Override
+    public String findById(String id) {
         return service.realTimeGet(getIndex(), getType(), id);
     }
     
     @Override
-    public Class findOneById(String id, Class clazz) {
+    public Class findById(String id, Class clazz) {
         try {
             String s = service.realTimeGet(getIndex(), getType(), id);
             // Todo probably put this into a util class for broad use
@@ -72,33 +92,13 @@ public class JsonIndex<T> extends Index<String> {
     }
     
     @Override
-    public String[] findManyById(String... ids) {
+    public String[] findAllById(String... ids) {
         return service.realTimeMultiGet(getIndex(), getType(), ids);
     }
     
     @Override
-    public Class[] findManyById(Class clazz, String... ids) {
-        return super.findManyById(clazz, ids);
-    }
-    
-    @Override
-    public String findOne() {
-        return super.findOne();
-    }
-    
-    @Override
-    public Class findOne(Class clazz) {
-        return super.findOne(clazz);
-    }
-    
-    @Override
-    public String findOne(Query qb) {
-        return super.findOne(qb);
-    }
-    
-    @Override
-    public Class findOne(Query qb, Class clazz) {
-        return super.findOne(qb, clazz);
+    public Class[] findAllById(Class clazz, String... ids) {
+        return super.findAllById(clazz, ids);
     }
             
     @Override

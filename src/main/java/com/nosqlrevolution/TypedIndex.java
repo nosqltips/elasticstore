@@ -38,29 +38,49 @@ public class TypedIndex<T> extends Index<T> {
         return 0;
     }
     
-    @Override
-    public Cursor find() {
+   @Override
+    public T find() {
         return super.find();
     }
-
+    
     @Override
-    public Cursor find(Query qb) {
+    public Class find(Class clazz) {
+        return super.find(clazz);
+    }
+    
+    @Override
+    public T find(Query qb) {
         return super.find(qb);
     }
-
+    
     @Override
-    public Cursor find(Query qb, Class clazz) {
+    public Class find(Query qb, Class clazz) {
         return super.find(qb, clazz);
+    }
+    
+    @Override
+    public Cursor findAll() {
+        return super.findAll();
     }
 
     @Override
-    public T findOneById(String id) {
+    public Cursor findAll(Query qb) {
+        return super.findAll(qb);
+    }
+
+    @Override
+    public Cursor findAll(Query qb, Class clazz) {
+        return super.findAll(qb, clazz);
+    }
+
+    @Override
+    public T findById(String id) {
         String s = service.realTimeGet(getIndex(), getType(), id);
         return getMapping(s);
     }
     
     @Override
-    public Class findOneById(String id, Class clazz) {
+    public Class findById(String id, Class clazz) {
         try {
             String s = service.realTimeGet(getIndex(), getType(), id);
             // Todo probably put this into a util class for broad use
@@ -74,7 +94,7 @@ public class TypedIndex<T> extends Index<T> {
     }
 
     @Override
-    public T[] findManyById(String... ids) {
+    public T[] findAllById(String... ids) {
         String[] s = service.realTimeMultiGet(getIndex(), getType(), ids);
         T[] out = (T[]) Array.newInstance(t.getClass(), s.length);
         for (int i=0; i<s.length; i++) {
@@ -84,28 +104,8 @@ public class TypedIndex<T> extends Index<T> {
     }
     
     @Override
-    public Class[] findManyById(Class clazz, String... ids) {
-        return super.findManyById(clazz, ids);
-    }
-    
-   @Override
-    public T findOne() {
-        return super.findOne();
-    }
-    
-    @Override
-    public Class findOne(Class clazz) {
-        return super.findOne(clazz);
-    }
-    
-    @Override
-    public T findOne(Query qb) {
-        return super.findOne(qb);
-    }
-    
-    @Override
-    public Class findOne(Query qb, Class clazz) {
-        return super.findOne(qb, clazz);
+    public Class[] findAllById(Class clazz, String... ids) {
+        return super.findAllById(clazz, ids);
     }
     
     @Override

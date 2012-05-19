@@ -44,7 +44,7 @@ public class JsonTypedIndexTest {
             index.write(mapper.writeValueAsString(p));
             
             // Read
-            String s2 = index.findOneById("1");
+            String s2 = index.findById("1");
             
             Person p2 = mapper.readValue(s2, Person.class);
             assertNotNull(p2);
@@ -56,7 +56,7 @@ public class JsonTypedIndexTest {
             p.setName("Marge Simpson");
             p.setUsername("msimpson");
             index.write(mapper.writeValueAsString(p));
-            String s3 = index.findOneById("1");
+            String s3 = index.findById("1");
             
             Person p3 = mapper.readValue(s3, Person.class);
             assertNotNull(p3);
@@ -66,7 +66,7 @@ public class JsonTypedIndexTest {
             
             // Delete
             index.remove(s3);
-            String s4 = index.findOneById("1");            
+            String s4 = index.findById("1");            
             assertNull(s4);                        
         } catch (Exception ex) {
             Logger.getLogger(JsonTypedIndexTest.class.getName()).log(Level.SEVERE, null, ex);
