@@ -235,7 +235,7 @@ public class ElasticStore {
         }
 
         if (clazz == String.class) {
-            return new JsonIndex(String.class, this, index, type);
+            return new JsonIndex<String>(this, index, type);
         }
         // TODO: need to catch and throw an exception here
         return new TypedIndex(clazz.newInstance(), this, index, type);

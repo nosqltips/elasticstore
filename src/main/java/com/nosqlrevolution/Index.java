@@ -54,7 +54,7 @@ public abstract class Index<T> {
      * @param clazz
      * @return 
      */
-    public Class find(Class clazz) {
+    public Object find(Class clazz) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     
@@ -77,7 +77,7 @@ public abstract class Index<T> {
      * @param clazz
      * @return 
      */
-    public Class find(Query qb, Class clazz) {
+    public Object find(Query qb, Class clazz) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -130,7 +130,7 @@ public abstract class Index<T> {
      * @param clazz
      * @return 
      */
-    public Class findById(String id, Class clazz) {
+    public Object findById(String id, Class clazz) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     
@@ -152,7 +152,7 @@ public abstract class Index<T> {
      * @param ids
      * @return 
      */
-    public Class[] findAllById(Class clazz, String... ids) {
+    public Object[] findAllById(Class clazz, String... ids) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     
@@ -184,7 +184,7 @@ public abstract class Index<T> {
      * @param t
      * @return 
      */
-    public OperationStatus remove(T t) {
+    public OperationStatus remove(T... t) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     

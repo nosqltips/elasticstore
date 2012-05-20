@@ -1,7 +1,10 @@
 package com.nosqlrevolution.service;
 
 import com.google.common.collect.Lists;
+import com.nosqlrevolution.util.QueryUtil;
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.codehaus.jackson.JsonNode;
@@ -12,10 +15,16 @@ import org.elasticsearch.action.count.CountRequestBuilder;
 import org.elasticsearch.action.count.CountResponse;
 import org.elasticsearch.action.delete.DeleteRequestBuilder;
 import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.deletebyquery.DeleteByQueryRequestBuilder;
+import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse;
 import org.elasticsearch.action.get.*;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.search.SearchHits;
 
 /**
  *
@@ -28,6 +37,25 @@ public class QueryService {
     
     public QueryService(Client client) {
         this.client = client;
+    }
+    
+    public String getSingle(String index, String type) {
+        SearchRequestBuilder builder = client.prepareSearch(index)
+                .setSearchType(SearchType.QUERY_THEN_FETCH)
+                .setTypes(type)
+                .setFilter(QueryUtil.getMatchAllFilter())
+                .setFrom(0)
+                .setSize(1);
+        
+        SearchResponse response = builder.execute().actionGet();
+        
+        // Update the SearchQuery results
+        SearchHits h = response.hits();
+        if (h.getHits().length > 0) {
+            return h.getHits()[0].sourceAsString();
+        } else {
+            return null;
+        }
     }
     
     public String realTimeGet(String index, String type, String id) {
@@ -132,6 +160,24 @@ public class QueryService {
         //response.notFound();
     }
     
+    
+    public boolean deleteAll(String index, String type, String[] id) {
+        DeleteByQueryRequestBuilder builder = client.prepareDeleteByQuery()
+                .setIndices(index)
+                .setTypes(type)
+                .setQuery(QueryUtil.getIdQuery(id));
+                
+                // TODO: can set these as some point
+                //.setRefresh()
+                //.setOperationThreaded()
+                //.setConsistencyLevel()
+        
+        DeleteByQueryResponse response = builder.execute().actionGet();
+        
+        // TODO: Need to iterate through and return a response
+        return true;
+    }
+
     private String grabId(String json) {
         try {
             JsonNode rootNode = mapper.readValue(json, JsonNode.class);

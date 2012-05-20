@@ -6,14 +6,15 @@ import java.util.Map;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
-import org.junit.*;
-import org.elasticsearch.client.Client;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.client.Client;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-
+import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
+import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
+import org.junit.AfterClass;
 import static org.junit.Assert.*;
-import static org.elasticsearch.node.NodeBuilder.*;
-import static org.elasticsearch.common.xcontent.XContentFactory.*;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /**
  *
@@ -59,6 +60,12 @@ public class QueryServiceTest {
     @AfterClass
     public static void tearDownClass() throws Exception {
         client.close();
+    }
+
+    @Test
+    public void testGetSingle() throws IOException {
+        String s = service.getSingle(index, type);
+        assertNotNull(s);
     }
 
     @Test

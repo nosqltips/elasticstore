@@ -1,10 +1,14 @@
 package com.nosqlrevolution.util;
 
+import com.nosqlrevolution.enums.Field;
 import com.nosqlrevolution.enums.Wildcard;
 import org.elasticsearch.index.query.FilterBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import static org.elasticsearch.index.query.QueryBuilders.*;
 import static org.elasticsearch.index.query.FilterBuilders.*;
+import org.elasticsearch.search.sort.FieldSortBuilder;
+import org.elasticsearch.search.sort.SortBuilder;
+import org.elasticsearch.search.sort.SortOrder;
 
 /**
  *
@@ -26,6 +30,17 @@ public class QueryUtil {
         return matchAllFilter();
     }
    
+    public static QueryBuilder getIdQuery(String[] ids) {
+        return idsQuery()
+                .addIds(ids);
+    }
+    
+    public static SortBuilder getIdSort() {
+        SortBuilder sort = new FieldSortBuilder("id");
+        sort.order(SortOrder.ASC);
+        return sort;
+    }
+
     public static QueryBuilder getQueryBuilder(String field, String term) {
         Wildcard wild = ParseUtil.isWildcard(term);
         if (wild == Wildcard.NONE) {

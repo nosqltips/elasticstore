@@ -2,13 +2,13 @@ package com.nosqlrevolution;
 
 import com.nosqlrevolution.query.Query;
 import com.nosqlrevolution.service.QueryService;
+import com.nosqlrevolution.util.JsonUtil;
+import com.nosqlrevolution.util.MappingUtil;
 import com.nosqlrevolution.util.ReflectionUtil;
-import java.io.IOException;
 import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.codehaus.jackson.map.ObjectMapper;
 
 /**
  * Accept and return strongly typed objects.
@@ -19,7 +19,7 @@ public class TypedIndex<T> extends Index<T> {
     private static final Logger logger = Logger.getLogger(TypedIndex.class.getName());
     private T t;
     private QueryService service;
-    private ObjectMapper mapper = new ObjectMapper();
+    private MappingUtil<T> mapping = new MappingUtil<T>();
     
     public TypedIndex(T t, ElasticStore store, String index, String iType) throws Exception {
         super (store, index, iType);
@@ -40,12 +40,14 @@ public class TypedIndex<T> extends Index<T> {
     
    @Override
     public T find() {
-        return super.find();
+        String s = service.getSingle(getIndex(), getType());
+        return mapping.get(t, s);
     }
     
     @Override
-    public Class find(Class clazz) {
-        return super.find(clazz);
+    public Object find(Class clazz) {
+        String s = service.getSingle(getIndex(), getType());
+        return mapping.asClass(s, clazz);
     }
     
     @Override
@@ -54,7 +56,7 @@ public class TypedIndex<T> extends Index<T> {
     }
     
     @Override
-    public Class find(Query qb, Class clazz) {
+    public Object find(Query qb, Class clazz) {
         return super.find(qb, clazz);
     }
     
@@ -76,21 +78,13 @@ public class TypedIndex<T> extends Index<T> {
     @Override
     public T findById(String id) {
         String s = service.realTimeGet(getIndex(), getType(), id);
-        return getMapping(s);
+        return mapping.get(t, s);
     }
     
     @Override
-    public Class findById(String id, Class clazz) {
-        try {
-            String s = service.realTimeGet(getIndex(), getType(), id);
-            // Todo probably put this into a util class for broad use
-            return (Class) (mapper.readValue(s, clazz.getClass()));
-        } catch (IOException ex) {
-            if (logger.isLoggable(Level.WARNING)) {
-                logger.log(Level.SEVERE, null, ex);
-            }
-            return null;
-        }
+    public Object findById(String id, Class clazz) {
+        String s = service.realTimeGet(getIndex(), getType(), id);
+        return mapping.asClass(s, clazz);
     }
 
     @Override
@@ -98,30 +92,48 @@ public class TypedIndex<T> extends Index<T> {
         String[] s = service.realTimeMultiGet(getIndex(), getType(), ids);
         T[] out = (T[]) Array.newInstance(t.getClass(), s.length);
         for (int i=0; i<s.length; i++) {
-            out[i] = getMapping(s[i]);
+            out[i] = mapping.get(t, s[i]);
         }
+        
         return out;
     }
     
     @Override
-    public Class[] findAllById(Class clazz, String... ids) {
-        return super.findAllById(clazz, ids);
+    public Object[] findAllById(Class clazz, String... ids) {
+        String[] json = service.realTimeMultiGet(getIndex(), getType(), ids);
+        List<Object> list = new ArrayList<Object>();
+        for (String s: json) {
+            list.add(mapping.asClass(s, clazz));
+        }
+        
+        return list.toArray(new Object[list.size()]);
     }
     
     @Override
     public OperationStatus removeById(String... ids) {
-        return super.removeById(ids);
+        boolean r = service.deleteAll(getIndex(), getType(), ids);
+        return null;
     }
     
     @Override
     public OperationStatus removeById(List<String> ids) {
-        return super.removeById(ids);
+        boolean r = service.deleteAll(getIndex(), getType(), ids.toArray(new String[ids.size()]));
+        return null;
     }
     
     @Override
-    public OperationStatus remove(T t) {
-       boolean r = service.delete(getIndex(), getType(), ReflectionUtil.getId(t, getIdField()));
-       return null;
+    public OperationStatus remove(T... t) {
+        if (t.length == 1) {
+            boolean r = service.delete(getIndex(), getType(), ReflectionUtil.getId(t, getIdField()));
+        } else {
+            List<String> list = new ArrayList<String>();
+            for (T o: t) {
+                list.add(ReflectionUtil.getId(o, getIdField()));
+                // TODO: what do we do with null ids? bail with exception? Report the error with OperationStatus?
+            }
+            boolean r = service.deleteAll(getIndex(), getType(), list.toArray(new String[list.size()]));
+        }
+        return null;
     }
     
     @Override
@@ -131,42 +143,71 @@ public class TypedIndex<T> extends Index<T> {
     
     @Override
     public OperationStatus write(T... t) {
-        // Optimize for single value
-        try {
-            service.index(getIndex(), getType(), mapper.writeValueAsString(t[0]), ReflectionUtil.getId(t[0], getIdField()));
-        } catch (IOException ex) {
-            if (logger.isLoggable(Level.WARNING)) {
-                logger.log(Level.SEVERE, null, ex);
+        // TODO: need to gather operation results and return
+        if (t.length == 1) {
+            service.index(getIndex(), getType(), mapping.asString(t[0]), ReflectionUtil.getId(t[0], getIdField()));
+        } else {
+            List<String> list = new ArrayList<String>();
+            for (T o: t) {
+                list.add(mapping.asString(o));
+                // TODO: what do we do with null ids? bail with exception? Report the error with OperationStatus?
             }
+            service.bulkIndex(getIndex(), getType(), list.toArray(new String[list.size()]));
         }
+        
         return null;
     }
     
     @Override
     public OperationStatus write(WriteBuilder builder, T... t) {
-        return super.write(builder, t);
+        // TODO: need to gather operation results and return
+        // TODO: implement WriteBuilder
+        if (t.length == 1) {
+            service.index(getIndex(), getType(), mapping.asString(t[0]), ReflectionUtil.getId(t[0], getIdField()));
+        } else {
+            List<String> list = new ArrayList<String>();
+            for (T o: t) {
+                list.add(mapping.asString(o));
+                // TODO: what do we do with null ids? bail with exception? Report the error with OperationStatus?
+            }
+            service.bulkIndex(getIndex(), getType(), list.toArray(new String[list.size()]));
+        }
+        
+        return null;
     }
     
     @Override
     public OperationStatus write(List<? extends T> t) {
-        return super.write(t);
+        // TODO: need to gather operation results and return
+        if (t.size() == 1) {
+            service.index(getIndex(), getType(), mapping.asString(t.get(0)), ReflectionUtil.getId(t.get(0), getIdField()));
+        } else {
+            List<String> list = new ArrayList<String>();
+            for (T o: t) {
+                list.add(mapping.asString(o));
+                // TODO: what do we do with null ids? bail with exception? Report the error with OperationStatus?
+            }
+            service.bulkIndex(getIndex(), getType(), list.toArray(new String[list.size()]));
+        }
+        
+        return null;
     }
     
     @Override
     public OperationStatus write(WriteBuilder builder, List<? extends T> t) {
-        return super.write(builder, t);
-    }
-    
-    private T getMapping(String s) {
-        if (s == null) { return null; }
-        
-        try {
-            return (T) mapper.readValue(s, t.getClass());
-        } catch (IOException e) {
-            if (logger.isLoggable(Level.WARNING)) {
-                logger.log(Level.SEVERE, null, e);
+        // TODO: need to gather operation results and return
+        // TODO: implement WriteBuilder
+        if (t.size() == 1) {
+            service.index(getIndex(), getType(), mapping.asString(t.get(0)), ReflectionUtil.getId(t.get(0), getIdField()));
+        } else {
+            List<String> list = new ArrayList<String>();
+            for (T o: t) {
+                list.add(mapping.asString(o));
+                // TODO: what do we do with null ids? bail with exception? Report the error with OperationStatus?
             }
-            return null;
+            service.bulkIndex(getIndex(), getType(), list.toArray(new String[list.size()]));
         }
+        
+        return null;
     }
 }
