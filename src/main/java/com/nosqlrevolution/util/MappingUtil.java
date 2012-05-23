@@ -19,14 +19,14 @@ public class MappingUtil<T> {
         try {
             return (T) mapper.readValue(s, t.getClass());
         } catch (IOException e) {
-//            if (logger.isLoggable(Level.SEVERE)) {
+            if (logger.isLoggable(Level.WARNING)) {
                 logger.log(Level.SEVERE, null, e);
-//            }
+            }
             return null;
         }
     }
     
-    // TODO: probably needs a throws here to bubble the exception up.
+    // TODO: probably need a throws here to bubble the exception up.
     public String asString(T t) {
         try {
             return mapper.writeValueAsString(t);
@@ -38,15 +38,14 @@ public class MappingUtil<T> {
         }
     }
     
-    // TODO: probably needs a throws here to bubble the exception up.
+    // TODO: probably need a throws here to bubble the exception up.
     public Object asClass(String json, Class clazz) {
         try {
-            // Todo probably put this into a util class for broad use
             return mapper.readValue(json, clazz);
         } catch (IOException ex) {
-//            if (logger.isLoggable(Level.SEVERE)) {
+            if (logger.isLoggable(Level.WARNING)) {
                 logger.log(Level.SEVERE, null, ex);
-//            }
+            }
             return null;
         }
     }

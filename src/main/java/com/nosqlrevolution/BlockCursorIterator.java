@@ -5,18 +5,18 @@ import java.util.Iterator;
 import org.elasticsearch.search.SearchHits;
 
 /**
- * This is a simple iterator that expects all of the data to be in a single set of hits.
+ * This iterator can go back to the search engine and iterate through blocks of data returned from ES.
  * 
  * @author cbrown
  */
-public class CursorIterator<E> implements Iterator<E> {
+public class BlockCursorIterator<E> implements Iterator<E> {
     private E e;
     private MappingUtil<E> mapping = new MappingUtil<E>();
     private SearchHits hits;
     private int iter = 0;
     private int iterAll = 0;
     
-    protected CursorIterator(E e, SearchHits hits) {
+    protected BlockCursorIterator(E e, SearchHits hits) {
         this.e = e;
         this.hits = hits;
     }

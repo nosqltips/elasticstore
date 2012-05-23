@@ -3,6 +3,7 @@ package com.nosqlrevolution;
 import com.nosqlrevolution.model.Person;
 import com.nosqlrevolution.service.QueryService;
 import com.nosqlrevolution.util.QueryUtil;
+import java.util.Collection;
 import java.util.Iterator;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
@@ -117,6 +118,25 @@ public class CursorTest {
         int id = 1;
         while (it.hasNext()) {
             Person p = it.next();
+            assertEquals(Integer.toString(id), p.getId());
+            id ++;
+        }
+    }
+
+    /**
+     * Test of collection method, of class Cursor.
+     */
+    @Test
+    public void testCollection() {
+        Cursor<Person> instance = new Cursor(new Person(), hits);
+        Collection<Person> coll = instance.collection();
+                
+        // Make sure we got a real iterator instance
+        assertNotNull(coll);
+        
+        // Run through the collection and see what we get.
+        int id = 1;
+        for (Person p: coll) {
             assertEquals(Integer.toString(id), p.getId());
             id ++;
         }
