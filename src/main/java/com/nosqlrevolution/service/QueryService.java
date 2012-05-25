@@ -1,13 +1,9 @@
 package com.nosqlrevolution.service;
 
 import com.google.common.collect.Lists;
+import com.nosqlrevolution.WriteOperation;
+import com.nosqlrevolution.util.JsonUtil;
 import com.nosqlrevolution.util.QueryUtil;
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -31,14 +27,21 @@ import org.elasticsearch.search.SearchHits;
  * @author cbrown
  */
 public class QueryService {
-    // TODO should these be final?
-    private Client client;
-    private ObjectMapper mapper = new ObjectMapper();
+    private final Client client;
+    private final ObjectMapper mapper = new ObjectMapper();
+    private final WriteOperation DEFAULT_WRITE = new WriteOperation();
     
     public QueryService(Client client) {
         this.client = client;
     }
     
+    /**
+     * Return the first document from this index and type
+     * 
+     * @param index
+     * @param type
+     * @return 
+     */
     public String getSingle(String index, String type) {
         SearchRequestBuilder builder = client.prepareSearch(index)
                 .setSearchType(SearchType.QUERY_THEN_FETCH)
@@ -58,6 +61,14 @@ public class QueryService {
         }
     }
     
+    /**
+     * Return a single document using the rest time get api
+     * 
+     * @param index
+     * @param type
+     * @param id
+     * @return 
+     */
     public String realTimeGet(String index, String type, String id) {
         GetRequestBuilder builder = client.prepareGet()
                 .setIndex(index)
@@ -69,6 +80,14 @@ public class QueryService {
         return response.sourceAsString();
     }
 
+    /**
+     * Return a list of documents using the real time get api
+     * 
+     * @param index
+     * @param type
+     * @param ids
+     * @return 
+     */
     public String[] realTimeMultiGet(String index, String type, String[] ids) {
         MultiGetRequestBuilder builder = client.prepareMultiGet()
                 .add(index, type, Lists.asList(ids[0], ids))
@@ -84,6 +103,13 @@ public class QueryService {
         return out;
     }
     
+    /**
+     * Return a count of all documents from many indexes and types
+     * 
+     * @param indexes
+     * @param types
+     * @return 
+     */
     public long count(String[] indexes, String[] types) {
         CountRequestBuilder builder = client.prepareCount()
                 .setIndices(indexes)
@@ -93,6 +119,13 @@ public class QueryService {
         return response.getCount();
     }
 
+    /**
+     * Return a count of all documents from this index and type
+     * 
+     * @param index
+     * @param type
+     * @return 
+     */
     public long count(String index, String type) {
         CountRequestBuilder builder = client.prepareCount()
                 .setIndices(index)
@@ -102,16 +135,37 @@ public class QueryService {
         return response.getCount();
     }
 
+    /**
+     * Index a single document using the standard indexing api
+     * Passes in a default WriteOperation
+     * 
+     * @param index
+     * @param type
+     * @param source
+     * @param id 
+     */
     public void index(String index, String type, String source, String id) {
+        index(DEFAULT_WRITE, index, type, source, id);
+    }
+    /**
+     * Index a single document using the standard indexing api
+     * 
+     * @param write
+     * @param index
+     * @param type
+     * @param source
+     * @param id 
+     */
+    public void index(WriteOperation write, String index, String type, String source, String id) {
         IndexRequestBuilder builder = client.prepareIndex()
                 .setIndex(index)
                 .setType(type)
                 .setSource(source)
-                .setId(id);
-                // TODO: could set consistency level
+                .setId(id)
                 
-                // TODO: possible option for realtime search
-                //.setRefresh(true)
+                // Operations from WriteOperation
+                .setConsistencyLevel(write.getConsistencyLevel())
+                .setRefresh(write.getRefresh());
         
         IndexResponse response = builder.execute().actionGet();
 
@@ -120,21 +174,39 @@ public class QueryService {
 
         // TODO: could return id of the object
         //response.id();
-}
+    }
 
+    /**
+     * Index a number of documents using the bulk indexing api
+     * Passes in a default WriteOperation
+     * 
+     * @param index
+     * @param type
+     * @param source 
+     */
     public void bulkIndex(String index, String type, String[] source) {
+        bulkIndex(DEFAULT_WRITE, index, type, source);
+    }
+    /**
+     * Index a number of documents using the bulk indexing api
+     * 
+     * @param write
+     * @param index
+     * @param type
+     * @param source 
+     */
+    public void bulkIndex(WriteOperation write, String index, String type, String[] source) {
         BulkRequestBuilder builder = client.prepareBulk();
-                // TODO: could set consistency level
-                //.setConsistencyLevel(WriteConsistencyLevel.DEFAULT)
-                
-                // TODO: possible option for realtime search
-                //.setRefresh(true)
 
-        // Maybe should try to pull out _id or id
         for (String json: source) {
             builder.add(client.prepareIndex(index, type)
-                .setId(grabId(json))
+                    // TODO: need to pass in an id field if available.
+                .setId(JsonUtil.getId(json, null))
                 .setSource(json)
+                                    
+                // Operations from WriteOperation
+                .setConsistencyLevel(write.getConsistencyLevel())
+                .setRefresh(write.getRefresh())
                 );
         }
         
@@ -143,16 +215,36 @@ public class QueryService {
         // TODO: Need to return failures at some point
     }
     
+    /**
+     * Delete a single document
+     * Passes in a default WriteOperation
+     * 
+     * @param index
+     * @param type
+     * @param id
+     * @return 
+     */
     public boolean delete(String index, String type, String id) {
+        return delete(DEFAULT_WRITE, index, type, id);
+    }
+    /**
+     * Delete a single document
+     *
+     * @param write
+     * @param index
+     * @param type
+     * @param id
+     * @return 
+     */
+    public boolean delete(WriteOperation write, String index, String type, String id) {
         DeleteRequestBuilder builder = client.prepareDelete()
                 .setIndex(index)
                 .setType(type)
-                .setId(id);
+                .setId(id)
                 
-                // TODO: can set these as some point
-                //.setRefresh()
-                //.setOperationThreaded()
-                //.setConsistencyLevel()
+                // Operations from WriteOperation
+                .setConsistencyLevel(write.getConsistencyLevel())
+                .setRefresh(write.getRefresh());
         
         DeleteResponse response = builder.execute().actionGet();
         return ! response.notFound();
@@ -160,35 +252,42 @@ public class QueryService {
         //response.notFound();
     }
     
-    
-    public boolean deleteAll(String index, String type, String[] id) {
+    /**
+     * Delete all documents as DeleteByQuery
+     * Passes in a default WriteOperation
+     * 
+     * @param index
+     * @param type
+     * @param id
+     * @return 
+     */
+    public boolean deleteAll(String index, String type, String[] ids) {
+        return deleteAll(DEFAULT_WRITE, index, type, ids);
+    }
+    /**
+     * Delete all documents as DeleteByQuery
+     * 
+     * @param write
+     * @param index
+     * @param type
+     * @param id
+     * @return 
+     */
+    public boolean deleteAll(WriteOperation write, String index, String type, String[] id) {
         DeleteByQueryRequestBuilder builder = client.prepareDeleteByQuery()
                 .setIndices(index)
                 .setTypes(type)
-                .setQuery(QueryUtil.getIdQuery(id));
+                .setQuery(QueryUtil.getIdQuery(id))
                 
-                // TODO: can set these as some point
-                //.setRefresh()
-                //.setOperationThreaded()
-                //.setConsistencyLevel()
+                // Operations from WriteOperation
+                .setConsistencyLevel(write.getConsistencyLevel());
+        
+                // TODO: test no refresh for delete by query
+                //.setRefresh(write.getRefresh());
         
         DeleteByQueryResponse response = builder.execute().actionGet();
         
         // TODO: Need to iterate through and return a response
         return true;
-    }
-
-    private String grabId(String json) {
-        try {
-            JsonNode rootNode = mapper.readValue(json, JsonNode.class);
-            String id = rootNode.findValue("id").getTextValue();
-            if (id == null) {
-                id = rootNode.findValue("_id").getTextValue();
-            }
-            return id;
-        } catch (IOException ex) {
-            Logger.getLogger(QueryService.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        return null;
     }
 }

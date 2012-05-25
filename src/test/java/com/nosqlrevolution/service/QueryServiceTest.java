@@ -1,10 +1,12 @@
 package com.nosqlrevolution.service;
 
+import com.nosqlrevolution.WriteOperation;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.elasticsearch.action.WriteConsistencyLevel;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.client.Client;
@@ -180,5 +182,35 @@ public class QueryServiceTest {
         assertEquals(myId, id);
         assertEquals(myName, name);
         assertEquals(myUsername, username);               
+    }
+    
+    @Test
+    public void testIndexWriteOperation() throws IOException {
+        XContentBuilder builder = jsonBuilder().startObject().field("id", "10").field("name", "Kerney").field("username", "kerney").endObject();
+        String json = new String(builder.copiedBytes());
+
+        WriteOperation write = new WriteOperation();
+        write.setConsistencyLevel(WriteConsistencyLevel.ONE);
+        write.setRefresh(true);
+        
+        service.index(write, index, type, json, "10");
+        
+        String s = service.realTimeGet(index, type, "10");
+        assertValues(s, "10", "Kerney", "kerney");
+    }
+
+    
+    @Test 
+    public void testDeleteWriteOperation() throws IOException {
+        String s = service.realTimeGet(index, type, "10");
+        assertNotNull(s);
+
+        WriteOperation write = new WriteOperation();
+        write.setConsistencyLevel(WriteConsistencyLevel.ONE);
+        write.setRefresh(true);
+
+        service.delete(write, index, type, "10");
+         s = service.realTimeGet(index, type, "10");
+        assertNull(s);
     }
 }

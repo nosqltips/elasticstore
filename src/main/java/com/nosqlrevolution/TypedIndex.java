@@ -159,9 +159,9 @@ public class TypedIndex<T> extends Index<T> {
     }
     
     @Override
-    public OperationStatus write(WriteBuilder builder, T... t) {
+    public OperationStatus write(WriteOperation builder, T... t) {
         // TODO: need to gather operation results and return
-        // TODO: implement WriteBuilder
+        // TODO: implement WriteOperation
         if (t.length == 1) {
             service.index(getIndex(), getType(), mapping.asString(t[0]), ReflectionUtil.getId(t[0], getIdField()));
         } else {
@@ -194,9 +194,9 @@ public class TypedIndex<T> extends Index<T> {
     }
     
     @Override
-    public OperationStatus write(WriteBuilder builder, List<? extends T> t) {
+    public OperationStatus write(WriteOperation builder, List<? extends T> t) {
         // TODO: need to gather operation results and return
-        // TODO: implement WriteBuilder
+        // TODO: implement WriteOperation
         if (t.size() == 1) {
             service.index(getIndex(), getType(), mapping.asString(t.get(0)), ReflectionUtil.getId(t.get(0), getIdField()));
         } else {

@@ -210,13 +210,13 @@ public abstract class Index<T> {
     
     /**
      * Write one or more documents to the index.
-     * Write parameters can be specified by a WriteBuilder.
+     * Write parameters can be specified by a WriteOperation.
      * 
      * @param builder
      * @param t
      * @return 
      */
-    public OperationStatus write(WriteBuilder builder, T... t) {
+    public OperationStatus write(WriteOperation builder, T... t) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     
@@ -232,13 +232,13 @@ public abstract class Index<T> {
     
     /**
      * Write one or more documents to the index.
-     * Write parameters can be specified by a WriteBuilder.
+     * Write parameters can be specified by a WriteOperation.
      * 
      * @param builder
      * @param t
      * @return 
      */
-    public OperationStatus write(WriteBuilder builder, List<? extends T> t) {
+    public OperationStatus write(WriteOperation builder, List<? extends T> t) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     

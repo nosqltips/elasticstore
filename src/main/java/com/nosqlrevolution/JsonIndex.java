@@ -143,9 +143,9 @@ public class JsonIndex<T> extends Index<String> {
     }
     
     @Override
-    public OperationStatus write(WriteBuilder builder, String... json) {
+    public OperationStatus write(WriteOperation builder, String... json) {
         // TODO: need to gather operation results and return
-        // TODO: implement WriteBuilder
+        // TODO: implement WriteOperation
         if (json.length == 1) {
             service.index(getIndex(), getType(), json[0], ReflectionUtil.getId(json[0], getIdField()));
         } else {
@@ -166,9 +166,9 @@ public class JsonIndex<T> extends Index<String> {
     }
     
     @Override
-    public OperationStatus write(WriteBuilder builder, List<? extends String> json) {
+    public OperationStatus write(WriteOperation builder, List<? extends String> json) {
         // TODO: need to gather operation results and return
-        // TODO: implement WriteBuilder
+        // TODO: implement WriteOperation
         if (json.size() == 1) {
             service.index(getIndex(), getType(), json.get(0), ReflectionUtil.getId(json.get(0), getIdField()));
         } else {
