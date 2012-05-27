@@ -1,6 +1,6 @@
 package com.nosqlrevolution.model;
 
-import com.nosqlrevolution.annotation.Id;
+import com.nosqlrevolution.annotation.DocumentId;
 import org.codehaus.jackson.annotate.JsonProperty;
 
 /**
@@ -8,7 +8,7 @@ import org.codehaus.jackson.annotate.JsonProperty;
  * @author cbrown
  */
 public class Person {
-    @Id
+    @DocumentId
     private String id;
     private String name;
     private String username;

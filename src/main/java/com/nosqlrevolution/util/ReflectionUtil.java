@@ -1,7 +1,9 @@
 package com.nosqlrevolution.util;
 
-import com.nosqlrevolution.annotation.Id;
+import com.nosqlrevolution.annotation.DocumentId;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -13,13 +15,22 @@ public class ReflectionUtil {
     private static final Logger logger = Logger.getLogger(ReflectionUtil.class.getName());
     public static String getId(Object o, String idField) {
         Class<?> clazz = o.getClass();
-        Field[] fields = clazz.getDeclaredFields();
         
-        // Check to see if there is an annotation
+        // Check to see if there is an annotation on a field
+        Field[] fields = clazz.getDeclaredFields();
         for (Field f: fields) {
-            Id id = f.getAnnotation(Id.class);
+            DocumentId id = f.getAnnotation(DocumentId.class);
             if (id != null) {
                 return getFieldValue(f, o);
+            }
+        }
+        
+        // Check to see if there is an annotation on a method
+        Method[] methods = clazz.getDeclaredMethods();
+        for (Method m: methods) {
+            DocumentId id = m.getAnnotation(DocumentId.class);
+            if (id != null) {
+                return getMethodValue(m, o);
             }
         }
         
@@ -54,27 +65,65 @@ public class ReflectionUtil {
     private static String getFieldValue(Field f, Object o) {
         try {
             f.setAccessible(true);
-            if (f.getType().equals(java.lang.String.class)) {
+            Class<?> type = f.getType();
+            if ((type.equals(java.lang.String.class)) || (type.equals(java.lang.Object.class))) {
                 return f.get(o).toString();
-            } else if(f.getType().equals(java.lang.Long.class)) {
+            } else if (type.equals(java.lang.Long.class)) {
                 return Long.toString((Long)f.get(o));
-            } else if(f.getType().equals(java.lang.Integer.class)) {
+            } else if (type.equals(java.lang.Integer.class)) {
                 return Integer.toString((Integer)f.get(o));
-            } else if(f.getType().equals(long.class)) {
+            } else if (type.equals(long.class)) {
                 return Long.toString(f.getLong(o));
-            } else if(f.getType().equals(int.class)) {
+            } else if (type.equals(int.class)) {
                 return Integer.toString(f.getInt(o));
             }
         } catch (SecurityException ex) {
-            if (logger.isLoggable(Level.WARNING)) {
+            if (logger.isLoggable(Level.SEVERE)) {
                 logger.log(Level.SEVERE, null, ex);
             }
         } catch (IllegalArgumentException ex) {
-            if (logger.isLoggable(Level.WARNING)) {
+            if (logger.isLoggable(Level.SEVERE)) {
                 logger.log(Level.SEVERE, null, ex);
             }
         } catch (IllegalAccessException ex) {
-            if (logger.isLoggable(Level.WARNING)) {
+            if (logger.isLoggable(Level.SEVERE)) {
+                logger.log(Level.SEVERE, null, ex);
+            }
+        }
+        
+        return null;
+    }
+
+    private static String getMethodValue(Method m, Object o) {
+        try {
+            Class<?> returnType = m.getReturnType();
+            m.setAccessible(true);
+            if ((m.getParameterTypes().length > 0) || m.getReturnType().equals(java.lang.Void.class)) {
+                // TODO: maybe exception here? method cannot take arguments
+                return null;
+            }
+            Object[] args = new Object[0];
+            if ((returnType.equals(java.lang.String.class)) || (returnType.equals(java.lang.Object.class))) {
+                return m.invoke(o, args).toString();
+            } else if ((returnType.equals(java.lang.Long.class)) || (returnType.equals(long.class))) {
+                return Long.toString((Long)m.invoke(o, args));
+            } else if ((returnType.equals(java.lang.Integer.class)) || (returnType.equals(int.class))) {
+                return Integer.toString((Integer)m.invoke(o, args));
+            }
+        } catch (SecurityException ex) {
+            if (logger.isLoggable(Level.SEVERE)) {
+                logger.log(Level.SEVERE, null, ex);
+            }
+        } catch (IllegalArgumentException ex) {
+            if (logger.isLoggable(Level.SEVERE)) {
+                logger.log(Level.SEVERE, null, ex);
+            }
+        } catch (IllegalAccessException ex) {
+            if (logger.isLoggable(Level.SEVERE)) {
+                logger.log(Level.SEVERE, null, ex);
+            }
+        } catch (InvocationTargetException ex) {
+            if (logger.isLoggable(Level.SEVERE)) {
                 logger.log(Level.SEVERE, null, ex);
             }
         }

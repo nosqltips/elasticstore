@@ -10,6 +10,6 @@ import java.lang.annotation.Target;
  * @author cbrown
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.FIELD)
-public @interface Id {   
+@Target({ElementType.FIELD, ElementType.METHOD})
+public @interface DocumentId {   
 }

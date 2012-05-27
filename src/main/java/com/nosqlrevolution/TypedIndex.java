@@ -111,29 +111,32 @@ public class TypedIndex<T> extends Index<T> {
     
     @Override
     public OperationStatus removeById(String... ids) {
-        boolean r = service.deleteAll(getIndex(), getType(), ids);
-        return null;
+        OperationStatus status = new OperationStatus();
+        status.setSucceeded(service.deleteAll(getIndex(), getType(), ids));
+        return status;
     }
     
     @Override
     public OperationStatus removeById(List<String> ids) {
-        boolean r = service.deleteAll(getIndex(), getType(), ids.toArray(new String[ids.size()]));
-        return null;
+        OperationStatus status = new OperationStatus();
+        status.setSucceeded(service.deleteAll(getIndex(), getType(), ids.toArray(new String[ids.size()])));
+        return status;
     }
     
     @Override
     public OperationStatus remove(T... t) {
+        OperationStatus status = new OperationStatus();
         if (t.length == 1) {
-            boolean r = service.delete(getIndex(), getType(), ReflectionUtil.getId(t, getIdField()));
+            status.setSucceeded(service.delete(getIndex(), getType(), ReflectionUtil.getId(t, getIdField())));
         } else {
             List<String> list = new ArrayList<String>();
             for (T o: t) {
                 list.add(ReflectionUtil.getId(o, getIdField()));
                 // TODO: what do we do with null ids? bail with exception? Report the error with OperationStatus?
             }
-            boolean r = service.deleteAll(getIndex(), getType(), list.toArray(new String[list.size()]));
+            status.setSucceeded(service.deleteAll(getIndex(), getType(), list.toArray(new String[list.size()])));
         }
-        return null;
+        return status;
     }
     
     @Override
@@ -143,7 +146,8 @@ public class TypedIndex<T> extends Index<T> {
     
     @Override
     public OperationStatus write(T... t) {
-        // TODO: need to gather operation results and return
+        // TODO: Need to gather results from index operation
+        OperationStatus status = new OperationStatus();
         if (t.length == 1) {
             service.index(getIndex(), getType(), mapping.asString(t[0]), ReflectionUtil.getId(t[0], getIdField()));
         } else {
@@ -154,14 +158,14 @@ public class TypedIndex<T> extends Index<T> {
             }
             service.bulkIndex(getIndex(), getType(), list.toArray(new String[list.size()]));
         }
-        
-        return null;
+        status.setSucceeded(true);
+        return status;
     }
     
     @Override
     public OperationStatus write(WriteOperation builder, T... t) {
         // TODO: need to gather operation results and return
-        // TODO: implement WriteOperation
+        OperationStatus status = new OperationStatus();
         if (t.length == 1) {
             service.index(getIndex(), getType(), mapping.asString(t[0]), ReflectionUtil.getId(t[0], getIdField()));
         } else {
@@ -172,13 +176,14 @@ public class TypedIndex<T> extends Index<T> {
             }
             service.bulkIndex(getIndex(), getType(), list.toArray(new String[list.size()]));
         }
-        
-        return null;
+        status.setSucceeded(true);
+        return status;
     }
     
     @Override
     public OperationStatus write(List<? extends T> t) {
         // TODO: need to gather operation results and return
+        OperationStatus status = new OperationStatus();
         if (t.size() == 1) {
             service.index(getIndex(), getType(), mapping.asString(t.get(0)), ReflectionUtil.getId(t.get(0), getIdField()));
         } else {
@@ -189,14 +194,14 @@ public class TypedIndex<T> extends Index<T> {
             }
             service.bulkIndex(getIndex(), getType(), list.toArray(new String[list.size()]));
         }
-        
-        return null;
+        status.setSucceeded(true);
+        return status;
     }
     
     @Override
     public OperationStatus write(WriteOperation builder, List<? extends T> t) {
         // TODO: need to gather operation results and return
-        // TODO: implement WriteOperation
+        OperationStatus status = new OperationStatus();
         if (t.size() == 1) {
             service.index(getIndex(), getType(), mapping.asString(t.get(0)), ReflectionUtil.getId(t.get(0), getIdField()));
         } else {
@@ -207,7 +212,7 @@ public class TypedIndex<T> extends Index<T> {
             }
             service.bulkIndex(getIndex(), getType(), list.toArray(new String[list.size()]));
         }
-        
-        return null;
+        status.setSucceeded(true);
+        return status;
     }
 }
