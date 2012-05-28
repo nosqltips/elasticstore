@@ -6,7 +6,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- *
+ * Used to mark a field or method whose value is the id for this document.
+ * 
  * @author cbrown
  */
 @Retention(RetentionPolicy.RUNTIME)

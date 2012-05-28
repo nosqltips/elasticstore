@@ -1,11 +1,14 @@
 package com.nosqlrevolution.util;
 
 import com.nosqlrevolution.annotation.DocumentId;
+import com.nosqlrevolution.annotation.UUIDProvider;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.elasticsearch.common.UUID;
+import static com.nosqlrevolution.annotation.UUIDProvider.Type.*;
 
 /**
  *
@@ -16,8 +19,22 @@ public class ReflectionUtil {
     public static String getId(Object o, String idField) {
         Class<?> clazz = o.getClass();
         
-        // Check to see if there is an annotation on a field
         Field[] fields = clazz.getDeclaredFields();
+        // Inject a UUID if annotation is present
+        for (Field f: fields) {
+            UUIDProvider provider = f.getAnnotation(UUIDProvider.class);
+            if (provider != null) {
+                String uuid = null;
+                if (provider.value() == RANDOM) {
+                    uuid = UUID.randomUUID().toString();
+                } else if (provider.value() == RANDOM_64BIT) {
+                    uuid = UUID.randomBase64UUID();
+                }
+                setFieldValue(f, o, uuid);
+            }
+        }
+
+        // Check to see if there is an annotation on a field
         for (Field f: fields) {
             DocumentId id = f.getAnnotation(DocumentId.class);
             if (id != null) {
@@ -66,7 +83,9 @@ public class ReflectionUtil {
         try {
             f.setAccessible(true);
             Class<?> type = f.getType();
-            if ((type.equals(java.lang.String.class)) || (type.equals(java.lang.Object.class))) {
+            if (f.get(o) == null) {
+                return null;
+            } else if ((type.equals(java.lang.String.class)) || (type.equals(java.lang.Object.class))) {
                 return f.get(o).toString();
             } else if (type.equals(java.lang.Long.class)) {
                 return Long.toString((Long)f.get(o));
@@ -103,7 +122,9 @@ public class ReflectionUtil {
                 return null;
             }
             Object[] args = new Object[0];
-            if ((returnType.equals(java.lang.String.class)) || (returnType.equals(java.lang.Object.class))) {
+            if (m.invoke(o, args) == null) {
+                return null;
+            } else if ((returnType.equals(java.lang.String.class)) || (returnType.equals(java.lang.Object.class))) {
                 return m.invoke(o, args).toString();
             } else if ((returnType.equals(java.lang.Long.class)) || (returnType.equals(long.class))) {
                 return Long.toString((Long)m.invoke(o, args));
@@ -129,5 +150,19 @@ public class ReflectionUtil {
         }
         
         return null;
+    }
+
+    private static void setFieldValue(Field f, Object o, String s) {
+        try {
+            f.setAccessible(true);
+            Class<?> type = f.getType();
+            if ((type.equals(java.lang.String.class))) {
+                f.set(o, s);
+            }
+        } catch (IllegalAccessException ex) {
+            if (logger.isLoggable(Level.SEVERE)) {
+                logger.log(Level.SEVERE, null, ex);
+            }
+        }
     }
 }

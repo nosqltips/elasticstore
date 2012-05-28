@@ -1,11 +1,12 @@
 package com.nosqlrevolution.service;
 
 import com.nosqlrevolution.annotation.DocumentId;
+import com.nosqlrevolution.annotation.UUIDProvider;
+import static com.nosqlrevolution.annotation.UUIDProvider.Type.*;
 import com.nosqlrevolution.model.TestIdAnnotationFieldStatic;
 import com.nosqlrevolution.model.TestIdAnnotationMethodStatic;
 import com.nosqlrevolution.util.ReflectionUtil;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 import org.junit.Test;
 
 /**
@@ -190,6 +191,30 @@ public class ReflectionUtilTest {
      }
 
      @Test
+     public void withUUIDFieldString() {
+         TestUUIDFieldString t = new TestUUIDFieldString();
+         assertNotNull(ReflectionUtil.getId(t, null));
+     }
+
+     @Test
+     public void withUUID64BitFieldString() {
+         TestUUID64BitFieldString t = new TestUUID64BitFieldString();
+         assertNotNull(ReflectionUtil.getId(t, null));
+     }
+
+     @Test
+     public void withUUIDFieldLong() {
+         TestUUIDFieldLong t = new TestUUIDFieldLong();
+         assertNull(ReflectionUtil.getId(t, null));
+     }
+
+     @Test
+     public void withUUIDFieldInteger() {
+         TestUUIDFieldInteger t = new TestUUIDFieldInteger();
+         assertNull(ReflectionUtil.getId(t, null));
+     }
+
+     @Test
      public void withInheritenceField() {
          TestInheritenceField t = new TestInheritenceField();
          t.setId("1234");
@@ -285,12 +310,24 @@ public class ReflectionUtilTest {
          t.setId("1234");
          assertEquals("1234", ReflectionUtil.getId(t, null));
      }
+
+     @Test
+     public void withUUIDMethodString() {
+         TestUUIDMethodString t = new TestUUIDMethodString();
+         assertNotNull(ReflectionUtil.getId(t, null));
+     }
+     
+     @Test
+     public void withUUIDMethodLong() {
+         TestUUIDMethodLong t = new TestUUIDMethodLong();
+         assertNull(ReflectionUtil.getId(t, null));
+     }
      
      @Test
      public void withInheritenceMethod() {
          TestInheritenceMethod t = new TestInheritenceMethod();
          t.setId("1234");
-         //assertEquals("1234", ReflectionUtil.getId(t, null));
+         //assertEquals("1234", ReflectionUtil.getId(t, null));AnnotationFieldProtected
          assertNull(ReflectionUtil.getId(t, null));
      }
      
@@ -408,6 +445,30 @@ public class ReflectionUtilTest {
          public void setId(String someid) { this.someid = someid; }
      }
      
+     private class TestUUIDFieldString {
+         @UUIDProvider()
+         @DocumentId
+         public String someid;
+     }
+     
+     private class TestUUID64BitFieldString {
+         @UUIDProvider(RANDOM_64BIT)
+         @DocumentId
+         public String someid;
+     }
+     
+     private class TestUUIDFieldLong {
+         @UUIDProvider()
+         @DocumentId
+         public Long someid;
+     }
+     
+     private class TestUUIDFieldInteger {
+         @UUIDProvider()
+         @DocumentId
+         public Integer someid;
+     }
+     
      private class TestInheritenceField extends TestIdAnnotationFieldString {
      }
      
@@ -510,7 +571,21 @@ public class ReflectionUtilTest {
             return "1234";
         }         
      }
-     
+
+     private class TestUUIDMethodString {
+         @UUIDProvider()
+         private String someid;
+         @DocumentId
+         public String getId() { return someid; }
+     }
+          
+     private class TestUUIDMethodLong {
+         @UUIDProvider()
+         private Long someid;
+         @DocumentId
+         public Long getId() { return someid; }
+     }
+          
      private class TestInheritenceMethod extends TestIdAnnotationMethodString {
      }
      
