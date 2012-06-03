@@ -11,7 +11,7 @@ import java.lang.annotation.*;
  * @author cbrown
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.FIELD})
+@Target({ElementType.TYPE})
 @Inherited
 public @interface RootObject {
     public enum Dynamic { TRUE, FALSE, STRICT }

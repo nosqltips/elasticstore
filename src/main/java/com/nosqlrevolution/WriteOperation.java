@@ -13,8 +13,6 @@ public class WriteOperation {
 
     /**
      * Causes the indexed to be refreshed so that documents will be immediately visible in search results.
-     * 
-     * @return 
      */
     public boolean getRefresh() {
         return refresh;
