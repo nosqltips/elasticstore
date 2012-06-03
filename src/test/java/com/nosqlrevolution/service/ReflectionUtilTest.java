@@ -20,22 +20,6 @@ public class ReflectionUtilTest {
          t.setId("1234");
          assertEquals("1234", ReflectionUtil.getId(t, null));
      }
-     
-     @Test
-     public void withIdExtends() {
-         TestIdExtends t = new TestIdExtends();
-         t.setId("1234");
-         //assertEquals("1234", ReflectionUtil.getId(t, null));
-         assertNull(ReflectionUtil.getId(t, null));
-     }
-     
-     @Test
-     public void withIdExtendsId() {
-         TestIdExtends t = new TestIdExtends();
-         t.setId("1234");
-         //assertEquals("1234", ReflectionUtil.getId(t, null));
-         assertNull(ReflectionUtil.getId(t, "id"));
-     }
 
      @Test
      public void with_Id() {
@@ -215,25 +199,10 @@ public class ReflectionUtilTest {
      }
 
      @Test
-     public void withInheritenceField() {
-         TestInheritenceField t = new TestInheritenceField();
-         t.setId("1234");
-         //assertEquals("1234", ReflectionUtil.getId(t, null));
-         assertNull(ReflectionUtil.getId(t, null));
-     }
-
-     @Test
      public void withOverrideField() {
          TestOverrideField t = new TestOverrideField();
          t.setId("1234");
          assertEquals("5678", ReflectionUtil.getId(t, null));
-     }
-
-     @Test
-     public void withImplementsField() {
-         TestImplementsField t = new TestImplementsField();
-         //assertEquals("1234", ReflectionUtil.getId(t, null));
-         assertNull(ReflectionUtil.getId(t, null));
      }
 
      @Test
@@ -324,14 +293,6 @@ public class ReflectionUtilTest {
      }
      
      @Test
-     public void withInheritenceMethod() {
-         TestInheritenceMethod t = new TestInheritenceMethod();
-         t.setId("1234");
-         //assertEquals("1234", ReflectionUtil.getId(t, null));AnnotationFieldProtected
-         assertNull(ReflectionUtil.getId(t, null));
-     }
-     
-     @Test
      public void withOverrideMethod() {
          TestOverrideMethod t = new TestOverrideMethod();
          t.setId("1234");
@@ -349,9 +310,6 @@ public class ReflectionUtilTest {
      private class TestId {
          private String id;
          public void setId(String id) { this.id = id; }
-     }
-     
-     private class TestIdExtends extends TestId {
      }
      
      private class Test_Id {
@@ -469,20 +427,9 @@ public class ReflectionUtilTest {
          public Integer someid;
      }
      
-     private class TestInheritenceField extends TestIdAnnotationFieldString {
-     }
-     
      private class TestOverrideField extends TestIdAnnotationFieldString {
          @DocumentId
          private String someId="5678";
-     }
-     
-     private interface TestInterfaceField {
-         @DocumentId
-         String someId = "1234";
-     }
-     
-     private class TestImplementsField implements TestInterfaceField {         
      }
      
      private class TestIdAnnotationFieldDefault {
@@ -585,10 +532,7 @@ public class ReflectionUtilTest {
          @DocumentId
          public Long getId() { return someid; }
      }
-          
-     private class TestInheritenceMethod extends TestIdAnnotationMethodString {
-     }
-     
+
      private class TestOverrideMethod extends TestIdAnnotationMethodString {
          @DocumentId
          private String someId="5678";
