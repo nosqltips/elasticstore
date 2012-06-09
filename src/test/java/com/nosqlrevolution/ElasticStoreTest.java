@@ -44,4 +44,16 @@ public class ElasticStoreTest {
          
          es.close();
      }
+
+     @Test
+     public void testMemory() {
+         ElasticStore es = new ElasticStore().asMemoryOnly().execute();
+         assertNotNull(es);
+
+         ElasticStore esNode = new ElasticStore().asMemoryOnly().execute();
+         Client client = esNode.getClient();
+         assertNotNull(client);
+         
+         es.close();
+     }
 }

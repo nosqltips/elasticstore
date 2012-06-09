@@ -1,14 +1,11 @@
 package com.nosqlrevolution.util;
 
-import com.nosqlrevolution.annotation.DocumentId;
-import com.nosqlrevolution.annotation.UUIDProvider;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.elasticsearch.common.UUID;
-import static com.nosqlrevolution.annotation.UUIDProvider.Type.*;
+import java.lang.annotation.Annotation;
 
 /**
  *
@@ -16,70 +13,8 @@ import static com.nosqlrevolution.annotation.UUIDProvider.Type.*;
  */
 public class ReflectionUtil {
     private static final Logger logger = Logger.getLogger(ReflectionUtil.class.getName());
-    public static String getId(Object o, String idField) {
-        Class<?> clazz = o.getClass();
-        
-        Field[] fields = clazz.getDeclaredFields();
-        // Inject a UUID if annotation is present
-        for (Field f: fields) {
-            UUIDProvider provider = f.getAnnotation(UUIDProvider.class);
-            if (provider != null) {
-                String uuid = null;
-                if (provider.value() == RANDOM) {
-                    uuid = UUID.randomUUID().toString();
-                } else if (provider.value() == RANDOM_64BIT) {
-                    uuid = UUID.randomBase64UUID();
-                }
-                setFieldValue(f, o, uuid);
-            }
-        }
 
-        // Check to see if there is an annotation on a field
-        for (Field f: fields) {
-            DocumentId id = f.getAnnotation(DocumentId.class);
-            if (id != null) {
-                return getFieldValue(f, o);
-            }
-        }
-        
-        // Check to see if there is an annotation on a method
-        Method[] methods = clazz.getDeclaredMethods();
-        for (Method m: methods) {
-            DocumentId id = m.getAnnotation(DocumentId.class);
-            if (id != null) {
-                return getMethodValue(m, o);
-            }
-        }
-        
-        // Check to see if there is a value for the specified id field
-        if (idField != null) {
-            try {
-                Field f = clazz.getDeclaredField(idField);
-                return getFieldValue(f, o);
-            } catch (NoSuchFieldException ex) {
-//                if (logger.isLoggable(Level.WARNING)) {
-//                    logger.log(Level.SEVERE, null, ex);
-//                }
-            } catch (SecurityException ex) {
-//                if (logger.isLoggable(Level.WARNING)) {
-//                    logger.log(Level.SEVERE, null, ex);
-//                }
-            }
-        }
-        
-        // Check for a field of id or _id
-        for (Field f: fields) {
-            String name = f.getName();
-            if (name.toLowerCase().equals("id") || name.toLowerCase().equals("_id")) {
-                return getFieldValue(f, o);
-            }
-        }
-        
-        // No annotation or id field, return null
-        return null;
-    }
-
-    private static String getFieldValue(Field f, Object o) {
+    public static String getFieldValue(Field f, Object o) {
         try {
             f.setAccessible(true);
             Class<?> type = f.getType();
@@ -113,7 +48,7 @@ public class ReflectionUtil {
         return null;
     }
 
-    private static String getMethodValue(Method m, Object o) {
+    public static String getMethodValue(Method m, Object o) {
         try {
             Class<?> returnType = m.getReturnType();
             m.setAccessible(true);
@@ -152,7 +87,7 @@ public class ReflectionUtil {
         return null;
     }
 
-    private static void setFieldValue(Field f, Object o, String s) {
+    public static void setFieldValue(Field f, Object o, String s) {
         try {
             f.setAccessible(true);
             Class<?> type = f.getType();
@@ -163,6 +98,20 @@ public class ReflectionUtil {
             if (logger.isLoggable(Level.SEVERE)) {
                 logger.log(Level.SEVERE, null, ex);
             }
+        }
+    }
+
+    public static <T extends Annotation> T getAnnotation(Class<?> clazz, Class<T> annotationType) {
+        T result = clazz.getAnnotation(annotationType);
+        if (result == null) {
+            Class<?> superclass = clazz.getSuperclass();
+            if (superclass != null) {
+                return getAnnotation(superclass, annotationType);
+            } else {
+                return null;
+            }
+        } else {
+            return result;
         }
     }
 }

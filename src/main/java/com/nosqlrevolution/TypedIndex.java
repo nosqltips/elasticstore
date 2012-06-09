@@ -4,7 +4,7 @@ import com.nosqlrevolution.query.Query;
 import com.nosqlrevolution.service.QueryService;
 import com.nosqlrevolution.util.JsonUtil;
 import com.nosqlrevolution.util.MappingUtil;
-import com.nosqlrevolution.util.ReflectionUtil;
+import com.nosqlrevolution.util.AnnotationHelper;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
@@ -127,11 +127,11 @@ public class TypedIndex<T> extends Index<T> {
     public OperationStatus remove(T... t) {
         OperationStatus status = new OperationStatus();
         if (t.length == 1) {
-            status.setSucceeded(service.delete(getIndex(), getType(), ReflectionUtil.getId(t, getIdField())));
+            status.setSucceeded(service.delete(getIndex(), getType(), AnnotationHelper.getDocumentId(t, getIdField())));
         } else {
             List<String> list = new ArrayList<String>();
             for (T o: t) {
-                list.add(ReflectionUtil.getId(o, getIdField()));
+                list.add(AnnotationHelper.getDocumentId(o, getIdField()));
                 // TODO: what do we do with null ids? bail with exception? Report the error with OperationStatus?
             }
             status.setSucceeded(service.deleteAll(getIndex(), getType(), list.toArray(new String[list.size()])));
@@ -149,7 +149,7 @@ public class TypedIndex<T> extends Index<T> {
         // TODO: Need to gather results from index operation
         OperationStatus status = new OperationStatus();
         if (t.length == 1) {
-            service.index(getIndex(), getType(), mapping.asString(t[0]), ReflectionUtil.getId(t[0], getIdField()));
+            service.index(getIndex(), getType(), mapping.asString(t[0]), AnnotationHelper.getDocumentId(t[0], getIdField()));
         } else {
             List<String> list = new ArrayList<String>();
             for (T o: t) {
@@ -167,7 +167,7 @@ public class TypedIndex<T> extends Index<T> {
         // TODO: need to gather operation results and return
         OperationStatus status = new OperationStatus();
         if (t.length == 1) {
-            service.index(getIndex(), getType(), mapping.asString(t[0]), ReflectionUtil.getId(t[0], getIdField()));
+            service.index(getIndex(), getType(), mapping.asString(t[0]), AnnotationHelper.getDocumentId(t[0], getIdField()));
         } else {
             List<String> list = new ArrayList<String>();
             for (T o: t) {
@@ -185,7 +185,7 @@ public class TypedIndex<T> extends Index<T> {
         // TODO: need to gather operation results and return
         OperationStatus status = new OperationStatus();
         if (t.size() == 1) {
-            service.index(getIndex(), getType(), mapping.asString(t.get(0)), ReflectionUtil.getId(t.get(0), getIdField()));
+            service.index(getIndex(), getType(), mapping.asString(t.get(0)), AnnotationHelper.getDocumentId(t.get(0), getIdField()));
         } else {
             List<String> list = new ArrayList<String>();
             for (T o: t) {
@@ -203,7 +203,7 @@ public class TypedIndex<T> extends Index<T> {
         // TODO: need to gather operation results and return
         OperationStatus status = new OperationStatus();
         if (t.size() == 1) {
-            service.index(getIndex(), getType(), mapping.asString(t.get(0)), ReflectionUtil.getId(t.get(0), getIdField()));
+            service.index(getIndex(), getType(), mapping.asString(t.get(0)), AnnotationHelper.getDocumentId(t.get(0), getIdField()));
         } else {
             List<String> list = new ArrayList<String>();
             for (T o: t) {

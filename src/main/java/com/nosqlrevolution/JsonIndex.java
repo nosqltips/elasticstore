@@ -5,7 +5,7 @@ import com.nosqlrevolution.query.Query;
 import com.nosqlrevolution.service.QueryService;
 import com.nosqlrevolution.util.JsonUtil;
 import com.nosqlrevolution.util.MappingUtil;
-import com.nosqlrevolution.util.ReflectionUtil;
+import com.nosqlrevolution.util.AnnotationHelper;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -135,7 +135,7 @@ public class JsonIndex<T> extends Index<String> {
     public OperationStatus write(String... json) {
         // TODO: need to gather operation results and return
         if (json.length == 1) {
-            service.index(getIndex(), getType(), json[0], ReflectionUtil.getId(json[0], getIdField()));
+            service.index(getIndex(), getType(), json[0], AnnotationHelper.getDocumentId(json[0], getIdField()));
         } else {
             service.bulkIndex(getIndex(), getType(), json);
         }
@@ -147,7 +147,7 @@ public class JsonIndex<T> extends Index<String> {
         // TODO: need to gather operation results and return
         // TODO: implement WriteOperation
         if (json.length == 1) {
-            service.index(getIndex(), getType(), json[0], ReflectionUtil.getId(json[0], getIdField()));
+            service.index(getIndex(), getType(), json[0], AnnotationHelper.getDocumentId(json[0], getIdField()));
         } else {
             service.bulkIndex(getIndex(), getType(), json);
         }
@@ -158,7 +158,7 @@ public class JsonIndex<T> extends Index<String> {
     public OperationStatus write(List<? extends String> json) {
         // TODO: need to gather operation results and return
         if (json.size() == 1) {
-            service.index(getIndex(), getType(), json.get(0), ReflectionUtil.getId(json.get(0), getIdField()));
+            service.index(getIndex(), getType(), json.get(0), AnnotationHelper.getDocumentId(json.get(0), getIdField()));
         } else {
             service.bulkIndex(getIndex(), getType(), json.toArray(new String[json.size()]));
         }
@@ -170,7 +170,7 @@ public class JsonIndex<T> extends Index<String> {
         // TODO: need to gather operation results and return
         // TODO: implement WriteOperation
         if (json.size() == 1) {
-            service.index(getIndex(), getType(), json.get(0), ReflectionUtil.getId(json.get(0), getIdField()));
+            service.index(getIndex(), getType(), json.get(0), AnnotationHelper.getDocumentId(json.get(0), getIdField()));
         } else {
             service.bulkIndex(getIndex(), getType(), json.toArray(new String[json.size()]));
         }
