@@ -22,6 +22,7 @@ public class ElasticStore {
     private static boolean multicast = true;
     private static boolean node = true;
     private static boolean local = false;
+    private static boolean memory = false;
     
     private Client client = null;
     private String[] hosts = null;
@@ -58,6 +59,18 @@ public class ElasticStore {
      */
     public ElasticStore asLocal() {
         local = true;
+        return this;
+    }
+
+    /**
+     * Run a local instance of ElasticSearch as an in=memory store.
+     * This is useful for unit tests or running ElasticSearch as part of your application.
+     * 
+     * @return 
+     */
+    public ElasticStore asMemoryOnly() {
+        local = true;
+        memory = true;
         return this;
     }
 
@@ -155,6 +168,10 @@ public class ElasticStore {
                 .put("cluster.name", clusterName)
                 .put("discovery.zen.ping.timeout", timeout)
                 .put("discovery.zen.ping.multicast.enabled", multicast);
+            
+            if (memory) {
+                builder.put("es.index.storage.type", "memory");
+            }
             
             if (! multicast) {
                 if (hosts != null) {
