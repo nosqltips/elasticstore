@@ -1,6 +1,7 @@
 package com.nosqlrevolution;
 
 import com.google.common.base.Joiner;
+import com.nosqlrevolution.util.AnnotationHelper;
 import java.net.InetSocketAddress;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
@@ -246,14 +247,40 @@ public class ElasticStore {
      * @return
      * @throws Exception 
      */
+    // TODO: Need to type the exception more strongly
     public Index getIndex(Class clazz, String index, String type) throws Exception {
         if (client == null) {
-            throw new Exception("ElasticStore is not executed");
+            throw new IllegalArgumentException("ElasticStore is not executed");
         }
 
         if (clazz == String.class) {
             return new JsonIndex<String>(this, index, type);
         }
+        
+        // TODO: need to catch and throw an exception here
+        return new TypedIndex(clazz.newInstance(), this, index, type);
+    }
+
+    /**
+     * Create strongly typed access to an index and type.
+     * @Index and @IndexType must both be defined on the object to define the index and type.
+     * 
+     * @param clazz
+     * @return
+     * @throws Exception 
+     */
+    // TODO: Need to type the exception more strongly
+    public Index getIndex(Class clazz) throws Exception {
+        if (client == null) {
+            throw new IllegalArgumentException("ElasticStore is not executed");
+        }
+
+        String index = AnnotationHelper.getIndexValue(clazz);
+        String type = AnnotationHelper.getIndexTypeValue(clazz);
+        if (index == null || type == null) {
+            throw new IllegalArgumentException("Both @Index and @IndexType must be defined for object based mapping.");
+        }
+
         // TODO: need to catch and throw an exception here
         return new TypedIndex(clazz.newInstance(), this, index, type);
     }

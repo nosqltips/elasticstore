@@ -82,9 +82,9 @@ public class AnnotationHelper {
      * @param namedField
      * @return
      */
-    public static String getIndexValue(Object o) {
-        Index index = ReflectionUtil.getAnnotation(o.getClass(), Index.class);
-        return index != null ? index.value() : null;
+    public static String getIndexValue(Class<?> clazz) {
+        Index index = ReflectionUtil.getAnnotation(clazz, Index.class);
+        return ((index == null) || (index.value().isEmpty())) ? null : index.value();
     }
 
     /**
@@ -95,14 +95,14 @@ public class AnnotationHelper {
      * @param namedField
      * @return
      */
-    public static String getIndexTypeValue(Object o) {
-        IndexType indexType = ReflectionUtil.getAnnotation(o.getClass(), IndexType.class);
+    public static String getIndexTypeValue(Class<?> clazz) {
+        IndexType indexType = ReflectionUtil.getAnnotation(clazz, IndexType.class);
         if (indexType != null) {
             if (! indexType.value().isEmpty()) {
                 return indexType.value();
             } else {
                 // Return the name of the class camel-cased
-                String name = o.getClass().getSimpleName();
+                String name = clazz.getSimpleName();
                 if (name == null) {
                     throw new IllegalArgumentException("IndexType is not specified and class is not named (anonymous or local class");
                 }

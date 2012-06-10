@@ -10,7 +10,7 @@ import org.junit.Test;
  */
 public class RoutingTest {
      @Test
-     public void testFieldAnnotation() throws NoSuchMethodException {
+     public void testFieldAnnotation() {
          TestField t = new TestField();
          t.setRouting("simpson");
 
@@ -20,7 +20,7 @@ public class RoutingTest {
      }
    
      @Test
-     public void testMethodAnnotation() throws NoSuchMethodException {
+     public void testMethodAnnotation() {
          TestMethod t = new TestMethod();
          t.setRouting("simpson");
 
@@ -30,7 +30,7 @@ public class RoutingTest {
      }
    
      @Test
-     public void testStandardField1() throws NoSuchMethodException {
+     public void testStandardField1() {
          TestStandardField1 t = new TestStandardField1();
          t.setRouting("simpson");
 
@@ -40,7 +40,7 @@ public class RoutingTest {
      }
    
      @Test
-     public void testStandardField2() throws NoSuchMethodException {
+     public void testStandardField2() {
          TestStandardField2 t = new TestStandardField2();
          t.setRouting("simpson");
 
@@ -50,7 +50,7 @@ public class RoutingTest {
      }
    
      @Test
-     public void testNamedField() throws NoSuchMethodException {
+     public void testNamedField() {
          TestNamedField t = new TestNamedField();
          t.setRouting("simpson");
 
@@ -60,7 +60,7 @@ public class RoutingTest {
      }
    
      @Test
-     public void testBad() throws NoSuchMethodException {
+     public void testBad() {
          TestBad t = new TestBad();
          t.setRouting("simpson");
 

@@ -10,20 +10,28 @@ import org.junit.Test;
  */
 public class IndexTest {
      @Test
-     public void testClassAnnotation() throws NoSuchMethodException {
+     public void testClassAnnotation() {
          TestClass t = new TestClass();
 
-         String index = AnnotationHelper.getIndexValue(t);
+         String index = AnnotationHelper.getIndexValue(t.getClass());
          assertNotNull(index);
          assertEquals("myIndex", index);
      }
    
      @Test
-     public void testBothAnnotation1() throws NoSuchMethodException {
+     public void testBlankIndex() {
+         TestBlankIndex t = new TestBlankIndex();
+
+         String index = AnnotationHelper.getIndexValue(t.getClass());
+         assertNull(index);
+     }
+   
+     @Test
+     public void testBothAnnotation1() {
          TestBoth1 t = new TestBoth1();
 
-         String index = AnnotationHelper.getIndexValue(t);
-         String type = AnnotationHelper.getIndexTypeValue(t);
+         String index = AnnotationHelper.getIndexValue(t.getClass());
+         String type = AnnotationHelper.getIndexTypeValue(t.getClass());
          assertNotNull(index);
          assertNotNull(type);
          assertEquals("myIndex", index);
@@ -31,11 +39,11 @@ public class IndexTest {
      }
    
      @Test
-     public void testBothAnnotation2() throws NoSuchMethodException {
+     public void testBothAnnotation2() {
          TestBoth2 t = new TestBoth2();
 
-         String index = AnnotationHelper.getIndexValue(t);
-         String type = AnnotationHelper.getIndexTypeValue(t);
+         String index = AnnotationHelper.getIndexValue(t.getClass());
+         String type = AnnotationHelper.getIndexTypeValue(t.getClass());
          assertNotNull(index);
          assertNotNull(type);
          assertEquals("myIndex", index);
@@ -43,16 +51,19 @@ public class IndexTest {
      }
    
      @Test
-     public void testBad() throws NoSuchMethodException {
+     public void testBad() {
          TestBad t = new TestBad();
 
-         String index = AnnotationHelper.getIndexValue(t);
+         String index = AnnotationHelper.getIndexValue(t.getClass());
          assertNull(index);
      }
    
      // Test classes     
      @Index("myIndex")
      private class TestClass {}
+
+     @Index("")
+     private class TestBlankIndex {}
 
      @Index("myIndex")
      @IndexType("myType")

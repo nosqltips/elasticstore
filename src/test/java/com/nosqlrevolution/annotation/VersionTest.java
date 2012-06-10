@@ -10,7 +10,7 @@ import org.junit.Test;
  */
 public class VersionTest {
      @Test
-     public void testFieldAnnotation() throws NoSuchMethodException {
+     public void testFieldAnnotation() {
          TestField t = new TestField();
          t.setVersion("1");
 
@@ -20,7 +20,7 @@ public class VersionTest {
      }
    
      @Test
-     public void testMethodAnnotation() throws NoSuchMethodException {
+     public void testMethodAnnotation() {
          TestMethod t = new TestMethod();
          t.setVersion("1");
 
@@ -30,7 +30,7 @@ public class VersionTest {
      }
    
      @Test
-     public void testStandardField1() throws NoSuchMethodException {
+     public void testStandardField1() {
          TestStandardField1 t = new TestStandardField1();
          t.setVersion("1");
 
@@ -40,7 +40,7 @@ public class VersionTest {
      }
    
      @Test
-     public void testStandardField2() throws NoSuchMethodException {
+     public void testStandardField2() {
          TestStandardField2 t = new TestStandardField2();
          t.setVersion("1");
 
@@ -50,7 +50,7 @@ public class VersionTest {
      }
    
      @Test
-     public void testNamedField() throws NoSuchMethodException {
+     public void testNamedField() {
          TestNamedField t = new TestNamedField();
          t.setVersion("1");
 
@@ -60,7 +60,7 @@ public class VersionTest {
      }
    
      @Test
-     public void testLongField() throws NoSuchMethodException {
+     public void testLongField() {
          TestLongField t = new TestLongField();
          t.setVersion(10000L);
 
@@ -70,7 +70,7 @@ public class VersionTest {
      }
    
      @Test
-     public void testlongField() throws NoSuchMethodException {
+     public void testlongField() {
          TestlongField t = new TestlongField();
          t.setVersion(10000l);
 
@@ -80,7 +80,7 @@ public class VersionTest {
      }
    
      @Test
-     public void testIntegerField() throws NoSuchMethodException {
+     public void testIntegerField() {
          TestIntegerField t = new TestIntegerField();
          t.setVersion(100);
 
@@ -90,7 +90,7 @@ public class VersionTest {
     }
    
      @Test
-     public void testintField() throws NoSuchMethodException {
+     public void testintField() {
          TestintField t = new TestintField();
          t.setVersion(100);
 
@@ -100,7 +100,7 @@ public class VersionTest {
      }
    
      @Test
-     public void testBad() throws NoSuchMethodException {
+     public void testBad() {
          TestBad t = new TestBad();
          t.setVersion("1");
 
