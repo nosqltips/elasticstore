@@ -1,6 +1,8 @@
 package com.nosqlrevolution.annotation.schema;
 
 import java.lang.annotation.*;
+import com.nosqlrevolution.enums.Schema.GEOHASH;
+import com.nosqlrevolution.enums.Schema.LATLON;
 
 /**
  * The geo_point mapping will index a single field with the format of lat,lon. The lat_lon option can be set to also index the .lat and .lon as numeric fields, and geohash can be set to true to also index .geohash value.
@@ -46,9 +48,9 @@ import java.lang.annotation.*;
  * }
  * 
  * 
- * @param <B>lat_lon</B>            Set to true to also index the .lat and .lon as fields. Defaults to false.
- * @param <B>geohash</B>            Set to true to also index the .geohash as a field. Defaults to false.
- * @param <B>geohash_precision</B>  Sets the geohash precision, defaults to 12.    
+ * @param <B>lat_lon</B>            Set to true to also index the .lat and .lon as fields. Defaults to <B>false</B>.
+ * @param <B>geohash</B>            Set to true to also index the .geohash as a field. Defaults to <B>false</B>.
+ * @param <B>geohash_precision</B>  Sets the geohash precision, defaults to <B>12</B>.    
  * 
  * @author cbrown
  */
@@ -58,17 +60,17 @@ import java.lang.annotation.*;
 @Inherited
 public @interface GeoPointType {
     /**
-     * Set to true to also index the .lat and .lon as fields. Defaults to false.
+     * Set to true to also index the .lat and .lon as fields. Defaults to <B>false</B>.
      */
-    boolean lat_lon() default false;
+    LATLON lat_lon() default LATLON.DEFAULT;
 
     /**
-     * Set to true to also index the .geohash as a field. Defaults to false.
+     * Set to true to also index the .geohash as a field. Defaults to <B>false</B>.
      */
-    boolean geohash() default false;
+    GEOHASH geohash() default GEOHASH.DEFAULT;
 
     /**
-     * Sets the geohash precision, defaults to 12.
+     * Sets the geohash precision, defaults to <B>12</B>.
      */
     int geohash_precision() default 12;
 }
