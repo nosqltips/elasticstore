@@ -40,7 +40,7 @@ public class MappingUtilTest {
      */
     @Test
     public void testAsClass() {
-        Person result = (Person)instance.asClass(json, Person.class);
+        Person result = instance.asClass(json, Person.class);
         System.out.println("result");
         assertEquals(person.getId(), result.getId());
     }

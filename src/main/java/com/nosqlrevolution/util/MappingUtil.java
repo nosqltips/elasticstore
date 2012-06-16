@@ -39,7 +39,7 @@ public class MappingUtil<T> {
     }
     
     // TODO: probably need a throws here to bubble the exception up.
-    public Object asClass(String json, Class clazz) {
+    public <T>T asClass(String json, Class<T> clazz) {
         try {
             return mapper.readValue(json, clazz);
         } catch (IOException ex) {

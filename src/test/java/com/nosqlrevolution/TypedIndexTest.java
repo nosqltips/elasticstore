@@ -1,7 +1,6 @@
 package com.nosqlrevolution;
 
 import com.nosqlrevolution.annotation.index.IndexType;
-import com.nosqlrevolution.model.Person;
 import com.nosqlrevolution.model.PersonIndex;
 import java.util.logging.Level;
 import java.util.logging.Logger;

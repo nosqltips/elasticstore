@@ -6,6 +6,7 @@ import com.nosqlrevolution.service.QueryService;
 import com.nosqlrevolution.util.JsonUtil;
 import com.nosqlrevolution.util.MappingUtil;
 import com.nosqlrevolution.util.AnnotationHelper;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -42,7 +43,7 @@ public class JsonIndex<T> extends Index<String> {
     }
     
     @Override
-    public Object find(Class clazz) {
+    public <T>T find(Class<T> clazz) {
         String s = service.getSingle(getIndex(), getType());
         return mapping.asClass(s, clazz);
     }
@@ -53,7 +54,7 @@ public class JsonIndex<T> extends Index<String> {
     }
     
     @Override
-    public Object find(Query qb, Class clazz) {
+    public <T>T find(Query qb, Class<T> clazz) {
         return super.find(qb, clazz);
     }
     
@@ -78,7 +79,7 @@ public class JsonIndex<T> extends Index<String> {
     }
     
     @Override
-    public Object findById(String id, Class clazz) {
+    public <T>T findById(String id, Class<T> clazz) {
         String s = service.realTimeGet(getIndex(), getType(), id);
         return mapping.asClass(s, clazz);
     }
@@ -89,14 +90,14 @@ public class JsonIndex<T> extends Index<String> {
     }
     
     @Override
-    public Object[] findAllById(Class clazz, String... ids) {
+    public <T>T[] findAllById(Class<T> clazz, String... ids) {
         String[] json = service.realTimeMultiGet(getIndex(), getType(), ids);
-        List<Object> list = new ArrayList<Object>();
+        List<T> list = new ArrayList<T>();
         for (String s: json) {
             list.add(mapping.asClass(s, clazz));
         }
         
-        return list.toArray(new Object[list.size()]);
+        return (T[]) Array.newInstance(clazz, list.size());
     }
             
     @Override
