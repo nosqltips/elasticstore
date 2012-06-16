@@ -20,7 +20,7 @@ public @interface ObjectType {
         /**
      * Allow to determine schema dynamically. Defaults to <B>true</B>.
      */
-    DYNAMIC dynamic() default DYNAMIC.TRUE;
+    DYNAMIC dynamic() default DYNAMIC.DEFAULT;
     
     /**
      * The enabled flag allows to disable parsing and adding a named object completely. This is handy when a portion of the JSON document passed should not be indexed. Defaults to <B>true</B>.
