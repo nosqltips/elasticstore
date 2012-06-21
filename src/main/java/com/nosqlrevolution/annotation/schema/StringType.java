@@ -5,7 +5,7 @@ import com.nosqlrevolution.enums.Schema.INDEX;
 import com.nosqlrevolution.enums.Schema.OMIT_NORMS;
 import com.nosqlrevolution.enums.Schema.OMIT_TERM_FREQ;
 import com.nosqlrevolution.enums.Schema.STORE;
-import com.nosqlrevolution.enums.Schema.VECTOR;
+import com.nosqlrevolution.enums.Schema.TERM_VECTOR;
 import java.lang.annotation.*;
 
 /**
@@ -46,7 +46,7 @@ public @interface StringType {
     /**
      * Possible values are <B>no</B>, <B>yes</B>, <B>with_offsets</B>, <B>with_positions</B>, <B>with_positions_offsets</B>. Defaults to <B>no</B>.
      */
-    VECTOR term_vector() default VECTOR.DEFAULT;
+    TERM_VECTOR term_vector() default TERM_VECTOR.DEFAULT;
     
     /**
      * The boost value. Defaults to <B>1.0</B>.

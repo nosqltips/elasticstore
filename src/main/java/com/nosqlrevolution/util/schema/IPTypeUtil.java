@@ -18,18 +18,22 @@ import org.elasticsearch.common.xcontent.json.JsonXContent;
  * @author cbrown
  */
 public class IPTypeUtil {
-    public static String generateSchema(IPType anno, String name) {
+    public static String generateSchema(IPType anno) {
+        // Make sure annotation is valid
+        if (anno == null) { return null; }
+        
         try {
             XContentBuilder builder = JsonXContent.contentBuilder();
-            builder.startObject(name).field(Field.TYPE.getName(), Type.IP);
+            builder.startObject()
+                    .field(Field.TYPE.getName(), Type.IP.getName());
                 if (! anno.index_name().isEmpty()) {
                     builder.field(Field.INDEX_NAME.getName(), anno.index_name());
                 }
                 if (anno.store() != STORE.DEFAULT) {
-                    builder.field(Field.STORE.getName(), anno.store().name());
+                    builder.field(Field.STORE.getName(), anno.store().name().toLowerCase());
                 }
                 if (anno.index() != INDEX.DEFAULT) {
-                    builder.field(Field.INDEX.getName(), anno.index().name());
+                    builder.field(Field.INDEX.getName(), anno.index().name().toLowerCase());
                 }
                 if (anno.precision_step() != 4) {
                     builder.field(Field.PRECISION_STEP.getName(), anno.precision_step());
@@ -41,11 +45,11 @@ public class IPTypeUtil {
                     builder.field(Field.NULL_VALUE.getName(), anno.null_value());
                 }
                 if (anno.include_in_all() != INCLUDE_IN_ALL.DEFAULT) {
-                    builder.field(Field.INCLUDE_IN_ALL.getName(), anno.include_in_all());
+                    builder.field(Field.INCLUDE_IN_ALL.getName(), anno.include_in_all().name().toLowerCase());
                 }
             builder.endObject();
             
-            return builder.toString();
+            return builder.string();
 
         } catch (IOException ex) {
             Logger.getLogger(IPTypeUtil.class.getName()).log(Level.SEVERE, null, ex);

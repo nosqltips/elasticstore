@@ -12,7 +12,7 @@ public enum Field {
     TERM_VECTOR("term_vector"),
     BOOST("boost"),
     NULL_VALUE("null_value"),
-    OMIT_NORMS("omit_norms.id"),
+    OMIT_NORMS("omit_norms"),
     OMIT_TERMS("omit_term_freq_and_positions"),
     ANALYZER("analyzer"),
     INDEX_ANALYZER("index_analyzer"),
