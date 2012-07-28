@@ -1,9 +1,9 @@
 package com.nosqlrevolution.util.schema;
 
 import com.nosqlrevolution.annotation.schema.BinaryType;
-import com.nosqlrevolution.enums.Schema;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.Map;
 import org.junit.*;
 import static org.junit.Assert.*;
 
@@ -16,26 +16,27 @@ public class BinaryTypeUtilTest {
     public void Basic() throws IOException, NoSuchFieldException {
         Field f = Basic.class.getField("field");
         BinaryType anno = f.getAnnotation(BinaryType.class);
-        String json = BinaryTypeUtil.generateSchema(anno);
-        assertNotNull(json);
-        String expected = "{\"type\":\"binary\"}";
-        assertEquals(expected, json);
+        Map<String, Object> map = BinaryTypeUtil.generateSchema(anno);
+        assertNotNull(map);
+        assertEquals(map.size(), 1);
+        assertEquals(map.get("type"), "binary");
     }
      
     @Test
     public void IndexName() throws IOException, NoSuchFieldException {
         Field f = IndexName.class.getField("field");
         BinaryType anno = f.getAnnotation(BinaryType.class);
-        String json = BinaryTypeUtil.generateSchema(anno);
-        assertNotNull(json);
-        String expected = "{\"type\":\"binary\",\"index_name\":\"another\"}";
-        assertEquals(expected, json);
+        Map<String, Object> map = BinaryTypeUtil.generateSchema(anno);
+        assertNotNull(map);
+        assertEquals(map.size(), 2);
+        assertEquals(map.get("type"), "binary");
+        assertEquals(map.get("index_name"), "another");
     }
      
     @Test
     public void NullCase() throws IOException, NoSuchFieldException {
-        String json = BinaryTypeUtil.generateSchema(null);
-        assertNull(json);
+        Map<String, Object> map = BinaryTypeUtil.generateSchema(null);
+        assertNull(map);
     }
      
     public class Basic {

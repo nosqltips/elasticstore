@@ -3,11 +3,8 @@ package com.nosqlrevolution.util.schema;
 import com.nosqlrevolution.annotation.schema.BinaryType;
 import com.nosqlrevolution.enums.Field;
 import com.nosqlrevolution.enums.Type;
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.json.JsonXContent;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Generate the minimum schema for this type
@@ -15,25 +12,15 @@ import org.elasticsearch.common.xcontent.json.JsonXContent;
  * @author cbrown
  */
 public class BinaryTypeUtil {
-    public static String generateSchema(BinaryType anno) {
+    public static Map<String, Object> generateSchema(BinaryType anno) {
         // Make sure annotation is valid
         if (anno == null) { return null; }
         
-        try {
-            XContentBuilder builder = JsonXContent.contentBuilder();
-            builder.startObject()
-                    .field(Field.TYPE.getName(), Type.BINARY.getName());
-                if (! anno.index_name().isEmpty()) {
-                    builder.field(Field.INDEX_NAME.getName(), anno.index_name());
-                }
-            builder.endObject();
-            
-            return builder.string();
-
-        } catch (IOException ex) {
-            Logger.getLogger(BinaryTypeUtil.class.getName()).log(Level.SEVERE, null, ex);
+        Map<String, Object> map = new HashMap<String, Object>();
+        map.put(Field.TYPE.getName(), Type.BINARY.getName());
+        if (! anno.index_name().isEmpty()) {
+            map.put(Field.INDEX_NAME.getName(), anno.index_name());
         }
-        
-        return null;
+        return map;
     }
 }

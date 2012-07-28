@@ -4,6 +4,7 @@ import com.nosqlrevolution.annotation.schema.StringType;
 import com.nosqlrevolution.enums.Schema;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.Map;
 import org.junit.*;
 import static org.junit.Assert.*;
 
@@ -16,156 +17,184 @@ public class StringTypeUtilTest {
     public void Basic() throws IOException, NoSuchFieldException {
         Field f = Basic.class.getField("field");
         StringType anno = f.getAnnotation(StringType.class);
-        String json = StringTypeUtil.generateSchema(anno);
-        assertNotNull(json);
-        String expected = "{\"type\":\"string\"}";
-        assertEquals(expected, json);
+        Map<String, Object> map = StringTypeUtil.generateSchema(anno);
+        assertNotNull(map);
+        assertEquals(map.size(), 1);
+        assertEquals(map.get("type"), "string");
     }
      
     @Test
     public void Analyzer() throws IOException, NoSuchFieldException {
         Field f = Analyzer.class.getField("field");
         StringType anno = f.getAnnotation(StringType.class);
-        String json = StringTypeUtil.generateSchema(anno);
-        assertNotNull(json);
-        String expected = "{\"type\":\"string\",\"analyzer\":\"Standard\"}";
-        assertEquals(expected, json);
+        Map<String, Object> map = StringTypeUtil.generateSchema(anno);
+        assertNotNull(map);
+        assertEquals(map.size(), 2);
+        assertEquals(map.get("type"), "string");
+        assertEquals(map.get("analyzer"), "Standard");
     }
      
     @Test
     public void Boost() throws IOException, NoSuchFieldException {
         Field f = Boost.class.getField("field");
         StringType anno = f.getAnnotation(StringType.class);
-        String json = StringTypeUtil.generateSchema(anno);
-        assertNotNull(json);
-        String expected = "{\"type\":\"string\",\"boost\":2.2}";
-        assertEquals(expected, json);
+        Map<String, Object> map = StringTypeUtil.generateSchema(anno);
+        assertNotNull(map);
+        assertEquals(map.size(), 2);
+        assertEquals(map.get("type"), "string");
+        assertEquals(map.get("boost"), 2.2F);
     }
      
     @Test
     public void IncludeInAll() throws IOException, NoSuchFieldException {
         Field f = IncludeInAll.class.getField("field");
         StringType anno = f.getAnnotation(StringType.class);
-        String json = StringTypeUtil.generateSchema(anno);
-        assertNotNull(json);
-        String expected = "{\"type\":\"string\",\"include_in_all\":\"true\"}";
-        assertEquals(expected, json);
+        Map<String, Object> map = StringTypeUtil.generateSchema(anno);
+        assertNotNull(map);
+        assertEquals(map.size(), 2);
+        assertEquals(map.get("type"), "string");
+        assertEquals(map.get("include_in_all"), "true");
     }
      
     @Test
     public void Index() throws IOException, NoSuchFieldException {
         Field f = Index.class.getField("field");
         StringType anno = f.getAnnotation(StringType.class);
-        String json = StringTypeUtil.generateSchema(anno);
-        assertNotNull(json);
-        String expected = "{\"type\":\"string\",\"index\":\"not_analyzed\"}";
-        assertEquals(expected, json);
+        Map<String, Object> map = StringTypeUtil.generateSchema(anno);
+        assertNotNull(map);
+        assertEquals(map.size(), 2);
+        assertEquals(map.get("type"), "string");
+        assertEquals(map.get("index"), "not_analyzed");
     }
      
     @Test
     public void IndexAnalyzer() throws IOException, NoSuchFieldException {
         Field f = IndexAnalyzer.class.getField("field");
         StringType anno = f.getAnnotation(StringType.class);
-        String json = StringTypeUtil.generateSchema(anno);
-        assertNotNull(json);
-        String expected = "{\"type\":\"string\",\"index_analyzer\":\"something\"}";
-        assertEquals(expected, json);
+        Map<String, Object> map = StringTypeUtil.generateSchema(anno);
+        assertNotNull(map);
+        assertEquals(map.size(), 2);
+        assertEquals(map.get("type"), "string");
+        assertEquals(map.get("index_analyzer"), "something");
     }
      
     @Test
     public void IndexName() throws IOException, NoSuchFieldException {
         Field f = IndexName.class.getField("field");
         StringType anno = f.getAnnotation(StringType.class);
-        String json = StringTypeUtil.generateSchema(anno);
-        assertNotNull(json);
-        String expected = "{\"type\":\"string\",\"index_name\":\"another\"}";
-        assertEquals(expected, json);
+        Map<String, Object> map = StringTypeUtil.generateSchema(anno);
+        assertNotNull(map);
+        assertEquals(map.size(), 2);
+        assertEquals(map.get("type"), "string");
+        assertEquals(map.get("index_name"), "another");
     }
      
     @Test
     public void NullValue() throws IOException, NoSuchFieldException {
         Field f = NullValue.class.getField("field");
         StringType anno = f.getAnnotation(StringType.class);
-        String json = StringTypeUtil.generateSchema(anno);
-        assertNotNull(json);
-        String expected = "{\"type\":\"string\",\"null_value\":\"NA\"}";
-        assertEquals(expected, json);
+        Map<String, Object> map = StringTypeUtil.generateSchema(anno);
+        assertNotNull(map);
+        assertEquals(map.size(), 2);
+        assertEquals(map.get("type"), "string");
+        assertEquals(map.get("null_value"), "NA");
     }
      
     @Test
     public void OmitNorms() throws IOException, NoSuchFieldException {
         Field f = OmitNorms.class.getField("field");
         StringType anno = f.getAnnotation(StringType.class);
-        String json = StringTypeUtil.generateSchema(anno);
-        assertNotNull(json);
-        String expected = "{\"type\":\"string\",\"omit_norms\":\"true\"}";
-        assertEquals(expected, json);
+        Map<String, Object> map = StringTypeUtil.generateSchema(anno);
+        assertNotNull(map);
+        assertEquals(map.size(), 2);
+        assertEquals(map.get("type"), "string");
+        assertEquals(map.get("omit_norms"), "true");
     }
      
     @Test
     public void OmitTerms() throws IOException, NoSuchFieldException {
         Field f = OmitTerms.class.getField("field");
         StringType anno = f.getAnnotation(StringType.class);
-        String json = StringTypeUtil.generateSchema(anno);
-        assertNotNull(json);
-        String expected = "{\"type\":\"string\",\"omit_term_freq_and_positions\":\"true\"}";
-        assertEquals(expected, json);
+        Map<String, Object> map = StringTypeUtil.generateSchema(anno);
+        assertNotNull(map);
+        assertEquals(map.size(), 2);
+        assertEquals(map.get("type"), "string");
+        assertEquals(map.get("omit_term_freq_and_positions"), "true");
     }
      
     @Test
     public void SearchAnalyzer() throws IOException, NoSuchFieldException {
         Field f = SearchAnalyzer.class.getField("field");
         StringType anno = f.getAnnotation(StringType.class);
-        String json = StringTypeUtil.generateSchema(anno);
-        assertNotNull(json);
-        String expected = "{\"type\":\"string\",\"search_analyzer\":\"analyzer\"}";
-        assertEquals(expected, json);
+        Map<String, Object> map = StringTypeUtil.generateSchema(anno);
+        assertNotNull(map);
+        assertEquals(map.size(), 2);
+        assertEquals(map.get("type"), "string");
+        assertEquals(map.get("search_analyzer"), "analyzer");
     }
      
     @Test
     public void Store() throws IOException, NoSuchFieldException {
         Field f = Store.class.getField("field");
         StringType anno = f.getAnnotation(StringType.class);
-        String json = StringTypeUtil.generateSchema(anno);
-        assertNotNull(json);
-        String expected = "{\"type\":\"string\",\"store\":\"yes\"}";
-        assertEquals(expected, json);
+        Map<String, Object> map = StringTypeUtil.generateSchema(anno);
+        assertNotNull(map);
+        assertEquals(map.size(), 2);
+        assertEquals(map.get("type"), "string");
+        assertEquals(map.get("store"), "yes");
     }
      
     @Test
     public void TermVector() throws IOException, NoSuchFieldException {
         Field f = TermVector.class.getField("field");
         StringType anno = f.getAnnotation(StringType.class);
-        String json = StringTypeUtil.generateSchema(anno);
-        assertNotNull(json);
-        String expected = "{\"type\":\"string\",\"term_vector\":\"with_positions\"}";
-        assertEquals(expected, json);
+        Map<String, Object> map = StringTypeUtil.generateSchema(anno);
+        assertNotNull(map);
+        assertEquals(map.size(), 2);
+        assertEquals(map.get("type"), "string");
+        assertEquals(map.get("term_vector"), "with_positions");
     }
      
     @Test
     public void Analyzers() throws IOException, NoSuchFieldException {
         Field f = Analyzers.class.getField("field");
         StringType anno = f.getAnnotation(StringType.class);
-        String json = StringTypeUtil.generateSchema(anno);
-        assertNotNull(json);
-        String expected = "{\"type\":\"string\",\"analyzer\":\"Standard\",\"index_analyzer\":\"anotherspace\",\"search_analyzer\":\"whitespace\"}";
-        assertEquals(expected, json);
+        Map<String, Object> map = StringTypeUtil.generateSchema(anno);
+        assertNotNull(map);
+        assertEquals(map.size(), 4);
+        assertEquals(map.get("type"), "string");
+        assertEquals(map.get("analyzer"), "Standard");
+        assertEquals(map.get("index_analyzer"), "anotherspace");
+        assertEquals(map.get("search_analyzer"), "whitespace");
+        assertEquals(map.get("type"), "string");
     }
      
     @Test
     public void All() throws IOException, NoSuchFieldException {
         Field f = All.class.getField("field");
         StringType anno = f.getAnnotation(StringType.class);
-        String json = StringTypeUtil.generateSchema(anno);
-        assertNotNull(json);
-        String expected = "{\"type\":\"string\",\"index_name\":\"another\",\"store\":\"yes\",\"index\":\"analyzed\",\"term_vector\":\"no\",\"boost\":2.2,\"null_value\":\"NA\",\"omit_norms\":\"true\",\"omit_term_freq_and_positions\":\"true\",\"analyzer\":\"Standard\",\"index_analyzer\":\"anotherspace\",\"search_analyzer\":\"whitespace\",\"include_in_all\":\"true\"}";
-        assertEquals(expected, json);
+        Map<String, Object> map = StringTypeUtil.generateSchema(anno);
+        assertNotNull(map);
+        assertEquals(map.size(), 13);
+        assertEquals(map.get("type"), "string");
+        assertEquals(map.get("index_name"), "another");
+        assertEquals(map.get("store"), "yes");
+        assertEquals(map.get("index"), "analyzed");
+        assertEquals(map.get("term_vector"), "no");
+        assertEquals(map.get("boost"), 2.2F);
+        assertEquals(map.get("null_value"), "NA");
+        assertEquals(map.get("omit_norms"), "true");
+        assertEquals(map.get("analyzer"), "Standard");
+        assertEquals(map.get("index_analyzer"), "anotherspace");
+        assertEquals(map.get("search_analyzer"), "whitespace");
+        assertEquals(map.get("omit_term_freq_and_positions"), "true");
+        assertEquals(map.get("include_in_all"), "true");
     }
      
     @Test
     public void NullCase() throws IOException, NoSuchFieldException {
-        String json = StringTypeUtil.generateSchema(null);
-        assertNull(json);
+        Map<String, Object> map = StringTypeUtil.generateSchema(null);
+        assertNull(map);
     }
      
     public class Basic {
@@ -179,7 +208,7 @@ public class StringTypeUtilTest {
     }
 
     public class Boost {
-        @StringType(boost=2.2f)
+        @StringType(boost=2.2F)
         public String field;
     }
 
@@ -240,7 +269,7 @@ public class StringTypeUtilTest {
 
     public class All {
         @StringType(index=Schema.INDEX.ANALYZED, analyzer="Standard", search_analyzer="whitespace", index_analyzer="anotherspace", 
-                boost=2.2f, include_in_all=Schema.INCLUDE_IN_ALL.TRUE, index_name="another", null_value="NA", omit_norms=Schema.OMIT_NORMS.TRUE, 
+                boost=2.2F, include_in_all=Schema.INCLUDE_IN_ALL.TRUE, index_name="another", null_value="NA", omit_norms=Schema.OMIT_NORMS.TRUE, 
                 omit_term_freq_and_positions=Schema.OMIT_TERM_FREQ.TRUE, store=Schema.STORE.YES, term_vector=Schema.TERM_VECTOR.NO)
         public String field;
     }

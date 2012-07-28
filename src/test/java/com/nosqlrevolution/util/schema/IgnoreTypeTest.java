@@ -2,6 +2,7 @@ package com.nosqlrevolution.util.schema;
 
 import com.nosqlrevolution.annotation.schema.IgnoreType;
 import java.io.IOException;
+import java.util.Map;
 import org.junit.*;
 import static org.junit.Assert.*;
 
@@ -12,10 +13,13 @@ import static org.junit.Assert.*;
 public class IgnoreTypeTest {
     @Test
     public void All() throws IOException, NoSuchFieldException {
-        String json = IgnoreTypeUtil.generateSchema();
-        assertNotNull(json);
-        String expected = "{\"type\":\"string\",\"store\":\"no\",\"analyzer\":\"no\",\"include_in_all\":\"false\"}";
-        assertEquals(expected, json);
+        Map<String, Object> map = IgnoreTypeUtil.generateSchema();
+        assertNotNull(map);
+        assertEquals(map.size(), 4);
+        assertEquals(map.get("type"), "string");
+        assertEquals(map.get("store"), "no");
+        assertEquals(map.get("analyzer"), "no");
+        assertEquals(map.get("include_in_all"), "false");
     }
 
     public class All {

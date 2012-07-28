@@ -10,8 +10,7 @@ import java.lang.annotation.*;
  * @author cbrown
  */
 @Retention(RetentionPolicy.RUNTIME)
-//@Target({ElementType.FIELD, ElementType.TYPE})
-@Target(ElementType.FIELD)
+@Target({ElementType.FIELD, ElementType.TYPE})
 @Inherited
 public @interface DefaultType {
 }

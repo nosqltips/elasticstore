@@ -4,6 +4,7 @@ import com.nosqlrevolution.annotation.schema.DefaultType;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Date;
+import java.util.Map;
 import org.junit.*;
 import static org.junit.Assert.*;
 
@@ -15,160 +16,160 @@ public class DefaultTypeUtilTest {
     @Test
     public void StringTest() throws IOException, NoSuchFieldException {
         Field f = DefaultString.class.getField("field");
-        String json = DefaultTypeUtil.generateSchema(f);
-        assertNotNull(json);
-        String expected = "{\"type\":\"string\"}";
-        assertEquals(expected, json);
+        Map<String, Object> map = DefaultTypeUtil.generateSchema(f);
+        assertNotNull(map);
+        assertEquals(map.size(), 1);
+        assertEquals(map.get("type"), "string");
     }
      
     @Test
     public void BooleanTest() throws IOException, NoSuchFieldException {
         Field f = DefaultBoolean.class.getField("field");
-        String json = DefaultTypeUtil.generateSchema(f);
-        assertNotNull(json);
-        String expected = "{\"type\":\"boolean\"}";
-        assertEquals(expected, json);
+        Map<String, Object> map = DefaultTypeUtil.generateSchema(f);
+        assertNotNull(map);
+        assertEquals(map.size(), 1);
+        assertEquals(map.get("type"), "boolean");
     }
      
     @Test
     public void booleanTest() throws IOException, NoSuchFieldException {
         Field f = Defaultboolean.class.getField("field");
-        String json = DefaultTypeUtil.generateSchema(f);
-        assertNotNull(json);
-        String expected = "{\"type\":\"boolean\"}";
-        assertEquals(expected, json);
+        Map<String, Object> map = DefaultTypeUtil.generateSchema(f);
+        assertNotNull(map);
+        assertEquals(map.size(), 1);
+        assertEquals(map.get("type"), "boolean");
     }
      
     @Test
     public void IntegerTest() throws IOException, NoSuchFieldException {
         Field f = DefaultInteger.class.getField("field");
-        String json = DefaultTypeUtil.generateSchema(f);
-        assertNotNull(json);
-        String expected = "{\"type\":\"integer\"}";
-        assertEquals(expected, json);
+        Map<String, Object> map = DefaultTypeUtil.generateSchema(f);
+        assertNotNull(map);
+        assertEquals(map.size(), 1);
+        assertEquals(map.get("type"), "integer");
     }
      
     @Test
     public void intTest() throws IOException, NoSuchFieldException {
         Field f = Defaultint.class.getField("field");
-        String json = DefaultTypeUtil.generateSchema(f);
-        assertNotNull(json);
-        String expected = "{\"type\":\"integer\"}";
-        assertEquals(expected, json);
+        Map<String, Object> map = DefaultTypeUtil.generateSchema(f);
+        assertNotNull(map);
+        assertEquals(map.size(), 1);
+        assertEquals(map.get("type"), "integer");
     }
      
     @Test
     public void LongTest() throws IOException, NoSuchFieldException {
         Field f = DefaultLong.class.getField("field");
-        String json = DefaultTypeUtil.generateSchema(f);
-        assertNotNull(json);
-        String expected = "{\"type\":\"long\"}";
-        assertEquals(expected, json);
+        Map<String, Object> map = DefaultTypeUtil.generateSchema(f);
+        assertNotNull(map);
+        assertEquals(map.size(), 1);
+        assertEquals(map.get("type"), "long");
     }
      
     @Test
     public void longTest() throws IOException, NoSuchFieldException {
         Field f = Defaultlong.class.getField("field");
-        String json = DefaultTypeUtil.generateSchema(f);
-        assertNotNull(json);
-        String expected = "{\"type\":\"long\"}";
-        assertEquals(expected, json);
+        Map<String, Object> map = DefaultTypeUtil.generateSchema(f);
+        assertNotNull(map);
+        assertEquals(map.size(), 1);
+        assertEquals(map.get("type"), "long");
     }
      
     @Test
     public void DoubleTest() throws IOException, NoSuchFieldException {
         Field f = DefaultDouble.class.getField("field");
-        String json = DefaultTypeUtil.generateSchema(f);
-        assertNotNull(json);
-        String expected = "{\"type\":\"double\"}";
-        assertEquals(expected, json);
+        Map<String, Object> map = DefaultTypeUtil.generateSchema(f);
+        assertNotNull(map);
+        assertEquals(map.size(), 1);
+        assertEquals(map.get("type"), "double");
     }
      
     @Test
     public void doubleTest() throws IOException, NoSuchFieldException {
         Field f = Defaultdouble.class.getField("field");
-        String json = DefaultTypeUtil.generateSchema(f);
-        assertNotNull(json);
-        String expected = "{\"type\":\"double\"}";
-        assertEquals(expected, json);
+        Map<String, Object> map = DefaultTypeUtil.generateSchema(f);
+        assertNotNull(map);
+        assertEquals(map.size(), 1);
+        assertEquals(map.get("type"), "double");
     }
      
     @Test
     public void FloatTest() throws IOException, NoSuchFieldException {
         Field f = DefaultFloat.class.getField("field");
-        String json = DefaultTypeUtil.generateSchema(f);
-        assertNotNull(json);
-        String expected = "{\"type\":\"float\"}";
-        assertEquals(expected, json);
+        Map<String, Object> map = DefaultTypeUtil.generateSchema(f);
+        assertNotNull(map);
+        assertEquals(map.size(), 1);
+        assertEquals(map.get("type"), "float");
     }
      
     @Test
     public void floatTest() throws IOException, NoSuchFieldException {
         Field f = Defaultfloat.class.getField("field");
-        String json = DefaultTypeUtil.generateSchema(f);
-        assertNotNull(json);
-        String expected = "{\"type\":\"float\"}";
-        assertEquals(expected, json);
+        Map<String, Object> map = DefaultTypeUtil.generateSchema(f);
+        assertNotNull(map);
+        assertEquals(map.size(), 1);
+        assertEquals(map.get("type"), "float");
     }
      
     @Test
     public void ShortTest() throws IOException, NoSuchFieldException {
         Field f = DefaultShort.class.getField("field");
-        String json = DefaultTypeUtil.generateSchema(f);
-        assertNotNull(json);
-        String expected = "{\"type\":\"short\"}";
-        assertEquals(expected, json);
+        Map<String, Object> map = DefaultTypeUtil.generateSchema(f);
+        assertNotNull(map);
+        assertEquals(map.size(), 1);
+        assertEquals(map.get("type"), "short");
     }
      
     @Test
     public void shortTest() throws IOException, NoSuchFieldException {
         Field f = Defaultshort.class.getField("field");
-        String json = DefaultTypeUtil.generateSchema(f);
-        assertNotNull(json);
-        String expected = "{\"type\":\"short\"}";
-        assertEquals(expected, json);
+        Map<String, Object> map = DefaultTypeUtil.generateSchema(f);
+        assertNotNull(map);
+        assertEquals(map.size(), 1);
+        assertEquals(map.get("type"), "short");
     }
      
     @Test
     public void ByteTest() throws IOException, NoSuchFieldException {
         Field f = DefaultByte.class.getField("field");
-        String json = DefaultTypeUtil.generateSchema(f);
-        assertNotNull(json);
-        String expected = "{\"type\":\"byte\"}";
-        assertEquals(expected, json);
+        Map<String, Object> map = DefaultTypeUtil.generateSchema(f);
+        assertNotNull(map);
+        assertEquals(map.size(), 1);
+        assertEquals(map.get("type"), "byte");
     }
      
     @Test
     public void byteTest() throws IOException, NoSuchFieldException {
         Field f = Defaultbyte.class.getField("field");
-        String json = DefaultTypeUtil.generateSchema(f);
-        assertNotNull(json);
-        String expected = "{\"type\":\"byte\"}";
-        assertEquals(expected, json);
+        Map<String, Object> map = DefaultTypeUtil.generateSchema(f);
+        assertNotNull(map);
+        assertEquals(map.size(), 1);
+        assertEquals(map.get("type"), "byte");
     }
      
     @Test
     public void ObjectTest() throws IOException, NoSuchFieldException {
         Field f = DefaultObject.class.getField("field");
-        String json = DefaultTypeUtil.generateSchema(f);
-        assertNotNull(json);
-        String expected = "{\"type\":\"object\"}";
-        assertEquals(expected, json);
+        Map<String, Object> map = DefaultTypeUtil.generateSchema(f);
+        assertNotNull(map);
+        assertEquals(map.size(), 1);
+        assertEquals(map.get("type"), "object");
     }
      
     @Test
     public void DateTest() throws IOException, NoSuchFieldException {
         Field f = DefaultDate.class.getField("field");
-        String json = DefaultTypeUtil.generateSchema(f);
-        assertNotNull(json);
-        String expected = "{\"type\":\"date\"}";
-        assertEquals(expected, json);
+        Map<String, Object> map = DefaultTypeUtil.generateSchema(f);
+        assertNotNull(map);
+        assertEquals(map.size(), 1);
+        assertEquals(map.get("type"), "date");
     }
      
     @Test
     public void NullCase() throws IOException, NoSuchFieldException {
-        String json = DefaultTypeUtil.generateSchema(null);
-        assertNull(json);
+        Map<String, Object> map = DefaultTypeUtil.generateSchema(null);
+        assertNull(map);
     }
      
     public class DefaultString {

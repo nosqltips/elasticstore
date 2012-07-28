@@ -4,6 +4,7 @@ import com.nosqlrevolution.annotation.schema.*;
 import com.nosqlrevolution.enums.Schema;
 import java.lang.reflect.Field;
 import java.util.Date;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -13,7 +14,7 @@ import java.util.logging.Logger;
  * @author cbrown
  */
 public class DefaultTypeUtil {
-    public static String generateSchema(Field f) {
+    public static Map<String, Object> generateSchema(Field f) {
         // Make sure field is valid
         if (f == null) { return null; }
         
