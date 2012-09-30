@@ -127,7 +127,7 @@ public class TypedIndex<T> extends Index<T> {
     public OperationStatus remove(T... t) {
         OperationStatus status = new OperationStatus();
         if (t.length == 1) {
-            status.setSucceeded(service.delete(getIndex(), getType(), AnnotationHelper.getDocumentId(t, getIdField())));
+            status.setSucceeded(service.delete(getIndex(), getType(), AnnotationHelper.getDocumentId(t[0], getIdField())));
         } else {
             List<String> list = new ArrayList<String>();
             for (T o: t) {

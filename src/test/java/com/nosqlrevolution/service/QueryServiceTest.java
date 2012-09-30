@@ -1,5 +1,6 @@
 package com.nosqlrevolution.service;
 
+import com.nosqlrevolution.ElasticStore;
 import com.nosqlrevolution.WriteOperation;
 import java.io.IOException;
 import java.util.HashMap;
@@ -126,7 +127,7 @@ public class QueryServiceTest {
     @Test
     public void testIndex() throws IOException {
         XContentBuilder builder = jsonBuilder().startObject().field("id", "6").field("name", "Bart Simpson").field("username", "bsimpson").endObject();
-        String json = new String(builder.copiedBytes());
+        String json = new String(builder.bytes().array());
         service.index(index, type, json, "6");
         
         String s = service.realTimeGet(index, type, "6");
@@ -137,9 +138,9 @@ public class QueryServiceTest {
     public void testBulkIndex() throws IOException {
         String[] json = new String[2];
         XContentBuilder builder = jsonBuilder().startObject().field("id", "7").field("name", "Maggie Simpson").field("username", "msimpson").endObject();
-        json[0] = new String(builder.copiedBytes());
+        json[0] = new String(builder.bytes().array());
         builder = jsonBuilder().startObject().field("id", "8").field("name", "Lisa Simpson").field("username", "lsimpson").endObject();
-        json[1] = new String(builder.copiedBytes());
+        json[1] = new String(builder.bytes().array());
         service.bulkIndex(index, type, json);
         
         String s = service.realTimeGet(index, type, "7");
@@ -153,6 +154,14 @@ public class QueryServiceTest {
     
     @Test 
     public void testDelete() throws IOException {
+        String[] json = new String[2];
+        XContentBuilder builder = jsonBuilder().startObject().field("id", "7").field("name", "Maggie Simpson").field("username", "msimpson").endObject();
+        json[0] = new String(builder.bytes().array());
+        builder = jsonBuilder().startObject().field("id", "8").field("name", "Lisa Simpson").field("username", "lsimpson").endObject();
+        json[1] = new String(builder.bytes().array());
+        service.bulkIndex(index, type, json);
+        service.refresh(index);
+
         String s = service.realTimeGet(index, type, "6");
         assertNotNull(s);
         service.delete(index, type, "6");
@@ -187,7 +196,7 @@ public class QueryServiceTest {
     @Test
     public void testIndexWriteOperation() throws IOException {
         XContentBuilder builder = jsonBuilder().startObject().field("id", "10").field("name", "Kerney").field("username", "kerney").endObject();
-        String json = new String(builder.copiedBytes());
+        String json = new String(builder.bytes().array());
 
         WriteOperation write = new WriteOperation();
         write.setConsistencyLevel(WriteConsistencyLevel.ONE);

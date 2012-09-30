@@ -29,7 +29,6 @@ public class AnnotationHelper {
      */
     public static String getDocumentId(Object o, String namedField) {
         Class<?> clazz = o.getClass();
-
         Field[] fields = clazz.getDeclaredFields();
         // Inject a UUID if annotation is present
         for (Field f : fields) {
@@ -125,7 +124,6 @@ public class AnnotationHelper {
         Class<?> clazz = o.getClass();
 
         Field[] fields = clazz.getDeclaredFields();
-
         // Check to see if there is an annotation on a field
         for (Field f : fields) {
             if (f.isAnnotationPresent(annotation)) {

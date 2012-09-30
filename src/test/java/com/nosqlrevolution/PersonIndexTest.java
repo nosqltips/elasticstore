@@ -30,22 +30,22 @@ public class PersonIndexTest {
     }
     
      @Test
-     public void testCRUD() {
-        try {
+     public void testCRUD() throws Exception {
             index = elasticStore.getIndex(Person.class, "index", "type");
             
             // Create
             Person p = new Person()
-                    .setId("1")
+                    .setId("2")
                     .setName("Homer Simpson")
                     .setUsername("hsimpson");
             index.write(p);
+            index.refresh();
             
             // Read
-            Person p2 = index.findById("1");
+            Person p2 = index.findById("2");
             
             assertNotNull(p2);
-            assertEquals(p2.getId(), "1");
+            assertEquals(p2.getId(), "2");
             assertEquals(p2.getName(), "Homer Simpson");
             assertEquals(p2.getUsername(), "hsimpson");   
             
@@ -53,19 +53,17 @@ public class PersonIndexTest {
             p.setName("Marge Simpson");
             p.setUsername("msimpson");
             index.write(p);
-            Person p3 = index.findById("1");
+            Person p3 = index.findById("2");
             
             assertNotNull(p3);
-            assertEquals(p3.getId(), "1");
+            assertEquals(p3.getId(), "2");
             assertEquals(p3.getName(), "Marge Simpson");
             assertEquals(p3.getUsername(), "msimpson");   
             
+            System.out.println("p=" + p.getId());
             // Delete
             index.remove(p);
-            Person p4 = index.findById("1");
+            Person p4 = index.findById("2");
             assertNull(p4);
-        } catch (Exception ex) {
-            Logger.getLogger(PersonIndexTest.class.getName()).log(Level.SEVERE, null, ex);
-        }
      }
 }

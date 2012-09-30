@@ -5,6 +5,7 @@ import com.nosqlrevolution.WriteOperation;
 import com.nosqlrevolution.util.JsonUtil;
 import com.nosqlrevolution.util.QueryUtil;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.count.CountRequestBuilder;
@@ -289,5 +290,14 @@ public class QueryService {
         
         // TODO: Need to iterate through and return a response
         return true;
+    }
+    
+    /**
+     * Refresh the given index.
+     * 
+     * @param index 
+     */
+    public void refresh(String index) {
+        client.admin().indices().refresh(new RefreshRequest(index)).actionGet();
     }
 }

@@ -2,6 +2,8 @@ package com.nosqlrevolution;
 
 import com.nosqlrevolution.query.Query;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This class represents all of the fun things we can do with an ElasticSearch index
@@ -240,6 +242,26 @@ public abstract class Index<T> {
      */
     public OperationStatus write(WriteOperation builder, List<? extends T> t) {
         throw new UnsupportedOperationException("Not supported yet.");
+    }
+    
+    /**
+     * Applies the json schema document to this index.
+     * If this index already has a schema, then essentially only new fields can be added.
+     * Existing fields cannot be modified.
+     * 
+     * @param schema 
+     */
+    public void applyMapping(String mapping) {
+        store.applyMapping(mapping, true, type, index);
+    }
+    
+    public void refresh() {
+        // TODO: maybe do something better here.
+        try {
+            store.refreshIndex(this);
+        } catch (Exception ex) {
+            Logger.getLogger(Index.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
     
     // Accessor methods

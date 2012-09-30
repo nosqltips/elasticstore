@@ -3,7 +3,12 @@ package com.nosqlrevolution;
 import com.google.common.base.Joiner;
 import com.nosqlrevolution.util.AnnotationHelper;
 import java.net.InetSocketAddress;
+import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.elasticsearch.action.admin.indices.exists.IndicesExistsRequest;
+import org.elasticsearch.action.admin.indices.exists.IndicesExistsResponse;
+import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
+import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequestBuilder;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
@@ -322,5 +327,33 @@ public class ElasticStore {
                 .indices()
                 .refresh(new RefreshRequest(index.getIndex()))
                 .actionGet();
+    }
+
+    /**
+     * Apply type mapping to one or more indexes.
+     * If ignoreConflicts is false, then the mapping will be rejected if there are conflicts.
+     * If ignoreConflits is true, then conflicts will be ignored.
+     * 
+     * @param mapping
+     * @param indexes
+     * @param type
+     * @param ignoreConflicts 
+     */
+    protected void applyMapping(String mapping, boolean ignoreConflicts, String type, String... indexes) {
+        // Check to see if indexes exist and create if missing.
+        for (String index: indexes) {
+            if (! client.admin().indices().exists(new IndicesExistsRequest(index)).actionGet().exists()) {
+                client.admin().indices().create(new CreateIndexRequest(index)).actionGet();
+            }
+        }
+        
+        // Apply the new mapping to the index
+        client.admin()
+                .indices()
+                .putMapping(new PutMappingRequest(indexes)
+                    .source(mapping)
+                    .type(type)
+                    .ignoreConflicts(ignoreConflicts)
+                ).actionGet();
     }
 }

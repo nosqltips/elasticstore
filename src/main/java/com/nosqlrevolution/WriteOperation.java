@@ -23,8 +23,9 @@ public class WriteOperation {
      * 
      * @param refresh 
      */
-    public void setRefresh(boolean refresh) {
+    public WriteOperation setRefresh(boolean refresh) {
         this.refresh = refresh;
+        return this;
     }
 
     /**
@@ -49,8 +50,9 @@ public class WriteOperation {
      * 
      * @param consistencyLevel 
      */
-    public void setConsistencyLevel(WriteConsistencyLevel consistencyLevel) {
+    public WriteOperation setConsistencyLevel(WriteConsistencyLevel consistencyLevel) {
         this.consistencyLevel = consistencyLevel;
+        return this;
     }
     
 }
