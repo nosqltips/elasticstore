@@ -14,14 +14,16 @@ import static org.junit.Assert.*;
 public class SchemaServiceTest {
     @Test
     public void Basic() throws IOException, NoSuchFieldException, Exception {
-        String json = SchemaService.generateSchema(Basic.class, "twitter");
+        String json = SchemaService.generateSchema(Basic.class, "type");
         assertNotNull(json);
         System.out.println("json=" + json);
-        String expected = "{\"twitter\":{\"properties\":{\"field\":{\"type\":\"string\"}}}}";
+        String expected = "{\"type\":{\"properties\":{\"field\":{\"type\":\"string\"}}}}";
         assertEquals(expected, json);
 
         ElasticStore es = new ElasticStore().asLocal().asMemoryOnly().execute();
         Index<Basic> index = es.getIndex(Basic.class, "twitter", "type");
         index.applyMapping(json);
+        
+        index.write(new Basic().setField("something"));
     }
 }

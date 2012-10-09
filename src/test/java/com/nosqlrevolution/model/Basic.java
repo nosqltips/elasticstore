@@ -9,4 +9,7 @@ import com.nosqlrevolution.annotation.schema.StringType;
 public class Basic {
     @StringType
     public String field;
+    
+    public String getField() { return field; }
+    public Basic setField(String field) { this.field = field; return this; }
 }
