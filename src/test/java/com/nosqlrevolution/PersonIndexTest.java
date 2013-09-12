@@ -1,8 +1,6 @@
 package com.nosqlrevolution;
 
 import com.nosqlrevolution.model.Person;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.junit.AfterClass;
 import static org.junit.Assert.*;
 import org.junit.BeforeClass;

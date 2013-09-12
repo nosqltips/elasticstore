@@ -1,6 +1,5 @@
 package com.nosqlrevolution.service;
 
-import com.nosqlrevolution.ElasticStore;
 import com.nosqlrevolution.WriteOperation;
 import java.io.IOException;
 import java.util.HashMap;
@@ -33,6 +32,7 @@ public class QueryServiceTest {
     @BeforeClass
     public static void setUpClass() throws Exception {
         client = nodeBuilder().local(true).data(true).node().client();
+        client.admin().cluster().prepareHealth().setWaitForGreenStatus().execute().actionGet();
         
         BulkRequestBuilder bulkRequest = client.prepareBulk();
         bulkRequest.add(client.prepareIndex(index, type, "1")
@@ -208,15 +208,18 @@ public class QueryServiceTest {
         assertValues(s, "10", "Kerney", "kerney");
     }
 
-    
     @Test 
     public void testDeleteWriteOperation() throws IOException {
-        String s = service.realTimeGet(index, type, "10");
-        assertNotNull(s);
+        XContentBuilder builder = jsonBuilder().startObject().field("id", "10").field("name", "Kerney").field("username", "kerney").endObject();
+        String json = new String(builder.bytes().array());
 
         WriteOperation write = new WriteOperation();
         write.setConsistencyLevel(WriteConsistencyLevel.ONE);
         write.setRefresh(true);
+        
+        service.index(write, index, type, json, "10");
+        String s = service.realTimeGet(index, type, "10");
+        assertNotNull(s);
 
         service.delete(write, index, type, "10");
          s = service.realTimeGet(index, type, "10");

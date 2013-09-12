@@ -18,7 +18,7 @@
     <dependency>
       <groupId>org.elasticsearch</groupId>
       <artifactId>elasticsearch</artifactId>
-      <version>0.19.9</version>
+      <version>0.90.3</version>
       <scope>compile</scope>
       <type>jar</type>
     </dependency>
@@ -37,13 +37,13 @@
     <dependency>
       <groupId>org.codehaus.jackson</groupId>
       <artifactId>jackson-core-lgpl</artifactId>
-      <version>1.9.6</version>
+      <version>1.9.13</version>
       <type>jar</type>
     </dependency>
     <dependency>
       <groupId>org.codehaus.jackson</groupId>
       <artifactId>jackson-mapper-lgpl</artifactId>
-      <version>1.9.6</version>
+      <version>1.9.13</version>
       <type>jar</type>
     </dependency>
   </dependencies>

@@ -54,9 +54,9 @@ public class QueryService {
         SearchResponse response = builder.execute().actionGet();
         
         // Update the SearchQuery results
-        SearchHits h = response.hits();
+        SearchHits h = response.getHits();
         if (h.getHits().length > 0) {
-            return h.getHits()[0].sourceAsString();
+            return h.getHits()[0].getSourceAsString();
         } else {
             return null;
         }
@@ -78,7 +78,7 @@ public class QueryService {
                 .setRealtime(Boolean.TRUE);
         
         GetResponse response = builder.execute().actionGet();
-        return response.sourceAsString();
+        return response.getSourceAsString();
     }
 
     /**
@@ -95,11 +95,11 @@ public class QueryService {
                 .setRealtime(Boolean.TRUE);
         
         MultiGetResponse response = builder.execute().actionGet();
-        MultiGetItemResponse[] responses = response.responses();
+        MultiGetItemResponse[] responses = response.getResponses();
         
         String[] out = new String[responses.length];
         for (int i=0; i<responses.length; i++) {
-            out[i] = responses[i].getResponse().sourceAsString();
+            out[i] = responses[i].getResponse().getSourceAsString();
         }
         return out;
     }
@@ -248,7 +248,7 @@ public class QueryService {
                 .setRefresh(write.getRefresh());
         
         DeleteResponse response = builder.execute().actionGet();
-        return ! response.notFound();
+        return ! response.isNotFound();
         // TODO: Could return if found.
         //response.notFound();
     }

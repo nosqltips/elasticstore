@@ -74,7 +74,7 @@ public class CursorTest {
                 .addSort(QueryUtil.getIdSort());
         
         SearchResponse response = builder.execute().actionGet();
-        hits = response.hits();
+        hits = response.getHits();
     }
 
     @AfterClass

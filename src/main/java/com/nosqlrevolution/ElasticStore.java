@@ -5,7 +5,7 @@ import com.nosqlrevolution.util.AnnotationHelper;
 import java.net.InetSocketAddress;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
-import org.elasticsearch.action.admin.indices.exists.IndicesExistsRequest;
+import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.client.Client;
@@ -340,7 +340,7 @@ public class ElasticStore {
     protected void applyMapping(String mapping, boolean ignoreConflicts, String type, String... indexes) {
         // Check to see if indexes exist and create if missing.
         for (String index: indexes) {
-            if (! client.admin().indices().exists(new IndicesExistsRequest(index)).actionGet().exists()) {
+            if (! client.admin().indices().exists(new IndicesExistsRequest(index)).actionGet().isExists()) {
                 client.admin().indices().create(new CreateIndexRequest(index)).actionGet();
             }
         }
