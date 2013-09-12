@@ -46,7 +46,7 @@ public abstract class Index<T> {
      * @return 
      */
     public T find() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
     
     /**
@@ -57,7 +57,7 @@ public abstract class Index<T> {
      * @return 
      */
     public <T>T find(Class<T> clazz) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
     
     /**
@@ -68,7 +68,7 @@ public abstract class Index<T> {
      * @return 
      */
     public T find(Query qb) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
     
     /**
@@ -80,7 +80,7 @@ public abstract class Index<T> {
      * @return 
      */
     public <T>T find(Query qb, Class<T> clazz) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -89,7 +89,7 @@ public abstract class Index<T> {
      * @return 
      */
     public Cursor findAll() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -99,7 +99,7 @@ public abstract class Index<T> {
      * @return 
      */
     public Cursor findAll(Query qb) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -111,7 +111,7 @@ public abstract class Index<T> {
      * @return 
      */
     public Cursor findAll(Query qb, Class clazz) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -122,7 +122,7 @@ public abstract class Index<T> {
      * @return 
      */
     public T findById(String id) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
     
     /**
@@ -133,7 +133,7 @@ public abstract class Index<T> {
      * @return 
      */
     public <T>T findById(String id, Class<T> clazz) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
     
     /**
@@ -143,7 +143,7 @@ public abstract class Index<T> {
      * @return 
      */
     public T[] findAllById(String... ids) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
     
     /**
@@ -155,7 +155,7 @@ public abstract class Index<T> {
      * @return 
      */
     public <T>T[] findAllById(Class<T> clazz, String... ids) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
     
     /**
@@ -165,7 +165,7 @@ public abstract class Index<T> {
      * @return 
      */
     public OperationStatus removeById(String... ids) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
     
     /**
@@ -175,7 +175,7 @@ public abstract class Index<T> {
      * @return 
      */
     public OperationStatus removeById(List<String> ids) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
     
     /**
@@ -187,7 +187,7 @@ public abstract class Index<T> {
      * @return 
      */
     public OperationStatus remove(T... t) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
     
     /**
@@ -197,7 +197,7 @@ public abstract class Index<T> {
      * @return 
      */
     public OperationStatus remove(Query qb) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
     
     /**
@@ -207,7 +207,7 @@ public abstract class Index<T> {
      * @return 
      */
     public OperationStatus write(T... t) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
     
     /**
@@ -219,7 +219,7 @@ public abstract class Index<T> {
      * @return 
      */
     public OperationStatus write(WriteOperation builder, T... t) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
     
     /**
@@ -229,7 +229,7 @@ public abstract class Index<T> {
      * @return 
      */
     public OperationStatus write(List<? extends T> t) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
     
     /**
@@ -241,7 +241,7 @@ public abstract class Index<T> {
      * @return 
      */
     public OperationStatus write(WriteOperation builder, List<? extends T> t) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
     
     /**

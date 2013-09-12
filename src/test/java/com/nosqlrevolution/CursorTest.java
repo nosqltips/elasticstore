@@ -1,11 +1,9 @@
 package com.nosqlrevolution;
 
 import com.nosqlrevolution.model.Person;
-import com.nosqlrevolution.service.QueryService;
 import com.nosqlrevolution.util.QueryUtil;
 import java.util.Collection;
 import java.util.Iterator;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.search.SearchRequestBuilder;
@@ -15,7 +13,6 @@ import org.elasticsearch.client.Client;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.sort.SortBuilder;
 import org.junit.AfterClass;
 import static org.junit.Assert.*;
 import org.junit.BeforeClass;
@@ -116,6 +113,9 @@ public class CursorTest {
         
         // Run through the iterator and see what we get.
         int id = 1;
+        for (Person p: instance.collection()) {
+            
+        }
         while (it.hasNext()) {
             Person p = it.next();
             assertEquals(Integer.toString(id), p.getId());

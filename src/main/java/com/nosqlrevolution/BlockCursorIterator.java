@@ -36,6 +36,6 @@ public class BlockCursorIterator<E> implements Iterator<E> {
 
     @Override
     public void remove() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
 }
