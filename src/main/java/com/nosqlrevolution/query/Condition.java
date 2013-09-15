@@ -196,7 +196,7 @@ public class Condition {
     /**
      * Inner class that is used to give public access to just the fields we want, and separate them form the parent.
      * This also helps us to better construct Condition objects as the CompletedCondition is returned 
-     * when we're reached an end point in object construction;
+     * when we've reached an end point in object construction;
      */
     public class CompletedCondition {
 

@@ -19,16 +19,17 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- *
+ * TODO: Need to really test the block iterating capability.
  * @author cbrown
  */
-public class CursorTest {
+public class BlockCursorTest {
     private static Client client;
     private static String index = "test";
     private static String type = "data";
     private static String[] ids;
     private static SearchHits hits;
-
+    private static SearchRequestBuilder builder;
+    
     @BeforeClass
     public static void setUpClass() throws Exception {
         client = nodeBuilder().local(true).data(true).node().client();
@@ -68,7 +69,7 @@ public class CursorTest {
         ids[4] = "5";
 
         // Get a list of SearchHits we can work with
-        SearchRequestBuilder builder = client.prepareSearch(index)
+        builder = client.prepareSearch(index)
                 .setSearchType(SearchType.QUERY_THEN_FETCH)
                 .setTypes(type)
                 .setQuery(QueryUtil.getIdQuery(ids))
@@ -85,19 +86,19 @@ public class CursorTest {
 
     @Test
     public void testSize() {
-        Cursor instance = new Cursor(new Person(), hits);
+        BlockCursor<Person> instance = new BlockCursor(new Person(), hits, builder, 1, 10);
         assertEquals(5, instance.size());
     }
 
     @Test
     public void testIsEmpty() {
-        Cursor instance = new Cursor(new Person(), hits);
+        BlockCursor<Person> instance = new BlockCursor(new Person(), hits, builder, 1, 10);
         assertFalse(instance.isEmpty());
     }
 
     @Test
     public void testIterator() {
-        Cursor<Person> instance = new Cursor(new Person(), hits);
+        BlockCursor<Person> instance = new BlockCursor(new Person(), hits, builder, 1, 10);
         Iterator<Person> it = instance.iterator();
                 
         // Make sure we got a real iterator instance
@@ -117,7 +118,7 @@ public class CursorTest {
 
     @Test
     public void testCollection() {
-        Cursor<Person> instance = new Cursor(new Person(), hits);
+        BlockCursor<Person> instance = new BlockCursor(new Person(), hits, builder, 1, 10);
         Collection<Person> coll = instance.collection();
                 
         // Make sure we got a real iterator instance

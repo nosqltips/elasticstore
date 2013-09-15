@@ -2,6 +2,8 @@ package com.nosqlrevolution;
 
 import com.nosqlrevolution.util.MappingUtil;
 import java.util.Iterator;
+import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHits;
 
 /**
@@ -13,21 +15,39 @@ public class BlockCursorIterator<E> implements Iterator<E> {
     private E e;
     private MappingUtil<E> mapping = new MappingUtil<E>();
     private SearchHits hits;
+    private SearchRequestBuilder builder;
+    private int from = 0;
+    private int size = 0;
     private int iter = 0;
     private int iterAll = 0;
     
-    protected BlockCursorIterator(E e, SearchHits hits) {
+    protected BlockCursorIterator(E e, SearchHits firstHits, SearchRequestBuilder builder, int from, int size) {
         this.e = e;
-        this.hits = hits;
+        this.hits = firstHits;
+        this.builder = builder;
+        this.from = from;
+        this.size = size;
     }
-
+    
     @Override
     public boolean hasNext() {
-        return iter < hits.getHits().length;
+        return iter < hits.getTotalHits();
     }
 
     @Override
     public E next() {
+        // Need to check if we need to get the next block of data.
+        if (iter >= hits.getHits().length) {
+            hits = getNextPage();
+            iter = 0;
+            
+            // TODO: What to do if we get a call for next and we don't have any results?
+            if (hits.getHits().length == 0) {
+                return null;
+            }
+        }
+        
+        // Return the next object
         E returnE = mapping.get(e, hits.getAt(iter).sourceAsString());
         iter ++;
         iterAll ++;
@@ -37,5 +57,17 @@ public class BlockCursorIterator<E> implements Iterator<E> {
     @Override
     public void remove() {
         throw new UnsupportedOperationException();
+    }
+    
+    private SearchHits getNextPage() {
+        // increment next page
+        from ++;
+        builder.setFrom(from * size);
+        
+        // Get search response
+        SearchResponse response = builder.execute().actionGet();
+
+        // Return the next set of hits
+        return response.getHits();
     }
 }

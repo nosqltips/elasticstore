@@ -11,6 +11,7 @@ import static com.nosqlrevolution.query.Query.*;
 public class QueryTest {
 
     @Test
+    // Just testing to see how the structure looks.
     public void testSomething() {
         select()
             .where(
