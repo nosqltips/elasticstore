@@ -22,7 +22,7 @@ import org.junit.Test;
  * TODO: Need to really test the block iterating capability.
  * @author cbrown
  */
-public class BlockCursorTest {
+public class BlockCursorPagingTest {
     private static Client client;
     private static String index = "test";
     private static String type = "data";
@@ -73,7 +73,9 @@ public class BlockCursorTest {
                 .setSearchType(SearchType.QUERY_THEN_FETCH)
                 .setTypes(type)
                 .setQuery(QueryUtil.getIdQuery(ids))
-                .addSort(QueryUtil.getIdSort());
+                .addSort(QueryUtil.getIdSort())
+                .setFrom(0)
+                .setSize(1);
         
         SearchResponse response = builder.execute().actionGet();
         hits = response.getHits();
@@ -86,19 +88,19 @@ public class BlockCursorTest {
 
     @Test
     public void testSize() {
-        BlockCursor<Person> instance = new BlockCursor(new Person(), hits, builder, 0, 10);
+        BlockCursor<Person> instance = new BlockCursor(new Person(), hits, builder, 0, 1);
         assertEquals(5, instance.size());
     }
 
     @Test
     public void testIsEmpty() {
-        BlockCursor<Person> instance = new BlockCursor(new Person(), hits, builder, 0, 10);
+        BlockCursor<Person> instance = new BlockCursor(new Person(), hits, builder, 0, 1);
         assertFalse(instance.isEmpty());
     }
 
     @Test
     public void testIterator() {
-        BlockCursor<Person> instance = new BlockCursor(new Person(), hits, builder, 0, 10);
+        BlockCursor<Person> instance = new BlockCursor(new Person(), hits, builder, 0, 1);
         Iterator<Person> it = instance.iterator();
                 
         // Make sure we got a real iterator instance
@@ -116,7 +118,7 @@ public class BlockCursorTest {
 
     @Test
     public void testCollection() {
-        BlockCursor<Person> instance = new BlockCursor(new Person(), hits, builder, 0, 10);
+        BlockCursor<Person> instance = new BlockCursor(new Person(), hits, builder, 0, 1);
         Collection<Person> coll = instance.collection();
                 
         // Make sure we got a real iterator instance

@@ -31,7 +31,11 @@ public class BlockCursorIterator<E> implements Iterator<E> {
     
     @Override
     public boolean hasNext() {
-        return iter < hits.getTotalHits();
+        if ((from * size) > hits.getTotalHits()) { 
+            return false;
+        } else {
+            return iterAll < hits.getTotalHits();
+        }
     }
 
     @Override

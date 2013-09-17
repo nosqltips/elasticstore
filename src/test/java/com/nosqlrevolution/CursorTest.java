@@ -105,9 +105,6 @@ public class CursorTest {
         
         // Run through the iterator and see what we get.
         int id = 1;
-        for (Person p: instance.collection()) {
-            
-        }
         while (it.hasNext()) {
             Person p = it.next();
             assertEquals(Integer.toString(id), p.getId());
