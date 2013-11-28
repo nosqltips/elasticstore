@@ -7,17 +7,18 @@ import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.search.SearchHits;
 
 /**
- * Used to automatically scroll through i set of search results.
+ * Used to automatically scroll through a set of search results.
  * 
  * @author cbrown
+ * @param <E>
  */
 public class BlockCursor<E> extends AbstractCollection {
-    private E e;
-    private SearchHits firstHits;
-    private SearchRequestBuilder builder;
-    private int from;
-    private int size;
-    private int totalSize;
+    private final E e;
+    private final SearchHits firstHits;
+    private final SearchRequestBuilder builder;
+    private final int from;
+    private final int size;
+    private final int totalSize;
     
     public BlockCursor(E e, SearchHits firstHits, SearchRequestBuilder builder, int from, int size) {
         // TODO: may need to check for null here.

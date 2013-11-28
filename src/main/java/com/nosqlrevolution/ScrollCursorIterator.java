@@ -2,8 +2,8 @@ package com.nosqlrevolution;
 
 import com.nosqlrevolution.util.MappingUtil;
 import java.util.Iterator;
-import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchScrollRequestBuilder;
 import org.elasticsearch.search.SearchHits;
 
 /**
@@ -12,31 +12,22 @@ import org.elasticsearch.search.SearchHits;
  * @author cbrown
  * @param <E>
  */
-public class BlockCursorIterator<E> implements Iterator<E> {
+public class ScrollCursorIterator<E> implements Iterator<E> {
     private final E e;
     private final MappingUtil<E> mapping = new MappingUtil<E>();
     private SearchHits hits;
-    private final SearchRequestBuilder builder;
-    private int from = 0;
-    private int size = 0;
+    private final SearchScrollRequestBuilder scrollBuilder;
     private int iter = 0;
-    private int iterAll = 0;
+    private boolean hasNext = true;
     
-    protected BlockCursorIterator(E e, SearchHits firstHits, SearchRequestBuilder builder, int from, int size) {
+    protected ScrollCursorIterator(E e, SearchScrollRequestBuilder scrollBuilder) {
         this.e = e;
-        this.hits = firstHits;
-        this.builder = builder;
-        this.from = from;
-        this.size = size;
+        this.scrollBuilder = scrollBuilder;
     }
     
     @Override
     public boolean hasNext() {
-        if ((from * size) > hits.getTotalHits()) { 
-            return false;
-        } else {
-            return iterAll < hits.getTotalHits();
-        }
+        return hasNext;
     }
 
     @Override
@@ -55,7 +46,6 @@ public class BlockCursorIterator<E> implements Iterator<E> {
         // Return the next object
         E returnE = mapping.get(e, hits.getAt(iter).sourceAsString());
         iter ++;
-        iterAll ++;
         return returnE;
     }
 
@@ -65,13 +55,12 @@ public class BlockCursorIterator<E> implements Iterator<E> {
     }
     
     private SearchHits getNextPage() {
-        // increment next page
-        from ++;
-        builder.setFrom(from * size);
-        
         // Get search response
-        SearchResponse response = builder.execute().actionGet();
+        SearchResponse response = scrollBuilder.execute().actionGet();
 
+        if (response.getHits().getHits().length == 0) {
+            hasNext = false;
+        }
         // Return the next set of hits
         return response.getHits();
     }
