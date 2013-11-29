@@ -24,7 +24,7 @@ public class DefaultTypeUtilTest {
      
     @Test
     public void BooleanTest() throws IOException, NoSuchFieldException {
-        Field f = DefaultBoolean.class.getField("field");
+        Field f = DefaultFullBoolean.class.getField("field");
         Map<String, Object> map = DefaultTypeUtil.generateSchema(f);
         assertNotNull(map);
         assertEquals(map.size(), 1);
@@ -42,7 +42,7 @@ public class DefaultTypeUtilTest {
      
     @Test
     public void IntegerTest() throws IOException, NoSuchFieldException {
-        Field f = DefaultInteger.class.getField("field");
+        Field f = DefaultFullInteger.class.getField("field");
         Map<String, Object> map = DefaultTypeUtil.generateSchema(f);
         assertNotNull(map);
         assertEquals(map.size(), 1);
@@ -60,7 +60,7 @@ public class DefaultTypeUtilTest {
      
     @Test
     public void LongTest() throws IOException, NoSuchFieldException {
-        Field f = DefaultLong.class.getField("field");
+        Field f = DefaultFullLong.class.getField("field");
         Map<String, Object> map = DefaultTypeUtil.generateSchema(f);
         assertNotNull(map);
         assertEquals(map.size(), 1);
@@ -78,7 +78,7 @@ public class DefaultTypeUtilTest {
      
     @Test
     public void DoubleTest() throws IOException, NoSuchFieldException {
-        Field f = DefaultDouble.class.getField("field");
+        Field f = DefaultFullDouble.class.getField("field");
         Map<String, Object> map = DefaultTypeUtil.generateSchema(f);
         assertNotNull(map);
         assertEquals(map.size(), 1);
@@ -96,7 +96,7 @@ public class DefaultTypeUtilTest {
      
     @Test
     public void FloatTest() throws IOException, NoSuchFieldException {
-        Field f = DefaultFloat.class.getField("field");
+        Field f = DefaultFullFloat.class.getField("field");
         Map<String, Object> map = DefaultTypeUtil.generateSchema(f);
         assertNotNull(map);
         assertEquals(map.size(), 1);
@@ -114,7 +114,7 @@ public class DefaultTypeUtilTest {
      
     @Test
     public void ShortTest() throws IOException, NoSuchFieldException {
-        Field f = DefaultShort.class.getField("field");
+        Field f = DefaultFullShort.class.getField("field");
         Map<String, Object> map = DefaultTypeUtil.generateSchema(f);
         assertNotNull(map);
         assertEquals(map.size(), 1);
@@ -132,7 +132,7 @@ public class DefaultTypeUtilTest {
      
     @Test
     public void ByteTest() throws IOException, NoSuchFieldException {
-        Field f = DefaultByte.class.getField("field");
+        Field f = DefaultFullByte.class.getField("field");
         Map<String, Object> map = DefaultTypeUtil.generateSchema(f);
         assertNotNull(map);
         assertEquals(map.size(), 1);
@@ -177,7 +177,7 @@ public class DefaultTypeUtilTest {
         public String field;
     }
      
-    public class DefaultBoolean {
+    public class DefaultFullBoolean {
         @DefaultType
         public Boolean field;
     }
@@ -187,7 +187,7 @@ public class DefaultTypeUtilTest {
         public boolean field;
     }
      
-    public class DefaultInteger {
+    public class DefaultFullInteger {
         @DefaultType
         public Integer field;
     }
@@ -197,7 +197,7 @@ public class DefaultTypeUtilTest {
         public int field;
     }
      
-    public class DefaultLong {
+    public class DefaultFullLong {
         @DefaultType
         public Long field;
     }
@@ -207,7 +207,7 @@ public class DefaultTypeUtilTest {
         public long field;
     }
      
-    public class DefaultDouble {
+    public class DefaultFullDouble {
         @DefaultType
         public Double field;
     }
@@ -217,7 +217,7 @@ public class DefaultTypeUtilTest {
         public double field;
     }
      
-    public class DefaultFloat {
+    public class DefaultFullFloat {
         @DefaultType
         public Float field;
     }
@@ -227,7 +227,7 @@ public class DefaultTypeUtilTest {
         public float field;
     }
      
-    public class DefaultShort {
+    public class DefaultFullShort {
         @DefaultType
         public Short field;
     }
@@ -237,7 +237,7 @@ public class DefaultTypeUtilTest {
         public short field;
     }
      
-    public class DefaultByte {
+    public class DefaultFullByte {
         @DefaultType
         public Byte field;
     }

@@ -2,7 +2,6 @@ package com.nosqlrevolution;
 
 import com.nosqlrevolution.query.Query;
 import com.nosqlrevolution.service.QueryService;
-import com.nosqlrevolution.util.JsonUtil;
 import com.nosqlrevolution.util.MappingUtil;
 import com.nosqlrevolution.util.AnnotationHelper;
 import java.lang.reflect.Array;
@@ -14,12 +13,13 @@ import java.util.logging.Logger;
  * Accept and return strongly typed objects.
  * 
  * @author cbrown
+ * @param <T>
  */
 public class TypedIndex<T> extends Index<T> {
     private static final Logger logger = Logger.getLogger(TypedIndex.class.getName());
-    private T t;
-    private QueryService service;
-    private MappingUtil<T> mapping = new MappingUtil<T>();
+    private final T t;
+    private final QueryService service;
+    private final MappingUtil<T> mapping = new MappingUtil<T>();
     
     public TypedIndex(T t, ElasticStore store, String index, String iType) throws Exception {
         super (store, index, iType);

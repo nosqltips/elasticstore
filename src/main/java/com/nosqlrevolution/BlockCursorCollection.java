@@ -8,11 +8,12 @@ import org.elasticsearch.search.SearchHits;
 /**
  *
  * @author cbrown
+ * @param <E>
  */
 public class BlockCursorCollection<E> implements Collection<E> {
-    private E e;
-    private SearchHits firstHits;
-    private SearchRequestBuilder builder;
+    private final E e;
+    private final SearchHits firstHits;
+    private final SearchRequestBuilder builder;
     private int from = 0;
     private int size = 0;
 

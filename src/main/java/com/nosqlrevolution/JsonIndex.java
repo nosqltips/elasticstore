@@ -13,11 +13,12 @@ import java.util.logging.Logger;
  * Accept and return json strings
  * 
  * @author cbrown
+ * @param <T>
  */
 public class JsonIndex<T> extends Index<String> {
     private static final Logger logger = Logger.getLogger(JsonIndex.class.getName());
-    private QueryService service;
-    private MappingUtil<String> mapping = new MappingUtil<String>();
+    private final QueryService service;
+    private final MappingUtil<String> mapping = new MappingUtil<String>();
     
     public JsonIndex(ElasticStore store, String index, String type) throws Exception {
         super(store, index, type);

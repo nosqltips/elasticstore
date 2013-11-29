@@ -8,6 +8,7 @@ import java.util.logging.Logger;
 /**
  * This class represents all of the fun things we can do with an ElasticSearch index
  * @author cbrown
+ * @param <T>
  */
 public abstract class Index<T> {
     private ElasticStore store;
@@ -53,6 +54,7 @@ public abstract class Index<T> {
      * Return a single document from the entire index.
      * The document will be returned as specified by Class.
      * 
+     * @param <T>
      * @param clazz
      * @return 
      */
@@ -75,6 +77,7 @@ public abstract class Index<T> {
      * Return a single document from the entire index specified by the query.
      * The document will be returned as specified by Class.
      * 
+     * @param <T>
      * @param qb
      * @param clazz
      * @return 
@@ -128,6 +131,7 @@ public abstract class Index<T> {
     /**
      * Return a single document this index as specified by Class.
      * 
+     * @param <T>
      * @param id
      * @param clazz
      * @return 
@@ -150,6 +154,7 @@ public abstract class Index<T> {
      * Return a Cursor containing a list of documents in this index or indexes specified by the list of ids.
      * The documents will be returned as specified by Class.
      * 
+     * @param <T>
      * @param clazz
      * @param ids
      * @return 
@@ -249,7 +254,7 @@ public abstract class Index<T> {
      * If this index already has a schema, then essentially only new fields can be added.
      * Existing fields cannot be modified.
      * 
-     * @param schema 
+     * @param mapping
      */
     public void applyMapping(String mapping) {
         store.applyMapping(mapping, true, type, index);

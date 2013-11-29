@@ -2,15 +2,13 @@ package com.nosqlrevolution;
 
 import com.nosqlrevolution.model.Person;
 import com.nosqlrevolution.util.QueryUtil;
+import com.nosqlrevolution.util.TestDataHelper;
 import java.util.Collection;
 import java.util.Iterator;
-import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
-import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 import org.elasticsearch.search.SearchHits;
 import org.junit.AfterClass;
@@ -24,8 +22,8 @@ import org.junit.Test;
  */
 public class BlockCursorPagingTest {
     private static Client client;
-    private static String index = "test";
-    private static String type = "data";
+    private static final String index = "test";
+    private static final String type = "data";
     private static String[] ids;
     private static SearchHits hits;
     private static SearchRequestBuilder builder;
@@ -35,44 +33,16 @@ public class BlockCursorPagingTest {
         client = nodeBuilder().local(true).data(true).node().client();
         client.admin().cluster().prepareHealth().setWaitForGreenStatus().execute().actionGet();
         
-        BulkRequestBuilder bulkRequest = client.prepareBulk();
-        bulkRequest.add(client.prepareIndex(index, type, "1")
-                .setSource(
-                    jsonBuilder().startObject().field("id", "1").field("name", "Homer Simpson").field("username", "hsimpson").endObject()
-                ));
-        bulkRequest.add(client.prepareIndex(index, type, "2")
-                .setSource(
-                    jsonBuilder().startObject().field("id", "2").field("name", "C Montgomery Burns").field("username", "cburns").endObject()
-                ));
-        bulkRequest.add(client.prepareIndex(index, type, "3")
-                .setSource(
-                    jsonBuilder().startObject().field("id", "3").field("name", "Carl Carlson").field("username", "ccarlson").endObject()
-                ));
-        bulkRequest.add(client.prepareIndex(index, type, "4")
-                .setSource(
-                    jsonBuilder().startObject().field("id", "4").field("name", "Clancy Wigum").field("username", "cwigum").endObject()
-                ));
-        bulkRequest.add(client.prepareIndex(index, type, "5")
-                .setSource(
-                    jsonBuilder().startObject().field("id", "5").field("name", "Lenny Leonard").field("username", "lleonard").endObject()
-                ));
-        
-        bulkRequest.execute().actionGet();
-        client.admin().indices().refresh(new RefreshRequest(index)).actionGet();
+        TestDataHelper.indexCursorTestData(client, index, type);
         
         // Create ids
-        ids = new String[5];
-        ids[0] = "1";
-        ids[1] = "2";
-        ids[2] = "3";
-        ids[3] = "4";
-        ids[4] = "5";
+        ids = new String[]{"1", "2", "3", "4", "5"};
 
         // Get a list of SearchHits we can work with
         builder = client.prepareSearch(index)
                 .setSearchType(SearchType.QUERY_THEN_FETCH)
                 .setTypes(type)
-                .setQuery(QueryUtil.getIdQuery(ids))
+                .setQuery(QueryUtil.getMatchAllQuery())
                 .addSort(QueryUtil.getIdSort())
                 .setFrom(0)
                 .setSize(1);

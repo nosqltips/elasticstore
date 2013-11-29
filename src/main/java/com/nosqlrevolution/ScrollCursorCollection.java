@@ -32,7 +32,7 @@ public class ScrollCursorCollection<E> implements Collection<E> {
 
     @Override
     public Iterator<E> iterator() {
-        return new ScrollCursorIterator(e, scrollBuilder);
+        return new ScrollCursorIterator(e, scrollBuilder, totalSize);
     }
     
     // NotImplemented

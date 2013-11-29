@@ -8,10 +8,11 @@ import org.elasticsearch.search.SearchHits;
 /**
  *
  * @author cbrown
+ * @param <E>
  */
 public class Cursor<E> extends AbstractCollection {
-    private E e;
-    private SearchHits hits;
+    private final E e;
+    private final SearchHits hits;
     
     public Cursor(E e, SearchHits hits) {
         // TODO: may need to check for null here.

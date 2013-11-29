@@ -19,10 +19,10 @@ import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
  * @author cbrown
  */
 public class ElasticStore {
-    private static int DEFAULT_PORT = 9300;
-    private static String DEFAULT_HOST = "127.0.0.1";
-    private static String DEFAULT_TIMEOUT = "10s";
-    private static String DEFAULT_CLUSTER_NAME = "elasticsearch";
+    private static final int DEFAULT_PORT = 9300;
+    private static final String DEFAULT_HOST = "127.0.0.1";
+    private static final String DEFAULT_TIMEOUT = "10s";
+    private static final String DEFAULT_CLUSTER_NAME = "elasticsearch";
     private static boolean multicast = true;
     private static boolean node = true;
     private static boolean local = false;

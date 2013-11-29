@@ -61,7 +61,7 @@ public class VersionTest {
    
      @Test
      public void testLongField() {
-         TestLongField t = new TestLongField();
+         TestFullLongField t = new TestFullLongField();
          t.setVersion(10000L);
 
          String verison = AnnotationHelper.getVersionValue(t, "otherVersion");
@@ -141,7 +141,7 @@ public class VersionTest {
          public void setVersion(String otherVersion) { this.otherVersion = otherVersion; }
      }
      
-     private class TestLongField {
+     private class TestFullLongField {
          private Long otherVersion;
          public Long getVersion() { return otherVersion; }
          public void setVersion(Long otherVersion) { this.otherVersion = otherVersion; }

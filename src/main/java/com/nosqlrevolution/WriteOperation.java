@@ -13,6 +13,7 @@ public class WriteOperation {
 
     /**
      * Causes the indexed to be refreshed so that documents will be immediately visible in search results.
+     * @return 
      */
     public boolean getRefresh() {
         return refresh;
@@ -22,6 +23,7 @@ public class WriteOperation {
      * Causes the indexed to be refreshed so that documents will be immediately visible in search results.
      * 
      * @param refresh 
+     * @return  
      */
     public WriteOperation setRefresh(boolean refresh) {
         this.refresh = refresh;
@@ -49,6 +51,7 @@ public class WriteOperation {
      *   QUORUM - A majority of replicas need to commit the write before the operation succeeds
      * 
      * @param consistencyLevel 
+     * @return  
      */
     public WriteOperation setConsistencyLevel(WriteConsistencyLevel consistencyLevel) {
         this.consistencyLevel = consistencyLevel;

@@ -11,7 +11,7 @@ import org.elasticsearch.search.SearchHits;
  */
 public class CursorIterator<E> implements Iterator<E> {
     private E e;
-    private MappingUtil<E> mapping = new MappingUtil<E>();
+    private final MappingUtil<E> mapping = new MappingUtil<E>();
     private SearchHits hits;
     private int iter = 0;
     private int iterAll = 0;

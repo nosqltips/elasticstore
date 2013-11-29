@@ -26,7 +26,7 @@ public class ScrollCursor<E> extends AbstractCollection {
     
     @Override
     public Iterator<E> iterator() {
-        return new ScrollCursorIterator(e, scrollBuilder);
+        return new ScrollCursorIterator(e, scrollBuilder, totalSize);
     }
 
     public Collection<E> collection() {

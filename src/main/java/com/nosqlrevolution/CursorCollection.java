@@ -7,6 +7,7 @@ import org.elasticsearch.search.SearchHits;
 /**
  *
  * @author cbrown
+ * @param <E>
  */
 public class CursorCollection<E> implements Collection<E> {
     private E e;

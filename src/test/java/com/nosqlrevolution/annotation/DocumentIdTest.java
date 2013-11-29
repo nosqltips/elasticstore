@@ -28,7 +28,7 @@ public class DocumentIdTest {
 
      @Test
      public void withLongId() {
-         TestLongId t = new TestLongId();
+         TestFullLongId t = new TestFullLongId();
          t.setId(1234L);
          assertEquals("1234", AnnotationHelper.getDocumentId(t, null));
      }
@@ -112,7 +112,7 @@ public class DocumentIdTest {
      
      @Test
      public void withAnnotationFieldLong() {
-         TestIdAnnotationFieldLong t = new TestIdAnnotationFieldLong();
+         TestIdAnnotationFieldFullLong t = new TestIdAnnotationFieldFullLong();
          t.setId(1234L);
          assertEquals("1234", AnnotationHelper.getDocumentId(t, null));
      }
@@ -212,7 +212,7 @@ public class DocumentIdTest {
      
      @Test
      public void withAnnotationMethodLong() {
-         TestIdAnnotationMethodLong t = new TestIdAnnotationMethodLong();
+         TestIdAnnotationMethodFullLong t = new TestIdAnnotationMethodFullLong();
          t.setId(1234L);
          assertEquals("1234", AnnotationHelper.getDocumentId(t, null));
      }
@@ -315,7 +315,7 @@ public class DocumentIdTest {
          public void setId(String _id) { this._id = _id; }
      }
      
-     private class TestLongId {
+     private class TestFullLongId {
          private Long id;
          public void setId(Long id) { this.id = id; }
      }
@@ -366,7 +366,7 @@ public class DocumentIdTest {
          public void setId(String someid) { this.someid = someid; }
      }
      
-     private class TestIdAnnotationFieldLong {
+     private class TestIdAnnotationFieldFullLong {
          @DocumentId
          private Long someid;
          public void setId(Long someid) { this.someid = someid; }
@@ -449,7 +449,7 @@ public class DocumentIdTest {
          public void setId(String someid) { this.someid = someid; }
      }
      
-     private class TestIdAnnotationMethodLong {
+     private class TestIdAnnotationMethodFullLong {
          private Long someid;
          @DocumentId
          public Long getId() { return someid; }

@@ -1,32 +1,36 @@
 package com.nosqlrevolution;
 
 import com.nosqlrevolution.model.Person;
-import com.nosqlrevolution.util.TestDataHelper;
 import com.nosqlrevolution.util.QueryUtil;
+import com.nosqlrevolution.util.TestDataHelper;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchScrollRequestBuilder;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.common.unit.TimeValue;
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
-import org.elasticsearch.search.SearchHits;
 import org.junit.AfterClass;
 import static org.junit.Assert.*;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- *
+ * TODO: Need to really test the block iterating capability.
  * @author cbrown
  */
-public class CursorTest {
+public class ScrollCursorPagingTest {
     private static Client client;
     private static final String index = "test";
     private static final String type = "data";
     private static String[] ids;
-    private static SearchHits hits;
-
+    private static SearchScrollRequestBuilder scrollBuilder;
+    private static int totalSize;
+    
     @BeforeClass
     public static void setUpClass() throws Exception {
         client = nodeBuilder().local(true).data(true).node().client();
@@ -39,13 +43,17 @@ public class CursorTest {
 
         // Get a list of SearchHits we can work with
         SearchRequestBuilder builder = client.prepareSearch(index)
-                .setSearchType(SearchType.QUERY_THEN_FETCH)
+                .setSearchType(SearchType.SCAN)
                 .setTypes(type)
                 .setQuery(QueryUtil.getIdQuery(ids))
-                .addSort(QueryUtil.getIdSort());
+                .setScroll(new TimeValue(600000))
+                .setSize(1);
         
         SearchResponse response = builder.execute().actionGet();
-        hits = response.getHits();
+        totalSize = (int)response.getHits().getTotalHits();
+        
+        scrollBuilder = client.prepareSearchScroll(response.getScrollId())
+                .setScroll(new TimeValue(600000));
     }
 
     @AfterClass
@@ -55,46 +63,46 @@ public class CursorTest {
 
     @Test
     public void testSize() {
-        Cursor instance = new Cursor(new Person(), hits);
+        ScrollCursor<Person> instance = new ScrollCursor(new Person(), scrollBuilder, totalSize);
         assertEquals(5, instance.size());
     }
 
     @Test
     public void testIsEmpty() {
-        Cursor instance = new Cursor(new Person(), hits);
+        ScrollCursor<Person> instance = new ScrollCursor(new Person(), scrollBuilder, totalSize);
         assertFalse(instance.isEmpty());
     }
 
     @Test
     public void testIterator() {
-        Cursor<Person> instance = new Cursor(new Person(), hits);
+        ScrollCursor<Person> instance = new ScrollCursor(new Person(), scrollBuilder, totalSize);
         Iterator<Person> it = instance.iterator();
                 
         // Make sure we got a real iterator instance
         assertNotNull(it);
+        assertEquals(5, instance.size());
         
         // Run through the iterator and see what we get.
-        int id = 1;
+        List<String> idList = Arrays.asList(ids);
         while (it.hasNext()) {
             Person p = it.next();
-            assertEquals(Integer.toString(id), p.getId());
-            id ++;
+            assertTrue(idList.contains(p.getId()));
         }
     }
 
     @Test
     public void testCollection() {
-        Cursor<Person> instance = new Cursor(new Person(), hits);
+        ScrollCursor<Person> instance = new ScrollCursor(new Person(), scrollBuilder, totalSize);
         Collection<Person> coll = instance.collection();
                 
         // Make sure we got a real iterator instance
         assertNotNull(coll);
+        assertEquals(5, coll.size());
         
         // Run through the collection and see what we get.
-        int id = 1;
+        List<String> idList = Arrays.asList(ids);
         for (Person p: coll) {
-            assertEquals(Integer.toString(id), p.getId());
-            id ++;
+            assertTrue(idList.contains(p.getId()));
         }
     }
 }
