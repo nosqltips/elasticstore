@@ -91,6 +91,31 @@ public class ScrollCursorPagingTest {
     }
 
     @Test
+    public void testIterator2() throws Exception {
+        // Get a list of SearchHits we can work with
+        SearchRequestBuilder builder = client.prepareSearch(index)
+                .setSearchType(SearchType.SCAN)
+                .setTypes(type)
+                .setQuery(QueryUtil.getIdQuery(ids))
+                .setScroll(new TimeValue(600000))
+                .setSize(1);
+        
+        ScrollCursor<Person> instance = new ScrollCursor(new Person(), builder, client);
+        Iterator<Person> it = instance.iterator();
+                
+        // Make sure we got a real iterator instance
+        assertNotNull(it);
+        assertEquals(5, instance.size());
+        
+        // Run through the iterator and see what we get.
+        List<String> idList = Arrays.asList(ids);
+        while (it.hasNext()) {
+            Person p = it.next();
+            assertTrue(idList.contains(p.getId()));
+        }
+    }
+
+    @Test
     public void testCollection() {
         ScrollCursor<Person> instance = new ScrollCursor(new Person(), scrollBuilder, totalSize);
         Collection<Person> coll = instance.collection();
@@ -103,6 +128,48 @@ public class ScrollCursorPagingTest {
         List<String> idList = Arrays.asList(ids);
         for (Person p: coll) {
             assertTrue(idList.contains(p.getId()));
+        }
+    }
+
+    @Test
+    public void testCollection2() throws Exception {
+        // Get a list of SearchHits we can work with
+        SearchRequestBuilder builder = client.prepareSearch(index)
+                .setSearchType(SearchType.SCAN)
+                .setTypes(type)
+                .setQuery(QueryUtil.getIdQuery(ids))
+                .setScroll(new TimeValue(600000))
+                .setSize(1);
+        
+        ScrollCursor<Person> instance = new ScrollCursor(new Person(), builder, client);
+        Collection<Person> coll = instance.collection();
+                
+        // Make sure we got a real iterator instance
+        assertNotNull(coll);
+        assertEquals(5, coll.size());
+        
+        // Run through the collection and see what we get.
+        List<String> idList = Arrays.asList(ids);
+        for (Person p: coll) {
+            assertTrue(idList.contains(p.getId()));
+        }
+    }
+
+    @Test
+    public void testBadScanType() {
+        // Get a list of SearchHits we can work with
+        SearchRequestBuilder builder = client.prepareSearch(index)
+                .setSearchType(SearchType.DFS_QUERY_AND_FETCH)
+                .setTypes(type)
+                .setQuery(QueryUtil.getIdQuery(ids))
+                .setScroll(new TimeValue(600000))
+                .setSize(10);
+        
+        try {
+            ScrollCursor<Person> instance = new ScrollCursor(new Person(), builder, client);
+            assertTrue(false);
+        } catch (Exception e) {
+            assertTrue(true);
         }
     }
 }
