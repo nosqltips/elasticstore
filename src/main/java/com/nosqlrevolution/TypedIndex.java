@@ -8,6 +8,9 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.SearchHits;
 
 /**
  * Accept and return strongly typed objects.
@@ -17,11 +20,11 @@ import java.util.logging.Logger;
  */
 public class TypedIndex<T> extends Index<T> {
     private static final Logger logger = Logger.getLogger(TypedIndex.class.getName());
-    private final T t;
+    private final Class<T> t;
     private final QueryService service;
     private final MappingUtil<T> mapping = new MappingUtil<T>();
     
-    public TypedIndex(T t, ElasticStore store, String index, String iType) throws Exception {
+    public TypedIndex(Class<T> t, ElasticStore store, String index, String iType) throws Exception {
         super (store, index, iType);
         this.t = t;
         service = new QueryService(store.getClient());
@@ -41,13 +44,13 @@ public class TypedIndex<T> extends Index<T> {
    @Override
     public T find() {
         String s = service.getSingle(getIndex(), getType());
-        return mapping.get(t, s);
+        return mapping.get(s, t);
     }
     
     @Override
     public <T>T find(Class<T> clazz) {
         String s = service.getSingle(getIndex(), getType());
-        return mapping.asClass(s, clazz);
+        return mapping.get(s, clazz);
     }
     
     @Override
@@ -61,8 +64,12 @@ public class TypedIndex<T> extends Index<T> {
     }
     
     @Override
-    public Cursor findAll() {
-        return super.findAll();
+    public Cursor<T> findAll() {
+        SearchRequestBuilder builder = service.findAll(getIndex(), getType());
+        SearchResponse response = builder.execute().actionGet();
+        SearchHits h = response.getHits();
+        
+        return new BlockCursor<T>(t, h, builder, 0, 100);
     }
 
     @Override
@@ -78,13 +85,17 @@ public class TypedIndex<T> extends Index<T> {
     @Override
     public T findById(String id) {
         String s = service.realTimeGet(getIndex(), getType(), id);
-        return mapping.get(t, s);
+        if (s != null) {
+            return mapping.get(s, t);
+        } else {
+            return null;
+        }
     }
     
     @Override
     public <T>T findById(String id, Class<T> clazz) {
         String s = service.realTimeGet(getIndex(), getType(), id);
-        return mapping.asClass(s, clazz);
+        return mapping.get(s, clazz);
     }
 
     @Override
@@ -92,7 +103,7 @@ public class TypedIndex<T> extends Index<T> {
         String[] s = service.realTimeMultiGet(getIndex(), getType(), ids);
         T[] out = (T[]) Array.newInstance(t.getClass(), s.length);
         for (int i=0; i<s.length; i++) {
-            out[i] = mapping.get(t, s[i]);
+            out[i] = mapping.get(s[i], t);
         }
         
         return out;
@@ -103,7 +114,7 @@ public class TypedIndex<T> extends Index<T> {
         String[] json = service.realTimeMultiGet(getIndex(), getType(), ids);
         List<T> list = new ArrayList<T>();
         for (String s: json) {
-            list.add(mapping.asClass(s, clazz));
+            list.add(mapping.get(s, clazz));
         }
         
         return (T[]) Array.newInstance(clazz, list.size());
@@ -149,11 +160,11 @@ public class TypedIndex<T> extends Index<T> {
         // TODO: Need to gather results from index operation
         OperationStatus status = new OperationStatus();
         if (t.length == 1) {
-            service.index(getIndex(), getType(), mapping.asString(t[0]), AnnotationHelper.getDocumentId(t[0], getIdField()));
+            service.index(getIndex(), getType(), mapping.get(t[0]), AnnotationHelper.getDocumentId(t[0], getIdField()));
         } else {
             List<String> list = new ArrayList<String>();
             for (T o: t) {
-                list.add(mapping.asString(o));
+                list.add(mapping.get(o));
                 // TODO: what do we do with null ids? bail with exception? Report the error with OperationStatus?
             }
             service.bulkIndex(getIndex(), getType(), list.toArray(new String[list.size()]));
@@ -167,11 +178,11 @@ public class TypedIndex<T> extends Index<T> {
         // TODO: need to gather operation results and return
         OperationStatus status = new OperationStatus();
         if (t.length == 1) {
-            service.index(getIndex(), getType(), mapping.asString(t[0]), AnnotationHelper.getDocumentId(t[0], getIdField()));
+            service.index(getIndex(), getType(), mapping.get(t[0]), AnnotationHelper.getDocumentId(t[0], getIdField()));
         } else {
             List<String> list = new ArrayList<String>();
             for (T o: t) {
-                list.add(mapping.asString(o));
+                list.add(mapping.get(o));
                 // TODO: what do we do with null ids? bail with exception? Report the error with OperationStatus?
             }
             service.bulkIndex(getIndex(), getType(), list.toArray(new String[list.size()]));
@@ -185,11 +196,11 @@ public class TypedIndex<T> extends Index<T> {
         // TODO: need to gather operation results and return
         OperationStatus status = new OperationStatus();
         if (t.size() == 1) {
-            service.index(getIndex(), getType(), mapping.asString(t.get(0)), AnnotationHelper.getDocumentId(t.get(0), getIdField()));
+            service.index(getIndex(), getType(), mapping.get(t.get(0)), AnnotationHelper.getDocumentId(t.get(0), getIdField()));
         } else {
             List<String> list = new ArrayList<String>();
             for (T o: t) {
-                list.add(mapping.asString(o));
+                list.add(mapping.get(o));
                 // TODO: what do we do with null ids? bail with exception? Report the error with OperationStatus?
             }
             service.bulkIndex(getIndex(), getType(), list.toArray(new String[list.size()]));
@@ -203,11 +214,11 @@ public class TypedIndex<T> extends Index<T> {
         // TODO: need to gather operation results and return
         OperationStatus status = new OperationStatus();
         if (t.size() == 1) {
-            service.index(getIndex(), getType(), mapping.asString(t.get(0)), AnnotationHelper.getDocumentId(t.get(0), getIdField()));
+            service.index(getIndex(), getType(), mapping.get(t.get(0)), AnnotationHelper.getDocumentId(t.get(0), getIdField()));
         } else {
             List<String> list = new ArrayList<String>();
             for (T o: t) {
-                list.add(mapping.asString(o));
+                list.add(mapping.get(o));
                 // TODO: what do we do with null ids? bail with exception? Report the error with OperationStatus?
             }
             service.bulkIndex(getIndex(), getType(), list.toArray(new String[list.size()]));

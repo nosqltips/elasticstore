@@ -1,6 +1,8 @@
 package com.nosqlrevolution.service;
 
 import com.google.common.collect.Lists;
+import com.nosqlrevolution.BlockCursor;
+import com.nosqlrevolution.Cursor;
 import com.nosqlrevolution.WriteOperation;
 import com.nosqlrevolution.util.JsonUtil;
 import com.nosqlrevolution.util.QueryUtil;
@@ -60,6 +62,24 @@ public class QueryService {
         } else {
             return null;
         }
+    }
+    
+    /**
+     * Return the all of the documents from this index and type
+     * 
+     * @param index
+     * @param type
+     * @return 
+     */
+    public SearchRequestBuilder findAll(String index, String type) {
+        SearchRequestBuilder builder = client.prepareSearch(index)
+                .setSearchType(SearchType.QUERY_THEN_FETCH)
+                .setTypes(type)
+                .setFilter(QueryUtil.getMatchAllFilter())
+                .setFrom(0)
+                .setSize(100);
+        
+        return builder;
     }
     
     /**

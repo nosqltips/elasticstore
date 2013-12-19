@@ -58,19 +58,19 @@ public class BlockCursorPagingTest {
 
     @Test
     public void testSize() {
-        BlockCursor<Person> instance = new BlockCursor(new Person(), hits, builder, 0, 1);
+        BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, hits, builder, 0, 1);
         assertEquals(5, instance.size());
     }
 
     @Test
     public void testIsEmpty() {
-        BlockCursor<Person> instance = new BlockCursor(new Person(), hits, builder, 0, 1);
+        BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, hits, builder, 0, 1);
         assertFalse(instance.isEmpty());
     }
 
     @Test
     public void testIterator() {
-        BlockCursor<Person> instance = new BlockCursor(new Person(), hits, builder, 0, 1);
+        BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, hits, builder, 0, 1);
         Iterator<Person> it = instance.iterator();
                 
         // Make sure we got a real iterator instance
@@ -88,7 +88,7 @@ public class BlockCursorPagingTest {
 
     @Test
     public void testCollection() {
-        BlockCursor<Person> instance = new BlockCursor(new Person(), hits, builder, 0, 1);
+        BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, hits, builder, 0, 1);
         Collection<Person> coll = instance.collection();
                 
         // Make sure we got a real iterator instance

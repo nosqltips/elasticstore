@@ -1,7 +1,6 @@
 package com.nosqlrevolution;
 
 import java.util.Collection;
-import java.util.Iterator;
 import org.elasticsearch.search.SearchHits;
 
 /**
@@ -9,14 +8,9 @@ import org.elasticsearch.search.SearchHits;
  * @author cbrown
  * @param <E>
  */
-public class CursorCollection<E> implements Collection<E> {
-    private E e;
-    private SearchHits hits;
-
-    public CursorCollection(E e, SearchHits hits) {
-        this.e = e;
-        this.hits = hits;
-    }
+public abstract class CursorCollection<E> implements Collection<E> {
+    protected Class<E> e;
+    protected SearchHits hits;
     
     public int size() {
         return (int)hits.getTotalHits();
@@ -24,10 +18,6 @@ public class CursorCollection<E> implements Collection<E> {
 
     public boolean isEmpty() {
         return hits.getTotalHits() == 0;
-    }
-
-    public Iterator<E> iterator() {
-        return new CursorIterator(e, hits);
     }
 
     // NotImplemented

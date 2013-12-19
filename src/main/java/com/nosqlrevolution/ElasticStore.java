@@ -261,7 +261,7 @@ public class ElasticStore {
         }
         
         // TODO: need to catch and throw an exception here
-        return new TypedIndex(clazz.newInstance(), this, index, type);
+        return new TypedIndex(clazz, this, index, type);
     }
 
     /**
@@ -285,7 +285,7 @@ public class ElasticStore {
         }
 
         // TODO: need to catch and throw an exception here
-        return new TypedIndex(clazz.newInstance(), this, index, type);
+        return new TypedIndex(clazz, this, index, type);
     }
 
     /**

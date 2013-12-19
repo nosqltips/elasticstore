@@ -63,19 +63,19 @@ public class ScrollCursorPagingTest {
 
     @Test
     public void testSize() {
-        ScrollCursor<Person> instance = new ScrollCursor(new Person(), scrollBuilder, totalSize);
+        ScrollCursor<Person> instance = new ScrollCursor<Person>(Person.class, scrollBuilder, totalSize);
         assertEquals(5, instance.size());
     }
 
     @Test
     public void testIsEmpty() {
-        ScrollCursor<Person> instance = new ScrollCursor(new Person(), scrollBuilder, totalSize);
+        ScrollCursor<Person> instance = new ScrollCursor<Person>(Person.class, scrollBuilder, totalSize);
         assertFalse(instance.isEmpty());
     }
 
     @Test
     public void testIterator() {
-        ScrollCursor<Person> instance = new ScrollCursor(new Person(), scrollBuilder, totalSize);
+        ScrollCursor<Person> instance = new ScrollCursor<Person>(Person.class, scrollBuilder, totalSize);
         Iterator<Person> it = instance.iterator();
                 
         // Make sure we got a real iterator instance
@@ -100,7 +100,7 @@ public class ScrollCursorPagingTest {
                 .setScroll(new TimeValue(600000))
                 .setSize(1);
         
-        ScrollCursor<Person> instance = new ScrollCursor(new Person(), builder, client);
+        ScrollCursor<Person> instance = new ScrollCursor<Person>(Person.class, builder, client);
         Iterator<Person> it = instance.iterator();
                 
         // Make sure we got a real iterator instance
@@ -117,7 +117,7 @@ public class ScrollCursorPagingTest {
 
     @Test
     public void testCollection() {
-        ScrollCursor<Person> instance = new ScrollCursor(new Person(), scrollBuilder, totalSize);
+        ScrollCursor<Person> instance = new ScrollCursor<Person>(Person.class, scrollBuilder, totalSize);
         Collection<Person> coll = instance.collection();
                 
         // Make sure we got a real iterator instance
@@ -141,7 +141,7 @@ public class ScrollCursorPagingTest {
                 .setScroll(new TimeValue(600000))
                 .setSize(1);
         
-        ScrollCursor<Person> instance = new ScrollCursor(new Person(), builder, client);
+        ScrollCursor<Person> instance = new ScrollCursor<Person>(Person.class, builder, client);
         Collection<Person> coll = instance.collection();
                 
         // Make sure we got a real iterator instance
@@ -166,7 +166,7 @@ public class ScrollCursorPagingTest {
                 .setSize(10);
         
         try {
-            ScrollCursor<Person> instance = new ScrollCursor(new Person(), builder, client);
+            ScrollCursor<Person> instance = new ScrollCursor<Person>(Person.class, builder, client);
             assertTrue(false);
         } catch (Exception e) {
             assertTrue(true);

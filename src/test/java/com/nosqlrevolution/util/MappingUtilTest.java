@@ -29,7 +29,7 @@ public class MappingUtilTest {
      */
     @Test
     public void testAsString() {
-        String result = instance.asString(person);
+        String result = instance.get(person);
         System.out.println("person=" + result);
         assertNotNull(result);
         assertEquals(json, result);
@@ -40,7 +40,7 @@ public class MappingUtilTest {
      */
     @Test
     public void testAsClass() {
-        Person result = instance.asClass(json, Person.class);
+        Person result = instance.get(json, Person.class);
         System.out.println("result");
         assertEquals(person.getId(), result.getId());
     }

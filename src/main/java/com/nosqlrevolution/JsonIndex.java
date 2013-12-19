@@ -8,6 +8,9 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.SearchHits;
 
 /**
  * Accept and return json strings
@@ -44,7 +47,7 @@ public class JsonIndex<T> extends Index<String> {
     @Override
     public <T>T find(Class<T> clazz) {
         String s = service.getSingle(getIndex(), getType());
-        return mapping.asClass(s, clazz);
+        return mapping.get(s, clazz);
     }
     
     @Override
@@ -59,7 +62,11 @@ public class JsonIndex<T> extends Index<String> {
     
     @Override
     public Cursor findAll() {
-        return super.findAll();
+        SearchRequestBuilder builder = service.findAll(getIndex(), getType());
+        SearchResponse response = builder.execute().actionGet();
+        SearchHits h = response.getHits();
+        
+        return new BlockCursor<String>(String.class, h, builder, 0, 100);
     }
 
     @Override
@@ -80,7 +87,11 @@ public class JsonIndex<T> extends Index<String> {
     @Override
     public <T>T findById(String id, Class<T> clazz) {
         String s = service.realTimeGet(getIndex(), getType(), id);
-        return mapping.asClass(s, clazz);
+        if (s != null) {
+            return mapping.get(s, clazz);
+        } else {
+            return null;
+        }
     }
     
     @Override
@@ -93,7 +104,7 @@ public class JsonIndex<T> extends Index<String> {
         String[] json = service.realTimeMultiGet(getIndex(), getType(), ids);
         List<T> list = new ArrayList<T>();
         for (String s: json) {
-            list.add(mapping.asClass(s, clazz));
+            list.add(mapping.get(s, clazz));
         }
         
         return (T[]) Array.newInstance(clazz, list.size());

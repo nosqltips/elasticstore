@@ -17,19 +17,18 @@ import org.elasticsearch.common.unit.TimeValue;
  * @author cbrown
  * @param <E>
  */
-public class ScrollCursor<E> extends AbstractCollection {
-    private final E e;
+public class ScrollCursor<E> extends Cursor<E> {
     private final SearchScrollRequestBuilder scrollBuilder;
     private final int totalSize;
     
-    public ScrollCursor(E e, SearchScrollRequestBuilder scrollBuilder, int totalSize) {
+    public ScrollCursor(Class<E> e, SearchScrollRequestBuilder scrollBuilder, int totalSize) {
         // TODO: may need to check for null here.
         this.e = e;
         this.scrollBuilder = scrollBuilder;
         this.totalSize = totalSize;
     }
     
-    public ScrollCursor(E e, SearchRequestBuilder searchBuilder, Client client) throws Exception {
+    public ScrollCursor(Class<E> e, SearchRequestBuilder searchBuilder, Client client) throws Exception {
         // TODO: may need to check for null here.
         this.e = e;
         if (searchBuilder.request().searchType() == SearchType.SCAN) {

@@ -8,6 +8,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 /**
  *
  * @author cbrown
+ * @param <T>
  */
 public class MappingUtil<T> {
     private static final Logger logger = Logger.getLogger(MappingUtil.class.getName());
@@ -27,7 +28,7 @@ public class MappingUtil<T> {
     }
     
     // TODO: probably need a throws here to bubble the exception up.
-    public String asString(T t) {
+    public String get(T t) {
         try {
             return mapper.writeValueAsString(t);
         } catch (IOException ex) {
@@ -39,7 +40,7 @@ public class MappingUtil<T> {
     }
     
     // TODO: probably need a throws here to bubble the exception up.
-    public <T>T asClass(String json, Class<T> clazz) {
+    public <T>T get(String json, Class<T> clazz) {
         try {
             return mapper.readValue(json, clazz);
         } catch (IOException ex) {

@@ -55,19 +55,19 @@ public class CursorTest {
 
     @Test
     public void testSize() {
-        Cursor instance = new Cursor(new Person(), hits);
+        Cursor instance = new SimpleCursor(Person.class, hits);
         assertEquals(5, instance.size());
     }
 
     @Test
     public void testIsEmpty() {
-        Cursor instance = new Cursor(new Person(), hits);
+        Cursor instance = new SimpleCursor(Person.class, hits);
         assertFalse(instance.isEmpty());
     }
 
     @Test
     public void testIterator() {
-        Cursor<Person> instance = new Cursor(new Person(), hits);
+        Cursor instance = new SimpleCursor(Person.class, hits);
         Iterator<Person> it = instance.iterator();
                 
         // Make sure we got a real iterator instance
@@ -84,7 +84,7 @@ public class CursorTest {
 
     @Test
     public void testCollection() {
-        Cursor<Person> instance = new Cursor(new Person(), hits);
+        SimpleCursor instance = new SimpleCursor(Person.class, hits);
         Collection<Person> coll = instance.collection();
                 
         // Make sure we got a real iterator instance

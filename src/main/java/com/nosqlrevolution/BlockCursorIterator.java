@@ -1,7 +1,5 @@
 package com.nosqlrevolution;
 
-import com.nosqlrevolution.util.MappingUtil;
-import java.util.Iterator;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHits;
@@ -12,17 +10,12 @@ import org.elasticsearch.search.SearchHits;
  * @author cbrown
  * @param <E>
  */
-public class BlockCursorIterator<E> implements Iterator<E> {
-    private final E e;
-    private final MappingUtil<E> mapping = new MappingUtil<E>();
-    private SearchHits hits;
+public class BlockCursorIterator<E> extends CursorIterator<E> {
     private final SearchRequestBuilder builder;
     private int from = 0;
     private int size = 0;
-    private int iter = 0;
-    private int iterAll = 0;
     
-    protected BlockCursorIterator(E e, SearchHits firstHits, SearchRequestBuilder builder, int from, int size) {
+    protected BlockCursorIterator(Class<E> e, SearchHits firstHits, SearchRequestBuilder builder, int from, int size) {
         this.e = e;
         this.hits = firstHits;
         this.builder = builder;
@@ -53,15 +46,10 @@ public class BlockCursorIterator<E> implements Iterator<E> {
         }
         
         // Return the next object
-        E returnE = mapping.get(e, hits.getAt(iter).sourceAsString());
+        E returnE = mapping.get(hits.getAt(iter).sourceAsString(), e);
         iter ++;
         iterAll ++;
         return returnE;
-    }
-
-    @Override
-    public void remove() {
-        throw new UnsupportedOperationException();
     }
     
     private SearchHits getNextPage() {

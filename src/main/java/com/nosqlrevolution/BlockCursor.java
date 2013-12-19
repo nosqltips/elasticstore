@@ -12,18 +12,16 @@ import org.elasticsearch.search.SearchHits;
  * @author cbrown
  * @param <E>
  */
-public class BlockCursor<E> extends AbstractCollection {
-    private final E e;
-    private final SearchHits firstHits;
+public class BlockCursor<E> extends Cursor<E> {
     private final SearchRequestBuilder builder;
     private final int from;
     private final int size;
     private final int totalSize;
     
-    public BlockCursor(E e, SearchHits firstHits, SearchRequestBuilder builder, int from, int size) {
+    public BlockCursor(Class<E> e, SearchHits firstHits, SearchRequestBuilder builder, int from, int size) {
         // TODO: may need to check for null here.
         this.e = e;
-        this.firstHits = firstHits;
+        this.hits = firstHits;
         this.builder = builder;
         this.from = from;
         this.size = size;
@@ -33,11 +31,11 @@ public class BlockCursor<E> extends AbstractCollection {
     
     @Override
     public Iterator<E> iterator() {
-        return new BlockCursorIterator(e, firstHits, builder, from, size);
+        return new BlockCursorIterator(e, hits, builder, from, size);
     }
 
     public Collection<E> collection() {
-        return new BlockCursorCollection(e, firstHits, builder, from, size);
+        return new BlockCursorCollection(e, hits, builder, from, size);
     }
 
     @Override

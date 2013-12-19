@@ -9,17 +9,12 @@ import org.elasticsearch.search.SearchHits;
  * 
  * @author cbrown
  */
-public class CursorIterator<E> implements Iterator<E> {
-    private E e;
-    private final MappingUtil<E> mapping = new MappingUtil<E>();
-    private SearchHits hits;
-    private int iter = 0;
-    private int iterAll = 0;
-    
-    protected CursorIterator(E e, SearchHits hits) {
-        this.e = e;
-        this.hits = hits;
-    }
+public abstract class CursorIterator<E> implements Iterator<E> {
+    protected Class<E> e;
+    protected final MappingUtil<E> mapping = new MappingUtil<E>();
+    protected SearchHits hits;
+    protected int iter = 0;
+    protected int iterAll = 0;
 
     @Override
     public boolean hasNext() {
@@ -28,7 +23,7 @@ public class CursorIterator<E> implements Iterator<E> {
 
     @Override
     public E next() {
-        E returnE = mapping.get(e, hits.getAt(iter).sourceAsString());
+        E returnE = mapping.get(hits.getAt(iter).sourceAsString(), e);
         iter ++;
         iterAll ++;
         return returnE;

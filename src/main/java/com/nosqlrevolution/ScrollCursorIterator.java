@@ -1,7 +1,5 @@
 package com.nosqlrevolution;
 
-import com.nosqlrevolution.util.MappingUtil;
-import java.util.Iterator;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequestBuilder;
 import org.elasticsearch.search.SearchHits;
@@ -12,17 +10,12 @@ import org.elasticsearch.search.SearchHits;
  * @author cbrown
  * @param <E>
  */
-public class ScrollCursorIterator<E> implements Iterator<E> {
-    private final E e;
-    private final MappingUtil<E> mapping = new MappingUtil<E>();
-    private SearchHits hits;
+public class ScrollCursorIterator<E> extends CursorIterator<E> {
     private final SearchScrollRequestBuilder scrollBuilder;
     private final int totalSize;
-    private int iter = 0;
-    private int iterAll = 0;
     private boolean hasNext = true;
     
-    protected ScrollCursorIterator(E e, SearchScrollRequestBuilder scrollBuilder, int totalSize) {
+    protected ScrollCursorIterator(Class<E> e, SearchScrollRequestBuilder scrollBuilder, int totalSize) {
         this.e = e;
         this.scrollBuilder = scrollBuilder;
         this.totalSize = totalSize;
@@ -52,17 +45,12 @@ public class ScrollCursorIterator<E> implements Iterator<E> {
         }
         
         // Return the next object
-        E returnE = mapping.get(e, hits.getAt(iter).sourceAsString());
+        E returnE = mapping.get(hits.getAt(iter).sourceAsString(), e);
         iter ++;
         iterAll ++;
         return returnE;
     }
 
-    @Override
-    public void remove() {
-        throw new UnsupportedOperationException();
-    }
-    
     private SearchHits getNextPage() {
         // Get search response
         SearchResponse response = scrollBuilder.execute().actionGet();
