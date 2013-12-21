@@ -35,10 +35,10 @@ public abstract class Index<T> {
     /**
      * Return a count of documents in this index or indexes specified by the query.
      * 
-     * @param qb
+     * @param query
      * @return 
      */
-    public abstract long count(Query qb);
+    public abstract long count(Query query);
     
     /**
      * Return a single document from the entire index.
@@ -66,10 +66,10 @@ public abstract class Index<T> {
      * Return a single document from the entire index specified by the query.
      * The document will be returned as specified by Type.
      * 
-     * @param qb
+     * @param query
      * @return 
      */
-    public T find(Query qb) {
+    public T find(Query query) {
         throw new UnsupportedOperationException();
     }
     
@@ -78,11 +78,11 @@ public abstract class Index<T> {
      * The document will be returned as specified by Class.
      * 
      * @param <T>
-     * @param qb
+     * @param query
      * @param clazz
      * @return 
      */
-    public <T>T find(Query qb, Class<T> clazz) {
+    public <T>T find(Query query, Class<T> clazz) {
         throw new UnsupportedOperationException();
     }
 
@@ -98,10 +98,10 @@ public abstract class Index<T> {
     /**
      * Return a Cursor containing a list of documents in this index or indexes specified by the query.
      * 
-     * @param qb
+     * @param query
      * @return 
      */
-    public Cursor findAll(Query qb) {
+    public Cursor findAll(Query query) {
         throw new UnsupportedOperationException();
     }
 
@@ -109,11 +109,11 @@ public abstract class Index<T> {
      * Return a Cursor containing a list of documents in this index or indexes specified by the query.
      * The documents will be returned as specified by Class.
      * 
-     * @param qb
+     * @param query
      * @param clazz
      * @return 
      */
-    public Cursor findAll(Query qb, Class clazz) {
+    public Cursor findAll(Query query, Class clazz) {
         throw new UnsupportedOperationException();
     }
 
@@ -198,10 +198,10 @@ public abstract class Index<T> {
     /**
      * Remove documents from the index as specified by the query.
      * 
-     * @param qb
+     * @param query
      * @return 
      */
-    public OperationStatus remove(Query qb) {
+    public OperationStatus remove(Query query) {
         throw new UnsupportedOperationException();
     }
     

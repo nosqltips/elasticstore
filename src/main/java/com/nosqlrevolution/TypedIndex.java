@@ -36,9 +36,8 @@ public class TypedIndex<T> extends Index<T> {
     }
     
     @Override
-    public long count(Query qb) {
-        // TODO need to finish this;
-        return 0;
+    public long count(Query query) {
+        return service.count(query, getIndex(), getType());
     }
     
    @Override
@@ -54,32 +53,48 @@ public class TypedIndex<T> extends Index<T> {
     }
     
     @Override
-    public T find(Query qb) {
-        return super.find(qb);
+    public T find(Query query) {
+        String s = service.getSingle(query, getIndex(), getType());
+        return mapping.get(s, t);
     }
     
     @Override
-    public <T>T find(Query qb, Class<T> clazz) {
-        return super.find(qb, clazz);
+    public <T>T find(Query query, Class<T> clazz) {
+        String s = service.getSingle(query, getIndex(), getType());
+        return mapping.get(s, clazz);
     }
     
     @Override
     public Cursor<T> findAll() {
         SearchRequestBuilder builder = service.findAll(getIndex(), getType());
-        SearchResponse response = builder.execute().actionGet();
-        SearchHits h = response.getHits();
+        SearchHits h = service.executeBuilder(builder);
+        if (h != null) {
+            return new BlockCursor<T>(t, h, builder, 0, 100);
+        }
         
-        return new BlockCursor<T>(t, h, builder, 0, 100);
+        return null;
     }
 
     @Override
-    public Cursor findAll(Query qb) {
-        return super.findAll(qb);
+    public Cursor findAll(Query query) {
+        SearchRequestBuilder builder = service.findAll(query, getIndex(), getType());
+        SearchHits h = service.executeBuilder(builder);
+        if (h != null) {
+            return new BlockCursor<T>(t, h, builder, 0, 100);
+        }
+        
+        return null;
     }
 
     @Override
-    public Cursor findAll(Query qb, Class clazz) {
-        return super.findAll(qb, clazz);
+    public Cursor<T> findAll(Query query, Class clazz) {
+        SearchRequestBuilder builder = service.findAll(query, getIndex(), getType());
+        SearchHits h = service.executeBuilder(builder);
+        if (h != null) {
+            return new BlockCursor<T>(clazz, h, builder, 0, 100);
+        }
+        
+        return null;
     }
 
     @Override
@@ -151,8 +166,8 @@ public class TypedIndex<T> extends Index<T> {
     }
     
     @Override
-    public OperationStatus remove(Query qb) {
-        return super.remove(qb);
+    public OperationStatus remove(Query query) {
+        return super.remove(query);
     }
     
     @Override

@@ -2,8 +2,8 @@ package com.nosqlrevolution.service;
 
 import com.google.common.collect.Lists;
 import com.nosqlrevolution.BlockCursor;
-import com.nosqlrevolution.Cursor;
 import com.nosqlrevolution.WriteOperation;
+import com.nosqlrevolution.query.Query;
 import com.nosqlrevolution.util.JsonUtil;
 import com.nosqlrevolution.util.QueryUtil;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -23,6 +23,7 @@ import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.search.SearchHits;
 
 /**
@@ -46,13 +47,24 @@ public class QueryService {
      * @return 
      */
     public String getSingle(String index, String type) {
+        return getSingle(null, index, type);
+    }
+    
+    /**
+     * Return the first document from this index and type
+     * 
+     * @param query
+     * @param index
+     * @param type
+     * @return 
+     */
+    public String getSingle(Query query, String index, String type) {
         SearchRequestBuilder builder = client.prepareSearch(index)
                 .setSearchType(SearchType.QUERY_THEN_FETCH)
                 .setTypes(type)
-                .setFilter(QueryUtil.getMatchAllFilter())
                 .setFrom(0)
                 .setSize(1);
-        
+
         SearchResponse response = builder.execute().actionGet();
         
         // Update the SearchQuery results
@@ -72,12 +84,30 @@ public class QueryService {
      * @return 
      */
     public SearchRequestBuilder findAll(String index, String type) {
+        return findAll(null, index, type);
+    }
+    
+    /**
+     * Return the all of the documents from this index and type
+     * 
+     * @param query
+     * @param index
+     * @param type
+     * @return 
+     */
+    public SearchRequestBuilder findAll(Query query, String index, String type) {
         SearchRequestBuilder builder = client.prepareSearch(index)
                 .setSearchType(SearchType.QUERY_THEN_FETCH)
                 .setTypes(type)
-                .setFilter(QueryUtil.getMatchAllFilter())
                 .setFrom(0)
                 .setSize(100);
+        
+        QueryBuilder qb = QueryResolverService.resolve(query);
+        if (qb != null) {
+            builder.setQuery(qb);
+        } else {
+            builder.setFilter(QueryUtil.getMatchAllFilter());
+        }
         
         return builder;
     }
@@ -132,12 +162,7 @@ public class QueryService {
      * @return 
      */
     public long count(String[] indexes, String[] types) {
-        CountRequestBuilder builder = client.prepareCount()
-                .setIndices(indexes)
-                .setTypes(types);
-        
-        CountResponse response = builder.execute().actionGet();
-        return response.getCount();
+        return count(null, indexes, types);
     }
 
     /**
@@ -148,14 +173,53 @@ public class QueryService {
      * @return 
      */
     public long count(String index, String type) {
+        return count(null, index, type);
+    }
+    
+    /**
+     * Return a count of all documents from many indexes and types
+     * 
+     * @param query
+     * @param indexes
+     * @param types
+     * @return 
+     */
+    public long count(Query query, String[] indexes, String[] types) {
         CountRequestBuilder builder = client.prepareCount()
-                .setIndices(index)
-                .setTypes(type);
+                .setIndices(indexes)
+                .setTypes(types);
+        
+        QueryBuilder qb = QueryResolverService.resolve(query);
+        if (qb != null) {
+            builder.setQuery(qb);
+        }
         
         CountResponse response = builder.execute().actionGet();
         return response.getCount();
     }
 
+    /**
+     * Return a count of all documents from this index and type
+     * 
+     * @param query
+     * @param index
+     * @param type
+     * @return 
+     */
+    public long count(Query query, String index, String type) {
+        CountRequestBuilder builder = client.prepareCount()
+                .setIndices(index)
+                .setTypes(type);
+        
+        QueryBuilder qb = QueryResolverService.resolve(query);
+        if (qb != null) {
+            builder.setQuery(qb);
+        }
+        
+        CountResponse response = builder.execute().actionGet();
+        return response.getCount();
+    }
+    
     /**
      * Index a single document using the standard indexing api
      * Passes in a default WriteOperation
@@ -279,7 +343,7 @@ public class QueryService {
      * 
      * @param index
      * @param type
-     * @param id
+     * @param ids
      * @return 
      */
     public boolean deleteAll(String index, String type, String[] ids) {
@@ -319,5 +383,22 @@ public class QueryService {
      */
     public void refresh(String index) {
         client.admin().indices().refresh(new RefreshRequest(index)).actionGet();
+    }
+
+    /**
+     * Execute a SearchRequestBuilder and get a SearchResponse.
+     * 
+     * @param builder
+     * @return 
+     */
+    public SearchHits executeBuilder(SearchRequestBuilder builder) {
+        try {
+            SearchResponse response = builder.execute().actionGet();
+            if (response != null) {
+                return response.getHits();
+            }
+        } catch (Exception e) {}
+
+        return null;
     }
 }
