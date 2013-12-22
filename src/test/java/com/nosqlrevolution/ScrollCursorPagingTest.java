@@ -8,8 +8,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.SearchScrollRequestBuilder;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.unit.TimeValue;
@@ -28,8 +26,6 @@ public class ScrollCursorPagingTest {
     private static final String index = "test";
     private static final String type = "data";
     private static String[] ids;
-    private static SearchScrollRequestBuilder scrollBuilder;
-    private static int totalSize;
     
     @BeforeClass
     public static void setUpClass() throws Exception {
@@ -40,20 +36,6 @@ public class ScrollCursorPagingTest {
         
         // Create ids
         ids = new String[]{"1", "2", "3", "4", "5"};
-
-        // Get a list of SearchHits we can work with
-        SearchRequestBuilder builder = client.prepareSearch(index)
-                .setSearchType(SearchType.SCAN)
-                .setTypes(type)
-                .setQuery(QueryUtil.getIdQuery(ids))
-                .setScroll(new TimeValue(600000))
-                .setSize(1);
-        
-        SearchResponse response = builder.execute().actionGet();
-        totalSize = (int)response.getHits().getTotalHits();
-        
-        scrollBuilder = client.prepareSearchScroll(response.getScrollId())
-                .setScroll(new TimeValue(600000));
     }
 
     @AfterClass
@@ -62,20 +44,44 @@ public class ScrollCursorPagingTest {
     }
 
     @Test
-    public void testSize() {
-        ScrollCursor<Person> instance = new ScrollCursor<Person>(Person.class, scrollBuilder, totalSize);
+    public void testSize() throws Exception {
+        // Get a list of SearchHits we can work with
+        SearchRequestBuilder builder = client.prepareSearch(index)
+                .setSearchType(SearchType.SCAN)
+                .setTypes(type)
+                .setQuery(QueryUtil.getIdQuery(ids))
+                .setScroll(new TimeValue(600000))
+                .setSize(1);
+        
+        ScrollCursor<Person> instance = new ScrollCursor<Person>(Person.class, builder, client);
         assertEquals(5, instance.size());
     }
 
     @Test
-    public void testIsEmpty() {
-        ScrollCursor<Person> instance = new ScrollCursor<Person>(Person.class, scrollBuilder, totalSize);
+    public void testIsEmpty() throws Exception {
+        // Get a list of SearchHits we can work with
+        SearchRequestBuilder builder = client.prepareSearch(index)
+                .setSearchType(SearchType.SCAN)
+                .setTypes(type)
+                .setQuery(QueryUtil.getIdQuery(ids))
+                .setScroll(new TimeValue(600000))
+                .setSize(1);
+        
+        ScrollCursor<Person> instance = new ScrollCursor<Person>(Person.class, builder, client);
         assertFalse(instance.isEmpty());
     }
 
     @Test
-    public void testIterator() {
-        ScrollCursor<Person> instance = new ScrollCursor<Person>(Person.class, scrollBuilder, totalSize);
+    public void testIterator() throws Exception {
+        // Get a list of SearchHits we can work with
+        SearchRequestBuilder builder = client.prepareSearch(index)
+                .setSearchType(SearchType.SCAN)
+                .setTypes(type)
+                .setQuery(QueryUtil.getIdQuery(ids))
+                .setScroll(new TimeValue(600000))
+                .setSize(1);
+        
+        ScrollCursor<Person> instance = new ScrollCursor<Person>(Person.class, builder, client);
         Iterator<Person> it = instance.iterator();
                 
         // Make sure we got a real iterator instance
@@ -116,23 +122,7 @@ public class ScrollCursorPagingTest {
     }
 
     @Test
-    public void testCollection() {
-        ScrollCursor<Person> instance = new ScrollCursor<Person>(Person.class, scrollBuilder, totalSize);
-        Collection<Person> coll = instance.collection();
-                
-        // Make sure we got a real iterator instance
-        assertNotNull(coll);
-        assertEquals(5, coll.size());
-        
-        // Run through the collection and see what we get.
-        List<String> idList = Arrays.asList(ids);
-        for (Person p: coll) {
-            assertTrue(idList.contains(p.getId()));
-        }
-    }
-
-    @Test
-    public void testCollection2() throws Exception {
+    public void testCollection() throws Exception {
         // Get a list of SearchHits we can work with
         SearchRequestBuilder builder = client.prepareSearch(index)
                 .setSearchType(SearchType.SCAN)
@@ -171,5 +161,25 @@ public class ScrollCursorPagingTest {
         } catch (Exception e) {
             assertTrue(true);
         }
+    }
+
+    @Test
+    public void testArray() throws Exception {
+        // Get a list of SearchHits we can work with
+        SearchRequestBuilder builder = client.prepareSearch(index)
+                .setSearchType(SearchType.SCAN)
+                .setTypes(type)
+                .setQuery(QueryUtil.getIdQuery(ids))
+                .setScroll(new TimeValue(600000))
+                .setSize(1);
+        
+        ScrollCursor<Person> instance = new ScrollCursor<Person>(Person.class, builder, client);
+        
+        Collection<Person> coll = instance.collection();
+        Person[] persons = instance.toArray(new Person[coll.size()]);
+                
+        // Make sure we got a real iterator instance
+        assertNotNull(persons);
+        assertEquals(5, persons.length);
     }
 }

@@ -12,6 +12,7 @@ import org.elasticsearch.search.SearchHits;
  */
 public class BlockCursorIterator<E> extends CursorIterator<E> {
     private final SearchRequestBuilder builder;
+    private final int totalSize;
     private int from = 0;
     private int size = 0;
     
@@ -19,16 +20,17 @@ public class BlockCursorIterator<E> extends CursorIterator<E> {
         this.e = e;
         this.hits = firstHits;
         this.builder = builder;
+        this.totalSize = (int)hits.getTotalHits();
         this.from = from;
         this.size = size;
     }
     
     @Override
     public boolean hasNext() {
-        if ((from * size) > hits.getTotalHits()) { 
+        if ((from * size) > totalSize) { 
             return false;
         } else {
-            return iterAll < hits.getTotalHits();
+            return iterAll < totalSize;
         }
     }
 

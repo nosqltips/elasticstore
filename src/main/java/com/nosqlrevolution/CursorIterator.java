@@ -8,6 +8,7 @@ import org.elasticsearch.search.SearchHits;
  * This is a simple iterator that expects all of the data to be in a single set of hits.
  * 
  * @author cbrown
+ * @param <E>
  */
 public abstract class CursorIterator<E> implements Iterator<E> {
     protected Class<E> e;

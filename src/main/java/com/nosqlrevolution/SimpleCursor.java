@@ -23,7 +23,7 @@ public class SimpleCursor<E> extends Cursor<E> {
     }
 
     public Collection<E> collection() {
-        return new SimpleCursorCollection(e, hits);
+        return this;
     }
 
     @Override

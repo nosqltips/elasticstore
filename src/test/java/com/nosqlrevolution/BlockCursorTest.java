@@ -107,4 +107,16 @@ public class BlockCursorTest {
         }
         assertEquals(5, id);
     }
+
+    @Test
+    public void testArray() {
+        BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, hits, builder, 0, 10);
+        
+        Collection<Person> coll = instance.collection();
+        Person[] persons = instance.toArray(new Person[coll.size()]);
+                
+        // Make sure we got a real iterator instance
+        assertNotNull(persons);
+        assertEquals(5, persons.length);
+    }
 }

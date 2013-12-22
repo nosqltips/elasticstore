@@ -20,7 +20,7 @@ import org.junit.Test;
  *
  * @author cbrown
  */
-public class CursorTest {
+public class SimpleCursorTest {
     private static Client client;
     private static final String index = "test";
     private static final String type = "data";
@@ -55,19 +55,19 @@ public class CursorTest {
 
     @Test
     public void testSize() {
-        Cursor instance = new SimpleCursor(Person.class, hits);
+        Cursor<Person> instance = new SimpleCursor(Person.class, hits);
         assertEquals(5, instance.size());
     }
 
     @Test
     public void testIsEmpty() {
-        Cursor instance = new SimpleCursor(Person.class, hits);
+        Cursor<Person> instance = new SimpleCursor(Person.class, hits);
         assertFalse(instance.isEmpty());
     }
 
     @Test
     public void testIterator() {
-        Cursor instance = new SimpleCursor(Person.class, hits);
+        Cursor<Person> instance = new SimpleCursor(Person.class, hits);
         Iterator<Person> it = instance.iterator();
                 
         // Make sure we got a real iterator instance
@@ -84,7 +84,7 @@ public class CursorTest {
 
     @Test
     public void testCollection() {
-        SimpleCursor instance = new SimpleCursor(Person.class, hits);
+        SimpleCursor<Person> instance = new SimpleCursor(Person.class, hits);
         Collection<Person> coll = instance.collection();
                 
         // Make sure we got a real iterator instance
@@ -96,5 +96,17 @@ public class CursorTest {
             assertEquals(Integer.toString(id), p.getId());
             id ++;
         }
+    }
+
+    @Test
+    public void testArray() {
+        SimpleCursor<Person> instance = new SimpleCursor(Person.class, hits);
+        
+        Collection<Person> coll = instance.collection();
+        Person[] persons = instance.toArray(new Person[coll.size()]);
+                
+        // Make sure we got a real iterator instance
+        assertNotNull(persons);
+        assertEquals(5, persons.length);
     }
 }

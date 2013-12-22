@@ -1,6 +1,5 @@
 package com.nosqlrevolution;
 
-import java.util.AbstractCollection;
 import java.util.Collection;
 import java.util.Iterator;
 import org.elasticsearch.action.search.SearchRequestBuilder;
@@ -35,7 +34,7 @@ public class BlockCursor<E> extends Cursor<E> {
     }
 
     public Collection<E> collection() {
-        return new BlockCursorCollection(e, hits, builder, from, size);
+        return this;
     }
 
     @Override
