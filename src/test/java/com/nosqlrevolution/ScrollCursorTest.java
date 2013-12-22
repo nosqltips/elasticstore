@@ -4,14 +4,12 @@ import com.nosqlrevolution.model.Person;
 import com.nosqlrevolution.util.QueryUtil;
 import com.nosqlrevolution.util.TestDataHelper;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.unit.TimeValue;
-import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 import org.junit.AfterClass;
 import static org.junit.Assert.*;
 import org.junit.BeforeClass;
@@ -25,17 +23,13 @@ public class ScrollCursorTest {
     private static Client client;
     private static final String index = "test";
     private static final String type = "data";
-    private static String[] ids;
+    private static String[] ids = new String[]{"1", "2", "3", "4", "5"};
     
     @BeforeClass
     public static void setUpClass() throws Exception {
-        client = nodeBuilder().local(true).data(true).node().client();
-        client.admin().cluster().prepareHealth().setWaitForGreenStatus().execute().actionGet();
+        client = TestDataHelper.createTestClient();
         
         TestDataHelper.indexCursorTestData(client, index, type);
-        
-        // Create ids
-        ids = new String[]{"1", "2", "3", "4", "5"};
     }
 
     @AfterClass
@@ -54,7 +48,7 @@ public class ScrollCursorTest {
                 .setSize(10);
         
         ScrollCursor<Person> instance = new ScrollCursor<Person>(Person.class, builder, client);
-        assertEquals(5, instance.size());
+        assertEquals(ids.length, instance.size());
     }
 
     @Test
@@ -107,15 +101,14 @@ public class ScrollCursorTest {
                 .setSize(10);
         
         ScrollCursor<Person> instance = new ScrollCursor<Person>(Person.class, builder, client);
-        Collection<Person> coll = instance.collection();
                 
         // Make sure we got a real iterator instance
-        assertNotNull(coll);
-        assertEquals(5, coll.size());
+        assertNotNull(instance);
+        assertEquals(ids.length, instance.size());
 
         // Run through the collection and see what we get.
         List<String> idList = Arrays.asList(ids);
-        for (Person p: coll) {
+        for (Person p: instance) {
             assertTrue(idList.contains(p.getId()));
         }
     }
@@ -150,11 +143,10 @@ public class ScrollCursorTest {
         
         ScrollCursor<Person> instance = new ScrollCursor<Person>(Person.class, builder, client);
         
-        Collection<Person> coll = instance.collection();
-        Person[] persons = instance.toArray(new Person[coll.size()]);
+        Person[] persons = instance.toArray(new Person[instance.size()]);
                 
         // Make sure we got a real iterator instance
         assertNotNull(persons);
-        assertEquals(5, persons.length);
+        assertEquals(ids.length, persons.length);
     }
 }

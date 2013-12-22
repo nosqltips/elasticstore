@@ -3,13 +3,36 @@ package com.nosqlrevolution.util;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.common.settings.ImmutableSettings;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
+import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
 /**
  *
  * @author Craig
  */
 public class TestDataHelper {
+    public static Client createTestClient() {
+        ImmutableSettings.Builder builder = ImmutableSettings.settingsBuilder()
+            .put("es.index.storage.type", "memory");
+            
+        Client client = nodeBuilder()
+                .settings(builder)
+                .local(true)
+                .data(true)
+                .node()
+                .client();
+
+        client.admin()
+                .cluster()
+                .prepareHealth()
+                .setWaitForGreenStatus()
+                .execute()
+                .actionGet();
+
+        return client;
+    }
+    
     public static void indexCursorTestData(Client client, String index, String type) {
         try {
         BulkRequestBuilder bulkRequest = client.prepareBulk();

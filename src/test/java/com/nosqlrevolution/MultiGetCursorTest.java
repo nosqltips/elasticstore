@@ -1,14 +1,11 @@
 package com.nosqlrevolution;
 
 import com.nosqlrevolution.model.Person;
+import com.nosqlrevolution.service.QueryService;
 import com.nosqlrevolution.util.TestDataHelper;
-import com.nosqlrevolution.util.QueryUtil;
+import java.util.Arrays;
 import java.util.Iterator;
-import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.search.SearchHits;
 import org.junit.AfterClass;
 import static org.junit.Assert.*;
 import org.junit.BeforeClass;
@@ -18,28 +15,19 @@ import org.junit.Test;
  *
  * @author cbrown
  */
-public class SimpleCursorTest {
+public class MultiGetCursorTest {
     private static Client client;
     private static final String index = "test";
     private static final String type = "data";
-    private static String[] ids = new String[]{"1", "2", "3", "4", "5"};
-    private static SearchHits hits;
-
+    private static final String[] ids = new String[]{"1", "2", "3", "4", "5"};
+    private static QueryService service;
+    
     @BeforeClass
     public static void setUpClass() throws Exception {
         client = TestDataHelper.createTestClient();
         
         TestDataHelper.indexCursorTestData(client, index, type);
-
-        // Get a list of SearchHits we can work with
-        SearchRequestBuilder builder = client.prepareSearch(index)
-                .setSearchType(SearchType.QUERY_THEN_FETCH)
-                .setTypes(type)
-                .setQuery(QueryUtil.getIdQuery(ids))
-                .addSort(QueryUtil.getIdSort());
-        
-        SearchResponse response = builder.execute().actionGet();
-        hits = response.getHits();
+        service = new QueryService(client);
     }
 
     @AfterClass
@@ -49,51 +37,44 @@ public class SimpleCursorTest {
 
     @Test
     public void testSize() {
-        Cursor<Person> instance = new SimpleCursor(Person.class, hits);
+        Cursor<Person> instance = new MultiGetCursor(Person.class, service.realTimeMultiGet(index, type, ids));
         assertEquals(ids.length, instance.size());
     }
 
     @Test
     public void testIsEmpty() {
-        Cursor<Person> instance = new SimpleCursor(Person.class, hits);
+        Cursor<Person> instance = new MultiGetCursor(Person.class, service.realTimeMultiGet(index, type, ids));
         assertFalse(instance.isEmpty());
     }
 
     @Test
     public void testIterator() {
-        Cursor<Person> instance = new SimpleCursor(Person.class, hits);
+        Cursor<Person> instance = new MultiGetCursor(Person.class, service.realTimeMultiGet(index, type, ids));
         Iterator<Person> it = instance.iterator();
                 
         // Make sure we got a real iterator instance
         assertNotNull(it);
         
         // Run through the iterator and see what we get.
-        int id = 1;
         while (it.hasNext()) {
             Person p = it.next();
-            assertEquals(Integer.toString(id), p.getId());
-            id ++;
+            assertTrue(Arrays.binarySearch(ids, p.getId()) >= 0);
         }
     }
 
     @Test
     public void testCollection() {
-        SimpleCursor<Person> instance = new SimpleCursor(Person.class, hits);
-                
-        // Make sure we got a real iterator instance
-        assertNotNull(instance);
+        MultiGetCursor<Person> instance = new MultiGetCursor(Person.class, service.realTimeMultiGet(index, type, ids));
         
         // Run through the collection and see what we get.
-        int id = 1;
         for (Person p: instance) {
-            assertEquals(Integer.toString(id), p.getId());
-            id ++;
+            assertTrue(Arrays.binarySearch(ids, p.getId()) >= 0);
         }
     }
 
     @Test
     public void testArray() {
-        SimpleCursor<Person> instance = new SimpleCursor(Person.class, hits);
+        MultiGetCursor<Person> instance = new MultiGetCursor(Person.class, service.realTimeMultiGet(index, type, ids));
         
         Person[] persons = instance.toArray(new Person[instance.size()]);
                 

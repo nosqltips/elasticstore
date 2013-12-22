@@ -1,6 +1,5 @@
 package com.nosqlrevolution;
 
-import java.util.Collection;
 import java.util.Iterator;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
@@ -38,9 +37,5 @@ public class ScrollCursor<E> extends Cursor<E> {
     @Override
     public Iterator<E> iterator() {
         return new ScrollCursorIterator(e, scrollBuilder, totalSize);
-    }
-
-    public Collection<E> collection() {
-        return this;
     }
 }

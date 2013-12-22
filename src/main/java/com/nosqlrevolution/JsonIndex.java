@@ -4,12 +4,10 @@ import com.nosqlrevolution.query.Query;
 import com.nosqlrevolution.service.QueryService;
 import com.nosqlrevolution.util.JsonUtil;
 import com.nosqlrevolution.util.MappingUtil;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHits;
 
 /**
@@ -61,7 +59,7 @@ public class JsonIndex<T> extends Index<String> {
     }
     
     @Override
-    public Cursor findAll() {
+    public Cursor<String> findAll() {
         SearchRequestBuilder builder = service.findAll(getIndex(), getType());
         SearchHits h = service.executeBuilder(builder);
         if (h != null) {
@@ -72,7 +70,7 @@ public class JsonIndex<T> extends Index<String> {
     }
 
     @Override
-    public Cursor findAll(Query query) {
+    public Cursor<String> findAll(Query query) {
         SearchRequestBuilder builder = service.findAll(query, getIndex(), getType());
         SearchHits h = service.executeBuilder(builder);
         if (h != null) {
@@ -83,7 +81,7 @@ public class JsonIndex<T> extends Index<String> {
     }
 
     @Override
-    public Cursor findAll(Query query, Class clazz) {
+    public Cursor<String> findAll(Query query, Class clazz) {
         SearchRequestBuilder builder = service.findAll(query, getIndex(), getType());
         SearchHits h = service.executeBuilder(builder);
         if (h != null) {
@@ -109,19 +107,15 @@ public class JsonIndex<T> extends Index<String> {
     }
     
     @Override
-    public String[] findAllById(String... ids) {
-        return service.realTimeMultiGet(getIndex(), getType(), ids);
+    public Cursor findAllById(String... ids) {
+        String[] json = service.realTimeMultiGet(getIndex(), getType(), ids);
+        return new MultiGetCursor<String>(String.class, json);
     }
     
     @Override
-    public <T>T[] findAllById(Class<T> clazz, String... ids) {
-        String[] json = service.realTimeMultiGet(getIndex(), getType(), ids);
-        List<T> list = new ArrayList<T>();
-        for (String s: json) {
-            list.add(mapping.get(s, clazz));
-        }
-        
-        return (T[]) Array.newInstance(clazz, list.size());
+    public Cursor<String> findAllById(Class clazz, String... ids) {
+        String[] json = service.realTimeMultiGet(getIndex(), getType(), ids);        
+        return new MultiGetCursor<String>(clazz, json);
     }
             
     @Override

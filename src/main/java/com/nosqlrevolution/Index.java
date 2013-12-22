@@ -146,7 +146,7 @@ public abstract class Index<T> {
      * @param ids
      * @return 
      */
-    public T[] findAllById(String... ids) {
+    public Cursor findAllById(String... ids) {
         throw new UnsupportedOperationException();
     }
     
@@ -154,12 +154,11 @@ public abstract class Index<T> {
      * Return a Cursor containing a list of documents in this index or indexes specified by the list of ids.
      * The documents will be returned as specified by Class.
      * 
-     * @param <T>
      * @param clazz
      * @param ids
      * @return 
      */
-    public <T>T[] findAllById(Class<T> clazz, String... ids) {
+    public Cursor<T> findAllById(Class<T> clazz, String... ids) {
         throw new UnsupportedOperationException();
     }
     

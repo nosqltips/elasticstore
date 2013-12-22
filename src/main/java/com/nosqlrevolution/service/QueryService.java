@@ -141,7 +141,7 @@ public class QueryService {
      */
     public String[] realTimeMultiGet(String index, String type, String[] ids) {
         MultiGetRequestBuilder builder = client.prepareMultiGet()
-                .add(index, type, Lists.asList(ids[0], ids))
+                .add(index, type, ids)
                 .setRealtime(Boolean.TRUE);
         
         MultiGetResponse response = builder.execute().actionGet();

@@ -1,6 +1,5 @@
 package com.nosqlrevolution;
 
-import java.util.Collection;
 import java.util.Iterator;
 import org.elasticsearch.search.SearchHits;
 
@@ -20,10 +19,6 @@ public class SimpleCursor<E> extends Cursor<E> {
     @Override
     public Iterator<E> iterator() { 
         return new SimpleCursorIterator(e, hits);
-    }
-
-    public Collection<E> collection() {
-        return this;
     }
 
     @Override

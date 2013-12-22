@@ -4,12 +4,10 @@ import com.nosqlrevolution.query.Query;
 import com.nosqlrevolution.service.QueryService;
 import com.nosqlrevolution.util.MappingUtil;
 import com.nosqlrevolution.util.AnnotationHelper;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHits;
 
 /**
@@ -114,25 +112,15 @@ public class TypedIndex<T> extends Index<T> {
     }
 
     @Override
-    public T[] findAllById(String... ids) {
-        String[] s = service.realTimeMultiGet(getIndex(), getType(), ids);
-        T[] out = (T[]) Array.newInstance(t.getClass(), s.length);
-        for (int i=0; i<s.length; i++) {
-            out[i] = mapping.get(s[i], t);
-        }
-        
-        return out;
+    public Cursor findAllById(String... ids) {
+        String[] json = service.realTimeMultiGet(getIndex(), getType(), ids);
+        return new MultiGetCursor<T>(t, json);
     }
     
     @Override
-    public <T>T[] findAllById(Class<T> clazz, String... ids) {
-        String[] json = service.realTimeMultiGet(getIndex(), getType(), ids);
-        List<T> list = new ArrayList<T>();
-        for (String s: json) {
-            list.add(mapping.get(s, clazz));
-        }
-        
-        return (T[]) Array.newInstance(clazz, list.size());
+    public Cursor<T> findAllById(Class<T> clazz, String... ids) {
+        String[] json = service.realTimeMultiGet(getIndex(), getType(), ids);        
+        return new MultiGetCursor<T>(clazz, json);
     }
     
     @Override

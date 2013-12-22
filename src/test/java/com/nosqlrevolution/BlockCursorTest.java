@@ -4,13 +4,11 @@ import com.nosqlrevolution.model.Person;
 import com.nosqlrevolution.service.QueryService;
 import com.nosqlrevolution.util.QueryUtil;
 import com.nosqlrevolution.util.TestDataHelper;
-import java.util.Collection;
 import java.util.Iterator;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
-import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 import org.elasticsearch.search.SearchHits;
 import org.junit.AfterClass;
 import static org.junit.Assert.*;
@@ -25,19 +23,15 @@ public class BlockCursorTest {
     private static Client client;
     private static final String index = "test";
     private static final String type = "data";
-    private static String[] ids;
+    private static String[] ids = new String[]{"1", "2", "3", "4", "5"};
     private static SearchHits hits;
     private static SearchRequestBuilder builder;
     
     @BeforeClass
     public static void setUpClass() throws Exception {
-        client = nodeBuilder().local(true).data(true).node().client();
-        client.admin().cluster().prepareHealth().setWaitForGreenStatus().execute().actionGet();
+        client = TestDataHelper.createTestClient();
         
         TestDataHelper.indexCursorTestData(client, index, type);
-        
-        // Create ids
-        ids = new String[]{"1", "2", "3", "4", "5"};
 
         // Get a list of SearchHits we can work with
         builder = client.prepareSearch(index)
@@ -58,13 +52,13 @@ public class BlockCursorTest {
     @Test
     public void count() {
         long count = new QueryService(client).count(index, type);
-        assertEquals(5, count);
+        assertEquals(ids.length, count);
     }
     
     @Test
     public void testSize() {
         BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, hits, builder, 0, 10);
-        assertEquals(5, instance.size());
+        assertEquals(ids.length, instance.size());
     }
 
     @Test
@@ -80,7 +74,7 @@ public class BlockCursorTest {
                 
         // Make sure we got a real iterator instance
         assertNotNull(it);
-        assertEquals(5, instance.size());
+        assertEquals(ids.length, instance.size());
         
         // Run through the iterator and see what we get.
         int id = 0;
@@ -94,15 +88,14 @@ public class BlockCursorTest {
     @Test
     public void testCollection() {
         BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, hits, builder, 0, 10);
-        Collection<Person> coll = instance.collection();
                 
         // Make sure we got a real iterator instance
-        assertNotNull(coll);
-        assertEquals(5, coll.size());
+        assertNotNull(instance);
+        assertEquals(5, instance.size());
         
         // Run through the collection and see what we get.
         int id = 0;
-        for (Person p: coll) {
+        for (Person p: instance) {
             assertEquals(Integer.toString(++id), p.getId());
         }
         assertEquals(5, id);
@@ -112,8 +105,7 @@ public class BlockCursorTest {
     public void testArray() {
         BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, hits, builder, 0, 10);
         
-        Collection<Person> coll = instance.collection();
-        Person[] persons = instance.toArray(new Person[coll.size()]);
+        Person[] persons = instance.toArray(new Person[instance.size()]);
                 
         // Make sure we got a real iterator instance
         assertNotNull(persons);

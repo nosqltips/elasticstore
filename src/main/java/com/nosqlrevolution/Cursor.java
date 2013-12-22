@@ -13,7 +13,7 @@ import org.elasticsearch.search.SearchHits;
 public abstract class Cursor<E> extends AbstractCollection<E> {
     protected Class<E> e;
     protected SearchHits hits;
-    
+
     @Override
     public int size() {
         return (int)hits.getTotalHits();
