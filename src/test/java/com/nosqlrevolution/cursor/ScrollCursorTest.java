@@ -1,5 +1,6 @@
-package com.nosqlrevolution;
+package com.nosqlrevolution.cursor;
 
+import com.nosqlrevolution.cursor.ScrollCursor;
 import com.nosqlrevolution.model.Person;
 import com.nosqlrevolution.util.QueryUtil;
 import com.nosqlrevolution.util.TestDataHelper;

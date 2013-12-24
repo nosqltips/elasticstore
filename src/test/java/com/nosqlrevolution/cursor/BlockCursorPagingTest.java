@@ -1,7 +1,7 @@
-package com.nosqlrevolution;
+package com.nosqlrevolution.cursor;
 
+import com.nosqlrevolution.cursor.BlockCursor;
 import com.nosqlrevolution.model.Person;
-import com.nosqlrevolution.service.QueryService;
 import com.nosqlrevolution.util.QueryUtil;
 import com.nosqlrevolution.util.TestDataHelper;
 import java.util.Iterator;
@@ -19,7 +19,7 @@ import org.junit.Test;
  * TODO: Need to really test the block iterating capability.
  * @author cbrown
  */
-public class BlockCursorTest {
+public class BlockCursorPagingTest {
     private static Client client;
     private static final String index = "test";
     private static final String type = "data";
@@ -32,13 +32,15 @@ public class BlockCursorTest {
         client = TestDataHelper.createTestClient();
         
         TestDataHelper.indexCursorTestData(client, index, type);
-
+        
         // Get a list of SearchHits we can work with
         builder = client.prepareSearch(index)
                 .setSearchType(SearchType.QUERY_THEN_FETCH)
                 .setTypes(type)
-                .setQuery(QueryUtil.getIdQuery(ids))
-                .addSort(QueryUtil.getIdSort());
+                .setQuery(QueryUtil.getMatchAllQuery())
+                .addSort(QueryUtil.getIdSort())
+                .setFrom(0)
+                .setSize(1);
         
         SearchResponse response = builder.execute().actionGet();
         hits = response.getHits();
@@ -50,26 +52,20 @@ public class BlockCursorTest {
     }
 
     @Test
-    public void count() {
-        long count = new QueryService(client).count(index, type);
-        assertEquals(ids.length, count);
-    }
-    
-    @Test
     public void testSize() {
-        BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, hits, builder, 0, 10);
-        assertEquals(ids.length, instance.size());
+        BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, hits, builder, 0, 1);
+        assertEquals(5, instance.size());
     }
 
     @Test
     public void testIsEmpty() {
-        BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, hits, builder, 0, 10);
+        BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, hits, builder, 0, 1);
         assertFalse(instance.isEmpty());
     }
 
     @Test
     public void testIterator() {
-        BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, hits, builder, 0, 10);
+        BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, hits, builder, 0, 1);
         Iterator<Person> it = instance.iterator();
                 
         // Make sure we got a real iterator instance
@@ -87,11 +83,11 @@ public class BlockCursorTest {
 
     @Test
     public void testCollection() {
-        BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, hits, builder, 0, 10);
+        BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, hits, builder, 0, 1);
                 
         // Make sure we got a real iterator instance
         assertNotNull(instance);
-        assertEquals(5, instance.size());
+        assertEquals(ids.length, instance.size());
         
         // Run through the collection and see what we get.
         int id = 0;

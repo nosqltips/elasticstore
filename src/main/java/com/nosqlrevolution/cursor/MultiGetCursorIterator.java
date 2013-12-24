@@ -1,4 +1,4 @@
-package com.nosqlrevolution;
+package com.nosqlrevolution.cursor;
 
 /**
  * This iterator can go back to the search engine and iterate through blocks of data returned from ES.

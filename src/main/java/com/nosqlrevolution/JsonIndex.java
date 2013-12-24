@@ -1,5 +1,8 @@
 package com.nosqlrevolution;
 
+import com.nosqlrevolution.cursor.MultiGetCursor;
+import com.nosqlrevolution.cursor.BlockCursor;
+import com.nosqlrevolution.cursor.Cursor;
 import com.nosqlrevolution.query.Query;
 import com.nosqlrevolution.service.QueryService;
 import com.nosqlrevolution.util.JsonUtil;

@@ -1,4 +1,4 @@
-package com.nosqlrevolution;
+package com.nosqlrevolution.cursor;
 
 import java.util.Iterator;
 import org.elasticsearch.search.SearchHits;

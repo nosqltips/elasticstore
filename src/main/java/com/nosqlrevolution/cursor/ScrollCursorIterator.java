@@ -1,7 +1,7 @@
-package com.nosqlrevolution;
+package com.nosqlrevolution.cursor;
 
-import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchScrollRequestBuilder;
 import org.elasticsearch.search.SearchHits;
 
 /**
@@ -10,24 +10,21 @@ import org.elasticsearch.search.SearchHits;
  * @author cbrown
  * @param <E>
  */
-public class BlockCursorIterator<E> extends CursorIterator<E> {
-    private final SearchRequestBuilder builder;
+public class ScrollCursorIterator<E> extends CursorIterator<E> {
+    private final SearchScrollRequestBuilder scrollBuilder;
     private final int totalSize;
-    private int from = 0;
-    private int size = 0;
+    private boolean hasNext = true;
     
-    protected BlockCursorIterator(Class<E> e, SearchHits firstHits, SearchRequestBuilder builder, int from, int size) {
+    protected ScrollCursorIterator(Class<E> e, SearchScrollRequestBuilder scrollBuilder, int totalSize) {
         this.e = e;
-        this.hits = firstHits;
-        this.builder = builder;
-        this.totalSize = (int)hits.getTotalHits();
-        this.from = from;
-        this.size = size;
+        this.scrollBuilder = scrollBuilder;
+        this.totalSize = totalSize;
+        hits = getNextPage();
     }
     
     @Override
     public boolean hasNext() {
-        if ((from * size) > totalSize) { 
+        if (! hasNext) { 
             return false;
         } else {
             return iterAll < totalSize;
@@ -53,15 +50,14 @@ public class BlockCursorIterator<E> extends CursorIterator<E> {
         iterAll ++;
         return returnE;
     }
-    
-    private SearchHits getNextPage() {
-        // increment next page
-        from ++;
-        builder.setFrom(from * size);
-        
-        // Get search response
-        SearchResponse response = builder.execute().actionGet();
 
+    private SearchHits getNextPage() {
+        // Get search response
+        SearchResponse response = scrollBuilder.execute().actionGet();
+
+        if (response.getHits().getHits().length == 0) {
+            hasNext = false;
+        }
         // Return the next set of hits
         return response.getHits();
     }

@@ -1,7 +1,7 @@
 package com.nosqlrevolution.service;
 
 import com.google.common.collect.Lists;
-import com.nosqlrevolution.BlockCursor;
+import com.nosqlrevolution.cursor.BlockCursor;
 import com.nosqlrevolution.WriteOperation;
 import com.nosqlrevolution.query.Query;
 import com.nosqlrevolution.util.JsonUtil;

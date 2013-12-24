@@ -1,5 +1,6 @@
 package com.nosqlrevolution;
 
+import com.nosqlrevolution.cursor.Cursor;
 import com.nosqlrevolution.query.Query;
 import java.util.List;
 import java.util.logging.Level;

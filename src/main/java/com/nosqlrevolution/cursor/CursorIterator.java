@@ -1,4 +1,4 @@
-package com.nosqlrevolution;
+package com.nosqlrevolution.cursor;
 
 import com.nosqlrevolution.util.MappingUtil;
 import java.util.Iterator;
