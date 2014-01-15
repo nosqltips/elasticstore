@@ -5,10 +5,10 @@ package com.nosqlrevolution.query;
  * @author cbrown
  */
 public class Condition {
-    private Object field;
+    private String field;
+    private Field specialField;
     private Operator operator;
-    private Object value;
-    private Object[] values;
+    private String[] values;
     
     private CompletedCondition[] conditions;    
     
@@ -33,7 +33,7 @@ public class Condition {
     public static CompletedCondition or(CompletedCondition... conditions) {
         return (
                 new Condition().setConditions(conditions)
-                .setOperator(Operator.OR)
+                .setOperator(Operator.AND)
                 .getCompletedCondition()
             );
     }
@@ -46,7 +46,7 @@ public class Condition {
     public static CompletedCondition not(CompletedCondition... conditions) {
         return (
                 new Condition().setConditions(conditions)
-                .setOperator(Operator.OR)
+                .setOperator(Operator.NOT)
                 .getCompletedCondition()
             );
     }
@@ -56,16 +56,17 @@ public class Condition {
      * @param field
      * @return 
      */
-    public static Condition field(Object field) {
+    public static Condition field(String field) {
         return new Condition().setField(field);
     }
     
     /**
-     * condition on entire document
+     * condition on field
+     * @param specialField
      * @return 
      */
-    public static Condition all() {
-        return new Condition().setField("_all");
+    public static Condition field(Field specialField) {
+        return new Condition().setField(specialField);
     }
     
     
@@ -74,31 +75,34 @@ public class Condition {
      * @param value
      * @return 
      */
-    public CompletedCondition equal(Object value) {
+    public CompletedCondition equal(String value) {
         return this.setOperator(Operator.EQUAL).setValue(value).getCompletedCondition();
     }
     
     /**
      * not equal condition
      * @param value 
+     * @return  
      */
-    public CompletedCondition notEqual(Object value) {
+    public CompletedCondition notEqual(String value) {
         return this.setOperator(Operator.NOT_EQUAL).setValue(value).getCompletedCondition();
     }
     
     /**
      * less than condition
      * @param value 
+     * @return  
      */
-    public CompletedCondition lt(Object value) {
+    public CompletedCondition lt(String value) {
         return this.setOperator(Operator.EQUAL).setValue(value).getCompletedCondition();
     }
     
     /**
      * less than or equal condition
      * @param value 
+     * @return  
      */
-    public CompletedCondition lte(Object value) {
+    public CompletedCondition lte(String value) {
         return this.setOperator(Operator.NOT_EQUAL).setValue(value).getCompletedCondition();
     }
     
@@ -107,61 +111,72 @@ public class Condition {
      * @param value
      * @return 
      */
-    public CompletedCondition gt(Object value) {
+    public CompletedCondition gt(String value) {
         return this.setOperator(Operator.EQUAL).setValue(value).getCompletedCondition();
     }
     
     /**
      * greater than or equal condition
      * @param value 
+     * @return  
      */
-    public CompletedCondition gte(Object value) {
+    public CompletedCondition gte(String value) {
         return this.setOperator(Operator.NOT_EQUAL).setValue(value).getCompletedCondition();
     }
     
     /**
-     * in condition
-     * @param value 
+     * in condition 
+     * @param values
+     * @return 
      */
-    public CompletedCondition in(Object... values) {
+    public CompletedCondition in(String... values) {
         return this.setOperator(Operator.IN).setValues(values).getCompletedCondition();
     }
     
     /**
      * not in condition
      * @param values 
+     * @return  
      */
-    public CompletedCondition notIn(Object... values) {
+    public CompletedCondition notIn(String... values) {
         return this.setOperator(Operator.NOT_IN).setValues(values).getCompletedCondition();
     }
     
     /**
      * must contain condition
      * @param value 
+     * @return  
      */
-    public CompletedCondition mustContain(Object... value) {
+    public CompletedCondition mustContain(String... value) {
         return this.setOperator(Operator.MUST).setValues(value).getCompletedCondition();
     }
     
     /**
      * should contain condition
      * @param values 
+     * @return  
      */
-    public CompletedCondition shouldContain(Object... values) {
+    public CompletedCondition shouldContain(String... values) {
         return this.setOperator(Operator.SHOULD).setValues(values).getCompletedCondition();
     }
     
     /**
      * must not contain condition
      * @param values 
+     * @return  
      */
-    public CompletedCondition mustNotContain(Object... values) {
+    public CompletedCondition mustNotContain(String... values) {
         return this.setOperator(Operator.MUST_NOT).setValues(values).getCompletedCondition();
     }
 
     // Field operators
-    private Condition setField(Object field) {
+    private Condition setField(String field) {
         this.field = field;
+        return this;
+    }
+    
+    private Condition setField(Field specialField) {
+        this.specialField = specialField;
         return this;
     }
     
@@ -170,12 +185,12 @@ public class Condition {
         return this;
     }
     
-    private Condition setValue(Object value) {
-        this.value = value;
+    private Condition setValue(String value) {
+        this.values = new String[]{value};
         return this;
     }
     
-    private Condition setValues(Object[] values) {
+    private Condition setValues(String[] values) {
         this.values = values;
         return this;
     }
@@ -194,7 +209,7 @@ public class Condition {
     }
     
     /**
-     * Inner class that is used to give public access to just the fields we want, and separate them form the parent.
+     * Inner class that is used to give public access to just the fields we want, and separate them from the parent.
      * This also helps us to better construct Condition objects as the CompletedCondition is returned 
      * when we've reached an end point in object construction;
      */
@@ -204,8 +219,16 @@ public class Condition {
         * return the field
         * @return 
         */
-        public Object getField() {
+        public String getField() {
             return field;
+        }
+
+        /**
+        * return the field
+        * @return 
+        */
+        public Field getSpecialField() {
+            return specialField;
         }
 
         /**
@@ -220,15 +243,15 @@ public class Condition {
         * return the value
         * @return 
         */
-        public Object getValue() {
-            return value;
+        public String getValue() {
+            return values[0];
         }
 
         /**
         * return the values
         * @return 
         */
-        public Object[] getValues() {
+        public String[] getValues() {
             return values;
         }
 

@@ -1,6 +1,11 @@
 package com.nosqlrevolution.service;
 
+import com.nosqlrevolution.query.Condition.CompletedCondition;
 import com.nosqlrevolution.query.Query;
+import com.nosqlrevolution.query.QueryImpl;
+import com.nosqlrevolution.util.QueryUtil;
+import java.util.ArrayList;
+import java.util.List;
 import org.elasticsearch.index.query.QueryBuilder;
 
 /**
@@ -13,8 +18,87 @@ public class QueryResolverService {
         if (query == null) {
             return null;
         }
+        QueryImpl q = (QueryImpl) query;
         
+        List<QueryBuilder> builders = resolveConditions(q.getConditions());
         
-        return null;
+        if (builders.isEmpty()) {
+            return null;
+        } else if (builders.size() == 1) {
+            return builders.get(0);
+        } else {
+            
+            // Need to return the proper querybuilder at some point.
+            return null;
+        }
+    }
+    
+    private static List<QueryBuilder> resolveConditions(CompletedCondition[] conditions) {
+        List<QueryBuilder> builders = new ArrayList<QueryBuilder>();
+        for (CompletedCondition condition: conditions) {
+            
+            // Check to make sure that we have some reasonable values.
+            if (condition.getOperator() == null || condition.getValues()== null) {
+                continue;
+            }
+            
+            // Make sure at least one of the fields are populated.
+            if (condition.getField() == null && condition.getSpecialField() == null) {
+                continue;
+            }
+            
+            switch(condition.getOperator()) {
+                case AND:
+                    builders.add(QueryUtil.getTermQuery(condition.getField(), condition.getValue()));
+                    break;
+                case SHOULD:
+                    builders.add(QueryUtil.getTermQuery(condition.getField(), condition.getValue()));
+                    break;
+                case OR:
+                    builders.add(QueryUtil.getTermQuery(condition.getField(), condition.getValue()));
+                    break;
+                case NOT:
+                    builders.add(QueryUtil.getTermQuery(condition.getField(), condition.getValue()));
+                    break;
+                case MUST:
+                    builders.add(QueryUtil.getTermQuery(condition.getField(), condition.getValue()));
+                    break;
+                case MUST_NOT:
+                    builders.add(QueryUtil.getTermQuery(condition.getField(), condition.getValue()));
+                    break;
+
+                case IN:
+                    if (condition.getSpecialField() != null) {
+                        builders.add(QueryUtil.getIdQuery(condition.getValues()));
+                    } else {
+                        builders.add(QueryUtil.getInQuery(condition.getField(), condition.getValues()));
+                    }
+                    break;
+                case NOT_IN:
+                    builders.add(QueryUtil.getTermQuery(condition.getField(), condition.getValue()));
+                    break;
+
+                case EQUAL:
+                    builders.add(QueryUtil.getTermQuery(condition.getField(), condition.getValue()));
+                    break;
+                case NOT_EQUAL:
+                    builders.add(QueryUtil.getTermQuery(condition.getField(), condition.getValue()));
+                    break;
+                case GT:
+                    builders.add(QueryUtil.getTermQuery(condition.getField(), condition.getValue()));
+                    break;
+                case GTE:
+                    builders.add(QueryUtil.getTermQuery(condition.getField(), condition.getValue()));
+                    break;
+                case LT:
+                    builders.add(QueryUtil.getTermQuery(condition.getField(), condition.getValue()));
+                    break;
+                case LTE:
+                    builders.add(QueryUtil.getTermQuery(condition.getField(), condition.getValue()));
+                    break;
+                }
+        }
+        
+        return builders;
     }
 }

@@ -1,6 +1,5 @@
 package com.nosqlrevolution.util;
 
-import com.nosqlrevolution.enums.Field;
 import com.nosqlrevolution.enums.Wildcard;
 import org.elasticsearch.index.query.FilterBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -15,11 +14,12 @@ import org.elasticsearch.search.sort.SortOrder;
  * @author cbrown
  */
 public class QueryUtil {
+    public static QueryBuilder getTermQuery(String field, String value) {
+        return termQuery(field, value);
+    }
+    
     public static QueryBuilder getFilteredQuery(QueryBuilder qb1, FilterBuilder fb1) {
-        return filteredQuery(
-            qb1, 
-            fb1
-            );
+        return filteredQuery(qb1, fb1);
     }
 
     public static QueryBuilder getMatchAllQuery() {
@@ -33,6 +33,10 @@ public class QueryUtil {
     public static QueryBuilder getIdQuery(String[] ids) {
         return idsQuery()
                 .addIds(ids);
+    }
+    
+    public static QueryBuilder getInQuery(String field, String[] values) {
+        return inQuery(field, values);
     }
     
     public static SortBuilder getIdSort() {
@@ -122,6 +126,5 @@ public class QueryUtil {
         return textQuery(field, terms)
                 .slop(1)
                 .analyzer("simple");                
-    }
-    
+    }    
  }

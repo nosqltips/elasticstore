@@ -6,36 +6,24 @@ import com.nosqlrevolution.query.Condition.CompletedCondition;
  *
  * @author cbrown
  */
-public class Query {
-    private Object[] select;
-    private Object[] in;
-    private Object[] contains;
-    private Object[] sort;
-    private CompletedCondition[] conditions;
-    private long limit;
-    private long skip;
-    private long blockSize;
+public abstract class Query {
+    protected String[] fields;
+    protected String[] sort;
+    protected CompletedCondition[] conditions;
+    protected long limit;
+    protected long skip;
+    protected long blockSize;
 
-    public static Query select(Object... fields) {
-        return new Query().setFields(fields);
+    public static Query select(String... fields) {
+        return new QueryImpl().setFields(fields);
     }
 
     public static Query select() {
-        return new Query();
+        return new QueryImpl();
     }
-
-    public Query in(Object... ids) {
-        this.in = ids;
-        return this;
-    }
-
-    public Query contains(Object... ids) {
-        this.contains = ids;
-        return this;
-    }
-
-    public Query sort(Object... fields) {
-        this.sort = fields;
+    
+    public Query sort(String... sort) {
+        this.sort = sort;
         return this;
     }
 
@@ -48,19 +36,14 @@ public class Query {
         this.skip = skip;
         return this;
     }
-
+    
     public Query limit(long limit) {
         this.limit = limit;
         return this;
     }
-
+    
     public Query blockSize(long blockSize) {
         this.blockSize = blockSize;
-        return this;
-    }
-    
-    private Query setFields(Object... fields) {
-        this.setFields(fields);
         return this;
     }
 }
