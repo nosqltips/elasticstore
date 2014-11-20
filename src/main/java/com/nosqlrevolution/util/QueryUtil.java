@@ -123,7 +123,7 @@ public class QueryUtil {
     }
     
     public static QueryBuilder getTextQuery(String field, String terms) {
-        return textQuery(field, terms)
+        return matchQuery(field, terms)
                 .slop(1)
                 .analyzer("simple");                
     }    

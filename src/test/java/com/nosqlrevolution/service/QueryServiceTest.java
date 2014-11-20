@@ -4,8 +4,8 @@ import com.nosqlrevolution.WriteOperation;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.elasticsearch.action.WriteConsistencyLevel;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
@@ -24,10 +24,10 @@ import org.junit.Test;
  */
 public class QueryServiceTest {
     private static Client client;
-    private static String index="test";
-    private static String type = "data";
-    private QueryService service = new QueryService(client);
-    private ObjectMapper mapper = new ObjectMapper();
+    private static final String index="test";
+    private static final String type = "data";
+    private final QueryService service = new QueryService(client);
+    private final ObjectMapper mapper = new ObjectMapper();
 
     @BeforeClass
     public static void setUpClass() throws Exception {
@@ -108,7 +108,7 @@ public class QueryServiceTest {
         Map<String, String> map = new HashMap<String, String>();
         for (String json: s) {
             JsonNode rootNode = mapper.readValue(json, JsonNode.class);
-            String id = rootNode.findValue("id").getTextValue();
+            String id = rootNode.findValue("id").asText();
             map.put(id, json);
         }
         
@@ -183,9 +183,9 @@ public class QueryServiceTest {
     
     private void assertValues(String json, String id, String name, String username) throws IOException {
         JsonNode rootNode = mapper.readValue(json, JsonNode.class);
-        String myId = rootNode.findValue("id").getTextValue();
-        String myName = rootNode.findValue("name").getTextValue();
-        String myUsername = rootNode.findValue("username").getTextValue();
+        String myId = rootNode.findValue("id").asText();
+        String myName = rootNode.findValue("name").asText();
+        String myUsername = rootNode.findValue("username").asText();
 
         assertNotNull(rootNode);
         assertEquals(myId, id);

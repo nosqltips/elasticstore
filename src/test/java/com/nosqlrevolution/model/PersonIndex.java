@@ -1,9 +1,9 @@
 package com.nosqlrevolution.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.nosqlrevolution.annotation.DocumentId;
 import com.nosqlrevolution.annotation.index.Index;
 import com.nosqlrevolution.annotation.index.IndexType;
-import org.codehaus.jackson.annotate.JsonProperty;
 
 /**
  *

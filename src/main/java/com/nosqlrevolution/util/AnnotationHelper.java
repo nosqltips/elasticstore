@@ -11,7 +11,7 @@ import com.nosqlrevolution.annotation.index.IndexType;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import org.elasticsearch.common.UUID;
+import java.util.UUID;
 
 /**
  *
@@ -37,8 +37,6 @@ public class AnnotationHelper {
                 String uuid = null;
                 if (provider.value() == RANDOM) {
                     uuid = UUID.randomUUID().toString();
-                } else if (provider.value() == RANDOM_64BIT) {
-                    uuid = UUID.randomBase64UUID();
                 }
                 ReflectionUtil.setFieldValue(f, o, uuid);
             }

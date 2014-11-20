@@ -1,12 +1,12 @@
 package com.nosqlrevolution.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.nosqlrevolution.cursor.BlockCursor;
 import com.nosqlrevolution.WriteOperation;
 import com.nosqlrevolution.query.Query;
 import com.nosqlrevolution.util.JsonUtil;
 import com.nosqlrevolution.util.QueryUtil;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -106,7 +106,7 @@ public class QueryService {
         if (qb != null) {
             builder.setQuery(qb);
         } else {
-            builder.setFilter(QueryUtil.getMatchAllFilter());
+            builder.setPostFilter(QueryUtil.getMatchAllFilter());
         }
         
         return builder;
@@ -332,7 +332,7 @@ public class QueryService {
                 .setRefresh(write.getRefresh());
         
         DeleteResponse response = builder.execute().actionGet();
-        return ! response.isNotFound();
+        return response.isFound();
         // TODO: Could return if found.
         //response.notFound();
     }

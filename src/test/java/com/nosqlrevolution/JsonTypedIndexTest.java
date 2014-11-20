@@ -1,7 +1,7 @@
 package com.nosqlrevolution;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nosqlrevolution.model.Person;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.AfterClass;
 import static org.junit.Assert.*;
 import org.junit.BeforeClass;

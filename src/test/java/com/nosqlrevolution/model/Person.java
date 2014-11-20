@@ -1,7 +1,7 @@
 package com.nosqlrevolution.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.nosqlrevolution.annotation.DocumentId;
-import org.codehaus.jackson.annotate.JsonProperty;
 
 /**
  *
