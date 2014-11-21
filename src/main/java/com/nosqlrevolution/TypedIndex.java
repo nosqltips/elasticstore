@@ -24,11 +24,32 @@ public class TypedIndex<T> extends Index<T> {
     private final Class<T> t;
     private final QueryService service;
     private final MappingUtil<T> mapping = new MappingUtil<T>();
+    private List<T> bulk;
     
     public TypedIndex(Class<T> t, ElasticStore store, String index, String iType) throws Exception {
         super (store, index, iType);
         this.t = t;
         service = new QueryService(store.getClient());
+    }
+
+    @Override
+    public void addBulk(T t) {
+        if (bulk == null) {
+            bulk = new ArrayList<T>();
+        }
+        
+        bulk.add(t);
+        
+        if (bulk.size() >= getBulkSize() && getAutoBulkFlush()) {
+            flushBulk();
+        }
+    }
+
+    @Override
+    public boolean flushBulk() {
+        OperationStatus status = write(bulk);
+        bulk.clear();
+        return status.succeeded();
     }
 
     @Override
@@ -231,5 +252,10 @@ public class TypedIndex<T> extends Index<T> {
         }
         status.setSucceeded(true);
         return status;
+    }
+
+    @Override
+    public boolean exists() {
+        return service.exists(getType(), getType());
     }
 }

@@ -23,10 +23,31 @@ public class JsonIndex<T> extends Index<String> {
     private static final Logger logger = Logger.getLogger(JsonIndex.class.getName());
     private final QueryService service;
     private final MappingUtil<String> mapping = new MappingUtil<String>();
+    private List<String> bulk;
     
     public JsonIndex(ElasticStore store, String index, String type) throws Exception {
         super(store, index, type);
         service = new QueryService(store.getClient());
+    }
+
+    @Override
+    public void addBulk(String json) {
+        if (bulk == null) {
+            bulk = new ArrayList<String>();
+        }
+        
+        bulk.add(json);
+        
+        if (bulk.size() >= getBulkSize() && getAutoBulkFlush()) {
+            flushBulk();
+        }
+    }
+
+    @Override
+    public boolean flushBulk() {
+        OperationStatus status = write(bulk);
+        bulk.clear();
+        return status.succeeded();
     }
 
     @Override
@@ -197,5 +218,10 @@ public class JsonIndex<T> extends Index<String> {
             service.bulkIndex(getIndex(), getType(), json.toArray(new String[json.size()]));
         }
         return null;
+    }
+
+    @Override
+    public boolean exists() {
+        return service.exists(getType(), getType());
     }
 }

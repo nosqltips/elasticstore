@@ -7,6 +7,10 @@ import com.nosqlrevolution.WriteOperation;
 import com.nosqlrevolution.query.Query;
 import com.nosqlrevolution.util.JsonUtil;
 import com.nosqlrevolution.util.QueryUtil;
+import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
+import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
+import org.elasticsearch.action.admin.indices.exists.types.TypesExistsRequest;
+import org.elasticsearch.action.admin.indices.exists.types.TypesExistsResponse;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -400,5 +404,25 @@ public class QueryService {
         } catch (Exception e) {}
 
         return null;
+    }
+    
+    /**
+     * Check to see if indeces or types exists in the ElasticSearch cluster.
+     * 
+     * @param index
+     * @param type
+     * @return 
+     */
+    public boolean exists(String index, String type) {
+        if (type == null) {
+            IndicesExistsRequest indicesRequest = new IndicesExistsRequest(index);
+            IndicesExistsResponse response = client.admin().indices().exists(indicesRequest).actionGet();
+            return response.isExists();
+        } else {
+            String[] indices = new String[] {index};
+            TypesExistsRequest typesRequest = new TypesExistsRequest(indices, type);
+            TypesExistsResponse response = client.admin().indices().typesExists(typesRequest).actionGet();
+            return response.isExists();
+        }
     }
 }

@@ -16,7 +16,9 @@ public abstract class Index<T> {
     private String index;
     private String type;
     private String idField;
-    
+    private int bulkSize = 100;
+    private boolean autoFlush = true;
+
     public Index(ElasticStore store, String index, String type) throws Exception {
         if ((store == null) || (! store.isInitialized())) {
             throw new Exception("ElasticStore is not initialized!!!!");
@@ -26,6 +28,12 @@ public abstract class Index<T> {
         this.type = type;
     }
 
+    public abstract void addBulk(T t);
+        
+    public abstract boolean flushBulk();
+    
+    public abstract boolean exists();
+    
     /**
      * Return a count of all documents in this index or indexes.
      * 
@@ -268,8 +276,26 @@ public abstract class Index<T> {
             Logger.getLogger(Index.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
+
     // Accessor methods
+    public Index setBulkSize(int bulkSize) {
+        this.bulkSize = bulkSize;
+        return this;
+    }
+    
+    protected boolean getAutoBulkFlush() {
+        return autoFlush;
+    }
+
+    public Index setAutoBulkFlush(boolean autoFlush) {
+        this.autoFlush = autoFlush;
+        return this;
+    }
+
+    protected int getBulkSize() {
+        return bulkSize;
+    }
+
     protected String getIndex() {
         return index;
     }
