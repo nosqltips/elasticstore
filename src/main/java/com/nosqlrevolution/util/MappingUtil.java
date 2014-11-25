@@ -18,6 +18,9 @@ public class MappingUtil<T> {
         if (s == null) { return null; }
         
         try {
+            if (t.getClass() == String.class) {
+                return (T) s;
+            }
             return (T) mapper.readValue(s, t.getClass());
         } catch (IOException e) {
             if (logger.isLoggable(Level.WARNING)) {
@@ -42,6 +45,9 @@ public class MappingUtil<T> {
     // TODO: probably need a throws here to bubble the exception up.
     public <T>T get(String json, Class<T> clazz) {
         try {
+            if (clazz == String.class) {
+                return (T) json;
+            }
             return mapper.readValue(json, clazz);
         } catch (IOException ex) {
             if (logger.isLoggable(Level.WARNING)) {

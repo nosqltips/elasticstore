@@ -1,6 +1,5 @@
 package com.nosqlrevolution.cursor;
 
-import com.nosqlrevolution.cursor.ScrollCursor;
 import com.nosqlrevolution.model.Person;
 import com.nosqlrevolution.util.QueryUtil;
 import com.nosqlrevolution.util.TestDataHelper;
@@ -8,6 +7,8 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchScrollRequestBuilder;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.unit.TimeValue;
@@ -24,7 +25,7 @@ public class ScrollCursorTest {
     private static Client client;
     private static final String index = "test";
     private static final String type = "data";
-    private static String[] ids = new String[]{"1", "2", "3", "4", "5"};
+    private static final String[] ids = new String[]{"1", "2", "3", "4", "5"};
     
     @BeforeClass
     public static void setUpClass() throws Exception {
@@ -47,8 +48,11 @@ public class ScrollCursorTest {
                 .setQuery(QueryUtil.getIdQuery(ids))
                 .setScroll(new TimeValue(600000))
                 .setSize(10);
-        
-        ScrollCursor<Person> instance = new ScrollCursor<Person>(Person.class, builder, client);
+
+        SearchResponse response = builder.execute().actionGet();
+        SearchScrollRequestBuilder scroll = client.prepareSearchScroll(response.getScrollId()).setScroll(new TimeValue(600000));
+
+        ScrollCursor<Person> instance = new ScrollCursor<Person>(Person.class, scroll);
         assertEquals(ids.length, instance.size());
     }
 
@@ -62,7 +66,10 @@ public class ScrollCursorTest {
                 .setScroll(new TimeValue(600000))
                 .setSize(10);
         
-        ScrollCursor<Person> instance = new ScrollCursor<Person>(Person.class, builder, client);
+        SearchResponse response = builder.execute().actionGet();
+        SearchScrollRequestBuilder scroll = client.prepareSearchScroll(response.getScrollId()).setScroll(new TimeValue(600000));
+
+        ScrollCursor<Person> instance = new ScrollCursor<Person>(Person.class, scroll);
         assertFalse(instance.isEmpty());
     }
 
@@ -76,7 +83,10 @@ public class ScrollCursorTest {
                 .setScroll(new TimeValue(600000))
                 .setSize(10);
         
-        ScrollCursor<Person> instance = new ScrollCursor<Person>(Person.class, builder, client);
+        SearchResponse response = builder.execute().actionGet();
+        SearchScrollRequestBuilder scroll = client.prepareSearchScroll(response.getScrollId()).setScroll(new TimeValue(600000));
+
+        ScrollCursor<Person> instance = new ScrollCursor<Person>(Person.class, scroll);
         Iterator<Person> it = instance.iterator();
                 
         // Make sure we got a real iterator instance
@@ -101,7 +111,10 @@ public class ScrollCursorTest {
                 .setScroll(new TimeValue(600000))
                 .setSize(10);
         
-        ScrollCursor<Person> instance = new ScrollCursor<Person>(Person.class, builder, client);
+        SearchResponse response = builder.execute().actionGet();
+        SearchScrollRequestBuilder scroll = client.prepareSearchScroll(response.getScrollId()).setScroll(new TimeValue(600000));
+
+        ScrollCursor<Person> instance = new ScrollCursor<Person>(Person.class, scroll);
                 
         // Make sure we got a real iterator instance
         assertNotNull(instance);
@@ -115,24 +128,6 @@ public class ScrollCursorTest {
     }
 
     @Test
-    public void testBadScanType() throws Exception {
-        // Get a list of SearchHits we can work with
-        SearchRequestBuilder builder = client.prepareSearch(index)
-                .setSearchType(SearchType.DFS_QUERY_AND_FETCH)
-                .setTypes(type)
-                .setQuery(QueryUtil.getIdQuery(ids))
-                .setScroll(new TimeValue(600000))
-                .setSize(10);
-        
-        try {
-            ScrollCursor<Person> instance = new ScrollCursor<Person>(Person.class, builder, client);
-            assertTrue(false);
-        } catch (Exception e) {
-            assertTrue(true);
-        }
-    }
-
-    @Test
     public void testArray() throws Exception {
         // Get a list of SearchHits we can work with
         SearchRequestBuilder builder = client.prepareSearch(index)
@@ -142,7 +137,10 @@ public class ScrollCursorTest {
                 .setScroll(new TimeValue(600000))
                 .setSize(10);
         
-        ScrollCursor<Person> instance = new ScrollCursor<Person>(Person.class, builder, client);
+        SearchResponse response = builder.execute().actionGet();
+        SearchScrollRequestBuilder scroll = client.prepareSearchScroll(response.getScrollId()).setScroll(new TimeValue(600000));
+
+        ScrollCursor<Person> instance = new ScrollCursor<Person>(Person.class, scroll);
         
         Person[] persons = instance.toArray(new Person[instance.size()]);
                 

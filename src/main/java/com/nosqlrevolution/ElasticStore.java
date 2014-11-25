@@ -161,20 +161,22 @@ public class ElasticStore {
      * @return 
      */
     public ElasticStore execute() {
+        ImmutableSettings.Builder builder = ImmutableSettings.settingsBuilder()
+            .put("cluster.name", clusterName)
+            .put("discovery.zen.ping.timeout", timeout)
+            .put("discovery.zen.ping.multicast.enabled", multicast);
+        
         if (local) {
             client = nodeBuilder()
                 .local(true)
                 .data(true)
                 .node()
                 .client();
-        } else if (node) {
-            ImmutableSettings.Builder builder = ImmutableSettings.settingsBuilder()
-                .put("cluster.name", clusterName)
-                .put("discovery.zen.ping.timeout", timeout)
-                .put("discovery.zen.ping.multicast.enabled", multicast);
-            
+        } else if (node) {            
             if (memory) {
                 builder.put("es.index.storage.type", "memory");
+                builder.put("index.number_of_shards", "1");
+                builder.put("index.number_of_replicas", "0");
             }
             
             if (! multicast) {
@@ -192,7 +194,7 @@ public class ElasticStore {
                     .node()
                     .client();
         } else {
-            TransportClient transClient = new TransportClient();
+            TransportClient transClient = new TransportClient(builder.build());
             if (! multicast) {
                 if (addresses != null) {
                     for (InetSocketAddress address: addresses) {
@@ -207,13 +209,17 @@ public class ElasticStore {
                     transClient.addTransportAddress(new InetSocketTransportAddress(DEFAULT_HOST, port));
                 }
             }
-            client = new TransportClient()
-                    .addTransportAddress(new InetSocketTransportAddress("10.1.10.54", 9300));
             client = transClient;
         }
         
         // Wait for client connection.
-        client.admin().cluster().prepareHealth().setWaitForGreenStatus().execute().actionGet();
+        client.admin()
+                .cluster()
+                .prepareHealth()
+                .setWaitForYellowStatus()
+                .execute()
+                .actionGet();
+    
         return this;
     }
     

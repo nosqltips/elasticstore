@@ -17,18 +17,16 @@ import org.junit.BeforeClass;
 public class QueryTest {
     private static String[] ids = new String[]{"1", "2", "3", "4", "5"};
     private static ElasticStore elasticStore;
-    private static Index<Person> index;
     
     @BeforeClass
     public static void setUpClass() throws Exception {
-         elasticStore = new ElasticStore().asMemoryOnly().execute();
+         elasticStore = new ElasticStore().asMemoryOnly().withTimeout("1").execute();
          assertNotNull(elasticStore);
          assertNotNull(elasticStore.getClient());
     }
 
     @AfterClass
     public static void tearDownClass() throws Exception {
-        elasticStore.removeIndex(index);
         elasticStore.close();
     }
     

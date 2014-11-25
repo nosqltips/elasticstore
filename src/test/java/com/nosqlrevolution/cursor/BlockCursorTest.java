@@ -1,16 +1,13 @@
 package com.nosqlrevolution.cursor;
 
-import com.nosqlrevolution.cursor.BlockCursor;
 import com.nosqlrevolution.model.Person;
 import com.nosqlrevolution.service.QueryService;
 import com.nosqlrevolution.util.QueryUtil;
 import com.nosqlrevolution.util.TestDataHelper;
 import java.util.Iterator;
 import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.search.SearchHits;
 import org.junit.AfterClass;
 import static org.junit.Assert.*;
 import org.junit.BeforeClass;
@@ -24,8 +21,7 @@ public class BlockCursorTest {
     private static Client client;
     private static final String index = "test";
     private static final String type = "data";
-    private static String[] ids = new String[]{"1", "2", "3", "4", "5"};
-    private static SearchHits hits;
+    private static final String[] ids = new String[]{"1", "2", "3", "4", "5"};
     private static SearchRequestBuilder builder;
     
     @BeforeClass
@@ -40,9 +36,6 @@ public class BlockCursorTest {
                 .setTypes(type)
                 .setQuery(QueryUtil.getIdQuery(ids))
                 .addSort(QueryUtil.getIdSort());
-        
-        SearchResponse response = builder.execute().actionGet();
-        hits = response.getHits();
     }
 
     @AfterClass
@@ -58,19 +51,19 @@ public class BlockCursorTest {
     
     @Test
     public void testSize() {
-        BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, hits, builder, 0, 10);
+        BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, builder, 0, 10);
         assertEquals(ids.length, instance.size());
     }
 
     @Test
     public void testIsEmpty() {
-        BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, hits, builder, 0, 10);
+        BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, builder, 0, 10);
         assertFalse(instance.isEmpty());
     }
 
     @Test
     public void testIterator() {
-        BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, hits, builder, 0, 10);
+        BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, builder, 0, 10);
         Iterator<Person> it = instance.iterator();
                 
         // Make sure we got a real iterator instance
@@ -88,7 +81,7 @@ public class BlockCursorTest {
 
     @Test
     public void testCollection() {
-        BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, hits, builder, 0, 10);
+        BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, builder, 0, 10);
                 
         // Make sure we got a real iterator instance
         assertNotNull(instance);
@@ -104,7 +97,7 @@ public class BlockCursorTest {
 
     @Test
     public void testArray() {
-        BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, hits, builder, 0, 10);
+        BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, builder, 0, 10);
         
         Person[] persons = instance.toArray(new Person[instance.size()]);
                 

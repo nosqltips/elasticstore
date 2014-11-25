@@ -25,8 +25,10 @@ import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchScrollRequestBuilder;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.search.SearchHits;
 
@@ -87,8 +89,19 @@ public class QueryService {
      * @param type
      * @return 
      */
+    public SearchRequestBuilder findAllScroll(String index, String type) {
+        return findAll(null, index, type, true);
+    }
+    
+    /**
+     * Return the all of the documents from this index and type
+     * 
+     * @param index
+     * @param type
+     * @return 
+     */
     public SearchRequestBuilder findAll(String index, String type) {
-        return findAll(null, index, type);
+        return findAll(null, index, type, false);
     }
     
     /**
@@ -99,12 +112,18 @@ public class QueryService {
      * @param type
      * @return 
      */
-    public SearchRequestBuilder findAll(Query query, String index, String type) {
+    public SearchRequestBuilder findAll(Query query, String index, String type, boolean scroll) {
         SearchRequestBuilder builder = client.prepareSearch(index)
                 .setSearchType(SearchType.QUERY_THEN_FETCH)
                 .setTypes(type)
                 .setFrom(0)
                 .setSize(100);
+
+        // Set parameters if we're performing a scroll.
+        if (scroll) {
+            builder.setSearchType(SearchType.SCAN);
+            builder.setScroll(new TimeValue(600000));
+        }
         
         QueryBuilder qb = QueryResolverService.resolve(query);
         if (qb != null) {
@@ -400,6 +419,25 @@ public class QueryService {
             SearchResponse response = builder.execute().actionGet();
             if (response != null) {
                 return response.getHits();
+            }
+        } catch (Exception e) {}
+
+        return null;
+    }
+    
+    /**
+     * Execute a SearchRequestBuilder and get a SearchResponse.
+     * 
+     * @param builder
+     * @return 
+     */
+    public SearchScrollRequestBuilder executeScroll(SearchRequestBuilder builder) {
+        try {
+            if (builder.request().searchType() == SearchType.SCAN) {
+                SearchResponse response = builder.execute().actionGet();
+                return client.prepareSearchScroll(response.getScrollId()).setScroll(new TimeValue(600000));
+            } else {
+                throw new Exception("SearchRequest must be of type scan.");
             }
         } catch (Exception e) {}
 

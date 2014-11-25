@@ -4,7 +4,6 @@ import com.nosqlrevolution.annotation.DocumentId;
 import com.nosqlrevolution.annotation.Routing;
 import com.nosqlrevolution.annotation.UUIDProvider;
 import static com.nosqlrevolution.annotation.UUIDProvider.Type.RANDOM;
-import static com.nosqlrevolution.annotation.UUIDProvider.Type.RANDOM_64BIT;
 import com.nosqlrevolution.annotation.Version;
 import com.nosqlrevolution.annotation.index.Index;
 import com.nosqlrevolution.annotation.index.IndexType;

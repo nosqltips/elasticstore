@@ -12,14 +12,13 @@ import org.elasticsearch.search.SearchHits;
  */
 public class ScrollCursorIterator<E> extends CursorIterator<E> {
     private final SearchScrollRequestBuilder scrollBuilder;
-    private final int totalSize;
     private boolean hasNext = true;
     
-    protected ScrollCursorIterator(Class<E> e, SearchScrollRequestBuilder scrollBuilder, int totalSize) {
+    protected ScrollCursorIterator(Class<E> e, SearchScrollRequestBuilder scrollBuilder) {
         this.e = e;
         this.scrollBuilder = scrollBuilder;
-        this.totalSize = totalSize;
         hits = getNextPage();
+        totalSize = (int)hits.getTotalHits();
     }
     
     @Override

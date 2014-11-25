@@ -1,6 +1,5 @@
 package com.nosqlrevolution.annotation;
 
-import static com.nosqlrevolution.annotation.UUIDProvider.Type.RANDOM_64BIT;
 import com.nosqlrevolution.model.TestIdAnnotationFieldStatic;
 import com.nosqlrevolution.model.TestIdAnnotationMethodStatic;
 import com.nosqlrevolution.util.AnnotationHelper;
@@ -175,12 +174,6 @@ public class DocumentIdTest {
      @Test
      public void withUUIDFieldString() {
          TestUUIDFieldString t = new TestUUIDFieldString();
-         assertNotNull(AnnotationHelper.getDocumentId(t, null));
-     }
-
-     @Test
-     public void withUUID64BitFieldString() {
-         TestUUID64BitFieldString t = new TestUUID64BitFieldString();
          assertNotNull(AnnotationHelper.getDocumentId(t, null));
      }
 
@@ -403,12 +396,6 @@ public class DocumentIdTest {
      
      private class TestUUIDFieldString {
          @UUIDProvider()
-         @DocumentId
-         public String someid;
-     }
-     
-     private class TestUUID64BitFieldString {
-         @UUIDProvider(RANDOM_64BIT)
          @DocumentId
          public String someid;
      }

@@ -12,26 +12,21 @@ import org.elasticsearch.search.SearchHits;
  */
 public class BlockCursorIterator<E> extends CursorIterator<E> {
     private final SearchRequestBuilder builder;
-    private final int totalSize;
     private int from = 0;
     private int size = 0;
     
-    protected BlockCursorIterator(Class<E> e, SearchHits firstHits, SearchRequestBuilder builder, int from, int size) {
+    protected BlockCursorIterator(Class<E> e, SearchRequestBuilder builder, int from, int size) {
         this.e = e;
-        this.hits = firstHits;
         this.builder = builder;
-        this.totalSize = (int)hits.getTotalHits();
         this.from = from;
         this.size = size;
+        hits = getNextPage();
+        totalSize = (int)hits.getTotalHits();
     }
     
     @Override
     public boolean hasNext() {
-        if ((from * size) > totalSize) { 
-            return false;
-        } else {
-            return iterAll < totalSize;
-        }
+        return iterAll < totalSize;
     }
 
     @Override
@@ -56,11 +51,12 @@ public class BlockCursorIterator<E> extends CursorIterator<E> {
     
     private SearchHits getNextPage() {
         // increment next page
-        from ++;
         builder.setFrom(from * size);
+        builder.setSize(size);
         
         // Get search response
         SearchResponse response = builder.execute().actionGet();
+        from ++;
 
         // Return the next set of hits
         return response.getHits();

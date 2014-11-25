@@ -91,7 +91,7 @@ public class TypedIndex<T> extends Index<T> {
         SearchRequestBuilder builder = service.findAll(getIndex(), getType());
         SearchHits h = service.executeBuilder(builder);
         if (h != null) {
-            return new BlockCursor<T>(t, h, builder, 0, 100);
+            return new BlockCursor<T>(t, builder, 0, 100);
         }
         
         return null;
@@ -99,10 +99,10 @@ public class TypedIndex<T> extends Index<T> {
 
     @Override
     public Cursor findAll(Query query) {
-        SearchRequestBuilder builder = service.findAll(query, getIndex(), getType());
+        SearchRequestBuilder builder = service.findAll(query, getIndex(), getType(), false);
         SearchHits h = service.executeBuilder(builder);
         if (h != null) {
-            return new BlockCursor<T>(t, h, builder, 0, 100);
+            return new BlockCursor<T>(t, builder, 0, 100);
         }
         
         return null;
@@ -110,10 +110,10 @@ public class TypedIndex<T> extends Index<T> {
 
     @Override
     public Cursor<T> findAll(Query query, Class clazz) {
-        SearchRequestBuilder builder = service.findAll(query, getIndex(), getType());
+        SearchRequestBuilder builder = service.findAll(query, getIndex(), getType(), false);
         SearchHits h = service.executeBuilder(builder);
         if (h != null) {
-            return new BlockCursor<T>(clazz, h, builder, 0, 100);
+            return new BlockCursor<T>(clazz, builder, 0, 100);
         }
         
         return null;

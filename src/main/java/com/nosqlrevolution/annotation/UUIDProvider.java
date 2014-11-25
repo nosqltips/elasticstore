@@ -18,7 +18,6 @@ public @interface UUIDProvider {
     
     // TODO: need to possibly look at other types of UUIDs.
     public enum Type {
-        RANDOM,
-        RANDOM_64BIT;
+        RANDOM;
     }
 }

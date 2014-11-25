@@ -16,7 +16,8 @@ public abstract class CursorIterator<E> implements Iterator<E> {
     protected SearchHits hits;
     protected int iter = 0;
     protected int iterAll = 0;
-
+    protected int totalSize;
+    
     @Override
     public boolean hasNext() {
         return iter < hits.getHits().length;

@@ -23,7 +23,7 @@ public class BlockCursorPagingTest {
     private static Client client;
     private static final String index = "test";
     private static final String type = "data";
-    private static String[] ids = new String[]{"1", "2", "3", "4", "5"};
+    private static final String[] ids = new String[]{"1", "2", "3", "4", "5"};
     private static SearchHits hits;
     private static SearchRequestBuilder builder;
     
@@ -53,19 +53,19 @@ public class BlockCursorPagingTest {
 
     @Test
     public void testSize() {
-        BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, hits, builder, 0, 1);
+        BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, builder, 0, 1);
         assertEquals(5, instance.size());
     }
 
     @Test
     public void testIsEmpty() {
-        BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, hits, builder, 0, 1);
+        BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, builder, 0, 1);
         assertFalse(instance.isEmpty());
     }
 
     @Test
     public void testIterator() {
-        BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, hits, builder, 0, 1);
+        BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, builder, 0, 1);
         Iterator<Person> it = instance.iterator();
                 
         // Make sure we got a real iterator instance
@@ -83,7 +83,7 @@ public class BlockCursorPagingTest {
 
     @Test
     public void testCollection() {
-        BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, hits, builder, 0, 1);
+        BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, builder, 0, 1);
                 
         // Make sure we got a real iterator instance
         assertNotNull(instance);
@@ -99,7 +99,7 @@ public class BlockCursorPagingTest {
 
     @Test
     public void testArray() {
-        BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, hits, builder, 0, 10);
+        BlockCursor<Person> instance = new BlockCursor<Person>(Person.class, builder, 0, 10);
         
         Person[] persons = instance.toArray(new Person[instance.size()]);
                 

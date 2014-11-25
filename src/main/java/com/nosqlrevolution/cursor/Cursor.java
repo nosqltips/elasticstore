@@ -2,7 +2,6 @@ package com.nosqlrevolution.cursor;
 
 import java.util.AbstractCollection;
 import java.util.Collection;
-import org.elasticsearch.search.SearchHits;
 
 /**
  * Custom implementation of Collection<E> supporting ElasticSearch for the backend.
@@ -12,17 +11,12 @@ import org.elasticsearch.search.SearchHits;
  */
 public abstract class Cursor<E> extends AbstractCollection<E> {
     protected Class<E> e;
-    protected SearchHits hits;
 
     @Override
-    public int size() {
-        return (int)hits.getTotalHits();
-    }
+    public abstract int size();
 
     @Override
-    public boolean isEmpty() {
-        return hits.getTotalHits() == 0;
-    }
+    public abstract boolean isEmpty();
 
     @Override
     public boolean contains(Object o) {
