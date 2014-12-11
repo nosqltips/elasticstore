@@ -66,5 +66,36 @@ public class JsonUtil {
                         
         // No id found, return null
         return null;
+    }
+    
+    public static String getSource(String s, String sourceField) {
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            JsonNode rootNode = mapper.readValue(s, JsonNode.class);
+            JsonNode id;
+            // Check the specified idField if available
+            if (sourceField != null) {
+                id = rootNode.findValue(sourceField);
+                if (id != null) {
+                    return id.asText();
+                }
+            } else {
+                id = rootNode.findValue("source");
+                if (id != null) {
+                    return id.asText();
+                } 
+                id = rootNode.findValue("_source");
+                if (id != null) {
+                    return id.asText();
+                } 
+            }
+        } catch (IOException ex) {
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.log(Level.SEVERE, null, ex);
+            }
+        }
+                        
+        // No id found, return null
+        return s;
     }    
 }

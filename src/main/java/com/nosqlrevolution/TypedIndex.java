@@ -1,16 +1,20 @@
 package com.nosqlrevolution;
 
+import com.nosqlrevolution.apps.ExportModel;
 import com.nosqlrevolution.cursor.MultiGetCursor;
 import com.nosqlrevolution.cursor.BlockCursor;
 import com.nosqlrevolution.cursor.Cursor;
+import com.nosqlrevolution.cursor.ScrollCursor;
 import com.nosqlrevolution.query.Query;
 import com.nosqlrevolution.service.QueryService;
 import com.nosqlrevolution.util.MappingUtil;
 import com.nosqlrevolution.util.AnnotationHelper;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.action.search.SearchScrollRequestBuilder;
 import org.elasticsearch.search.SearchHits;
 
 /**
@@ -88,10 +92,14 @@ public class TypedIndex<T> extends Index<T> {
     
     @Override
     public Cursor<T> findAll() {
-        SearchRequestBuilder builder = service.findAll(getIndex(), getType());
-        SearchHits h = service.executeBuilder(builder);
-        if (h != null) {
-            return new BlockCursor<T>(t, builder, 0, 100);
+        SearchRequestBuilder builder = service.findAllScroll(getIndex(), getType());
+        SearchScrollRequestBuilder scroll = service.executeScroll(builder);
+        if (builder != null) {
+            try {
+                return new ScrollCursor<T>(t, scroll);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Failed to create new scroll.", e);
+            }
         }
         
         return null;
@@ -166,7 +174,7 @@ public class TypedIndex<T> extends Index<T> {
         OperationStatus status = new OperationStatus();
         if (t.length == 1) {
             status.setSucceeded(service.delete(getIndex(), getType(), AnnotationHelper.getDocumentId(t[0], getIdField())));
-        } else {
+        } else if (t.length > 1) {
             List<String> list = new ArrayList<String>();
             for (T o: t) {
                 list.add(AnnotationHelper.getDocumentId(o, getIdField()));
@@ -188,7 +196,7 @@ public class TypedIndex<T> extends Index<T> {
         OperationStatus status = new OperationStatus();
         if (t.length == 1) {
             service.index(getIndex(), getType(), mapping.get(t[0]), AnnotationHelper.getDocumentId(t[0], getIdField()));
-        } else {
+        } else if (t.length > 1) {
             List<String> list = new ArrayList<String>();
             for (T o: t) {
                 list.add(mapping.get(o));
@@ -206,7 +214,7 @@ public class TypedIndex<T> extends Index<T> {
         OperationStatus status = new OperationStatus();
         if (t.length == 1) {
             service.index(getIndex(), getType(), mapping.get(t[0]), AnnotationHelper.getDocumentId(t[0], getIdField()));
-        } else {
+        } else if (t.length > 1) {
             List<String> list = new ArrayList<String>();
             for (T o: t) {
                 list.add(mapping.get(o));
@@ -224,7 +232,7 @@ public class TypedIndex<T> extends Index<T> {
         OperationStatus status = new OperationStatus();
         if (t.size() == 1) {
             service.index(getIndex(), getType(), mapping.get(t.get(0)), AnnotationHelper.getDocumentId(t.get(0), getIdField()));
-        } else {
+        } else if (t.size() > 1) {
             List<String> list = new ArrayList<String>();
             for (T o: t) {
                 list.add(mapping.get(o));
@@ -242,7 +250,7 @@ public class TypedIndex<T> extends Index<T> {
         OperationStatus status = new OperationStatus();
         if (t.size() == 1) {
             service.index(getIndex(), getType(), mapping.get(t.get(0)), AnnotationHelper.getDocumentId(t.get(0), getIdField()));
-        } else {
+        } else if (t.size() > 1) {
             List<String> list = new ArrayList<String>();
             for (T o: t) {
                 list.add(mapping.get(o));

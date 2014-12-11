@@ -16,7 +16,7 @@ public abstract class Index<T> {
     private String index;
     private String type;
     private String idField;
-    private int bulkSize = 100;
+    private int bulkSize = 1000;
     private boolean autoFlush = true;
 
     public Index(ElasticStore store, String index, String type) throws Exception {

@@ -309,12 +309,12 @@ public class QueryService {
         for (String json: source) {
             builder.add(client.prepareIndex(index, type)
                     // TODO: need to pass in an id field if available.
-                .setId(JsonUtil.getId(json, null))
-                .setSource(json)
-                                    
-                // Operations from WriteOperation
-                .setConsistencyLevel(write.getConsistencyLevel())
-                .setRefresh(write.getRefresh())
+                    .setId(JsonUtil.getId(json, null))
+                    .setSource(JsonUtil.getSource(json, json))
+
+                    // Operations from WriteOperation
+                    .setConsistencyLevel(write.getConsistencyLevel())
+                    .setRefresh(write.getRefresh())
                 );
         }
         

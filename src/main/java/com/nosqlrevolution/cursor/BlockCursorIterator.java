@@ -1,7 +1,9 @@
 package com.nosqlrevolution.cursor;
 
+import com.nosqlrevolution.apps.ExportModel;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 
 /**
@@ -43,7 +45,18 @@ public class BlockCursorIterator<E> extends CursorIterator<E> {
         }
         
         // Return the next object
-        E returnE = mapping.get(hits.getAt(iter).sourceAsString(), e);
+        SearchHit hit = hits.getAt(iter);
+        String source = hit.sourceAsString();
+        E returnE;
+        
+        if (e == ExportModel.class) {
+            returnE = (E) new ExportModel()
+                    .setId(hit.getId())
+                    .setJson(source);
+        } else {
+            returnE = mapping.get(source, e);
+        }
+
         iter ++;
         iterAll ++;
         return returnE;

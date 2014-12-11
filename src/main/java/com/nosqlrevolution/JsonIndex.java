@@ -151,20 +151,23 @@ public class JsonIndex<T> extends Index<String> {
     @Override
     public OperationStatus removeById(String... ids) {
         boolean r = service.deleteAll(getIndex(), getType(), ids);
-        return null;
+        return new OperationStatus()
+                .setSucceeded(true);
     }
     
     @Override
     public OperationStatus removeById(List<String> ids) {
         boolean r = service.deleteAll(getIndex(), getType(), ids.toArray(new String[ids.size()]));
-        return null;
+        
+        return new OperationStatus()
+                .setSucceeded(true);
     }
     
     @Override
     public OperationStatus remove(String... json) {
         if (json.length == 1) {
             boolean r = service.delete(getIndex(), getType(), JsonUtil.getId(json[0], getIdField()));
-        } else {
+        } else if (json.length > 1) {
             List<String> ids = new ArrayList<String>();
             for (String js: json) {
                 ids.add(JsonUtil.getId(js, getIdField()));
@@ -172,7 +175,9 @@ public class JsonIndex<T> extends Index<String> {
             }
             boolean r = service.deleteAll(getIndex(), getType(), ids.toArray(new String[ids.size()]));
         }
-        return null;
+        
+        return new OperationStatus()
+                .setSucceeded(true);
     }
     
     @Override
@@ -185,10 +190,12 @@ public class JsonIndex<T> extends Index<String> {
         // TODO: need to gather operation results and return
         if (json.length == 1) {
             service.index(getIndex(), getType(), json[0], JsonUtil.getId(json[0], getIdField()));
-        } else {
+        } else if (json.length > 1) {
             service.bulkIndex(getIndex(), getType(), json);
         }
-        return null;
+        
+        return new OperationStatus()
+                .setSucceeded(true);
     }
     
     @Override
@@ -197,10 +204,12 @@ public class JsonIndex<T> extends Index<String> {
         // TODO: implement WriteOperation
         if (json.length == 1) {
             service.index(getIndex(), getType(), json[0], JsonUtil.getId(json[0], getIdField()));
-        } else {
+        } else if (json.length > 1) {
             service.bulkIndex(getIndex(), getType(), json);
         }
-        return null;
+
+        return new OperationStatus()
+                .setSucceeded(true);
     }
     
     @Override
@@ -208,10 +217,12 @@ public class JsonIndex<T> extends Index<String> {
         // TODO: need to gather operation results and return
         if (json.size() == 1) {
             service.index(getIndex(), getType(), json.get(0), JsonUtil.getId(json.get(0), getIdField()));
-        } else {
+        } else if (json.size() > 1) {
             service.bulkIndex(getIndex(), getType(), json.toArray(new String[json.size()]));
         }
-        return null;
+
+        return new OperationStatus()
+                .setSucceeded(true);
     }
     
     @Override
@@ -220,10 +231,12 @@ public class JsonIndex<T> extends Index<String> {
         // TODO: implement WriteOperation
         if (json.size() == 1) {
             service.index(getIndex(), getType(), json.get(0), JsonUtil.getId(json.get(0), getIdField()));
-        } else {
+        } else if (json.size() > 1) {
             service.bulkIndex(getIndex(), getType(), json.toArray(new String[json.size()]));
         }
-        return null;
+        
+        return new OperationStatus()
+                .setSucceeded(true);
     }
 
     @Override
