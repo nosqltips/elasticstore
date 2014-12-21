@@ -3,6 +3,7 @@ package com.nosqlrevolution;
 import com.nosqlrevolution.apps.Export;
 import com.nosqlrevolution.apps.Import;
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  *
@@ -22,10 +23,13 @@ public class App {
             return;
         }
         
-        if (args[0].toLowerCase().equals("export")) {
-            Export.run(args);
-        } else if (args[0].toLowerCase().equals("import")) {
-            Import.run(args);
+        String command = args[0];
+        String[] options = Arrays.copyOfRange(args, 1, args.length);
+        
+        if (command.equals("export")) {
+            Export.run(options);
+        } else if (command.equals("import")) {
+            Import.run(options);
         } else {
             System.out.println("1st parameter must be either export or import");
         }

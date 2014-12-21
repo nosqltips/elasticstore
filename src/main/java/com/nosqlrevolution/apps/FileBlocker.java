@@ -29,16 +29,18 @@ public class FileBlocker implements Callable<Integer> {
     private List<String> buffer = null;
     private List<String> secondBuffer = new ArrayList<>();
     private final Object synchronizer = new Object();
-    private final int BATCH_SIZE = 1000;
+    private final int blockSize;
     private boolean done = false;
     
     /**
      * Take a file input and break the file into blocks for processing.
      * 
      * @param file
+     * @param blockSize
      * @throws IOException 
      */
-    public FileBlocker(String file) throws IOException {
+    public FileBlocker(String file, int blockSize) throws IOException {
+        this.blockSize = blockSize;
         this.filename = file;
         inFile = new File(filename);
         fis = new FileInputStream(inFile);
@@ -68,7 +70,7 @@ public class FileBlocker implements Callable<Integer> {
                 totalCount ++;
             }
             
-            if (secondBuffer.size() >= BATCH_SIZE) {
+            if (secondBuffer.size() >= blockSize) {
                 synchronized(synchronizer) {
                     // Both buffers are full, so we can wait for a pickup.
                     if (buffer != null) {

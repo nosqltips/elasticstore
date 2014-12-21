@@ -8,6 +8,8 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
 
 /**
  * Used to download data from an ElasticSearch cluster
@@ -19,32 +21,28 @@ public class Export {
     private final static ObjectMapper mapper = new ObjectMapper();
     
     public static void run(String[] args) throws IOException, Exception {
-        if (args == null || args.length == 0) {
-            System.out.println("No parameters, exiting.");
-            System.out.println("1) hostname");
-            System.out.println("2) outFilename");
-            System.out.println("3) clustername");
-            System.out.println("4) index");
-            System.out.println("5) type");
+        ExportOptions options = new ExportOptions();
+        CmdLineParser parser = new CmdLineParser(options);
+        try {
+            parser.parseArgument(args);
+        } catch( CmdLineException e ) {
+            System.err.println(e.getMessage());
+            System.err.println("java -jar elasticstore.jar export [options...]");
+            parser.printUsage(System.err);
             return;
-        }
+        }        
         
-        String hostname = args[1];
-        String outfilename = args[2];
-        String clustername = args[3];
-        String index = args[4];
-        String type = args[5];
-        
-        System.out.println("hostname=" + hostname + " outfilename=" + outfilename + " clustername=" + clustername + " index=" + index + " type=" + type);
-        File outFile = new File(outfilename);
+        System.out.println("hostname=" + options.getHostname() + " outfilename=" + options.getOutfilename() + " clustername=" + options.getClustername() + 
+                " index=" + options.getIndex() + " type=" + options.getType());
+        File outFile = new File(options.getOutfilename());
         if (outFile.exists()) {
             System.out.println("File exists, exiting.");
             return;
         }
         
         // Connect to ElasticSearch
-        ElasticStore store = new ElasticStore().asTransport().withClusterName(clustername).withUniCast(hostname).execute();
-        Index data = store.getIndex(ExportModel.class, index, type);
+        ElasticStore store = new ElasticStore().asTransport().withClusterName(options.getClustername()).withUniCast(options.getHostname()).execute();
+        Index data = store.getIndex(ExportModel.class, options.getIndex(), options.getType());
         Cursor<ExportModel> cursor = data.findAll();
 
         outFile.createNewFile();

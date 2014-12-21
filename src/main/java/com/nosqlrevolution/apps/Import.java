@@ -1,7 +1,6 @@
 package com.nosqlrevolution.apps;
 
 import com.nosqlrevolution.ElasticStore;
-import com.nosqlrevolution.Index;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -9,6 +8,8 @@ import java.util.Stack;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
 
 /**
  * Used to download data from an ElasticSearch cluster
@@ -16,51 +17,46 @@ import java.util.concurrent.Future;
  * @author cbrown
  */
 public class Import {
-    public static void run(String[] args) throws IOException, Exception {
-        if (args == null || args.length == 0) {
-            System.out.println("No parameters, exiting.");
-            System.out.println("1) hostname");
-            System.out.println("2) inFilename");
-            System.out.println("3) clustername");
-            System.out.println("4) index");
-            System.out.println("5) type");
+    public static void run(String[] args) throws IOException, Exception {        
+        ImportOptions options = new ImportOptions();
+        CmdLineParser parser = new CmdLineParser(options);
+        try {
+            parser.parseArgument(args);
+        } catch( CmdLineException e ) {
+            System.err.println(e.getMessage());
+            System.err.println("java -jar elasticstore.jar import [options...]");
+            parser.printUsage(System.err);
             return;
-        }
-        
-        String hostname = args[1];
-        String inFilename = args[2];
-        String clustername = args[3];
-        String index = args[4];
-        String type = args[5];
-        int THREADS = 2;
-        
-        System.out.println("hostname=" + hostname + " inFilename=" + inFilename + " clustername=" + clustername + " index=" + index + " type=" + type);
-        File inFile = new File(inFilename);
+        }        
+
+        System.out.println("hostname=" + options.getHostname() + " inFilename=" + options.getInfilename() + " clustername=" + options.getClustername() + 
+                " index=" + options.getIndex() + " type=" + options.getType() + " threads=" + options.getThreads()+ " blockSize=" + options.getBlockSize());
+        File inFile = new File(options.getInfilename());
         if (! inFile.exists()) {
             System.out.println("File does not exist, exiting.");
             return;
         }
         
         // Connect to ElasticSearch
-        ElasticStore store = new ElasticStore().asTransport().withClusterName(clustername).withUniCast(hostname).execute();
+        ElasticStore store = new ElasticStore().asTransport().withClusterName(options.getClustername()).withUniCast(options.getHostname()).execute();
 
         ExecutorService single = Executors.newSingleThreadExecutor();
-        ExecutorService pool = Executors.newFixedThreadPool(THREADS);
+        ExecutorService pool = Executors.newFixedThreadPool(options.getThreads());
         
-        FileBlocker blocker = new FileBlocker(inFilename);
+        FileBlocker blocker = new FileBlocker(options.getInfilename(), options.getBlockSize());
         single.submit(blocker);
         
         Stack<Future<Integer>> futureStack = new Stack<>();
         
         // Initial creation of 
-        for (int i = 0; i < THREADS; i++) {
+        for (int i = 0; i < options.getThreads(); i++) {
             List<String> nextBlock = blocker.getNext();
             // Break 
             if (nextBlock == null) {
                 break;
             }
             futureStack.push(pool.submit(
-                    new JsonImporter(store.getIndex(String.class, index, type), nextBlock)
+                    new JsonImporter(store.getIndex(String.class, options.getIndex(), options.getType()), nextBlock)
             ));
         }
 
@@ -88,7 +84,7 @@ public class Import {
                 if (nextBlock == null) {
                     last = true;
                 } else {
-                    futureStack.push(pool.submit(new JsonImporter(store.getIndex(String.class, index, type), nextBlock)));
+                    futureStack.push(pool.submit(new JsonImporter(store.getIndex(String.class, options.getIndex(), options.getType()), nextBlock)));
                 }
             }
         }

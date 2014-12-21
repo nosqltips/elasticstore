@@ -19,7 +19,7 @@ public class ExportOptions {
     @Option(name="-t",usage="type to use")
     private String type = "type";
 
-    @Option(name="-o",usage="name of output file")
+    @Option(name="-f",usage="name of output file")
     private String outfilename = "out";
     
     @Option(name="-g",usage="gzip the output file")

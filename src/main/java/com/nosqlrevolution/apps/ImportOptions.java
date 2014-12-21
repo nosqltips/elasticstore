@@ -19,8 +19,14 @@ public class ImportOptions {
     @Option(name="-t",usage="type to use")
     private String type = "type";
 
-    @Option(name="-o",usage="name of input file")
+    @Option(name="-f",usage="name of input file")
     private String infilename = "in";
+
+    @Option(name="-th",usage="number of threads for processing")
+    private Integer threads = 2;
+
+    @Option(name="-b",usage="size of data blocks for processing")
+    private int blockSize = 1000;
 
     public String getHostname() {
         return hostname;
@@ -60,5 +66,21 @@ public class ImportOptions {
 
     public void setInfilename(String infilename) {
         this.infilename = infilename;
+    }
+
+    public Integer getThreads() {
+        return threads;
+    }
+
+    public void setThreads(Integer threads) {
+        this.threads = threads;
+    }
+
+    public int getBlockSize() {
+        return blockSize;
+    }
+
+    public void setBlockSize(int blockSize) {
+        this.blockSize = blockSize;
     }
 }
