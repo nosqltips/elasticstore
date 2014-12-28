@@ -14,13 +14,13 @@ public class ImportOptions {
     private String clustername = "elasticsearch";
     
     @Option(name="-i",usage="index to use")
-    private String index = "index";
+    private String index = null;
     
     @Option(name="-t",usage="type to use")
-    private String type = "type";
+    private String type = null;
 
     @Option(name="-f",usage="name of input file")
-    private String infilename = "in";
+    private String infilename = null;
 
     @Option(name="-th",usage="number of threads for processing")
     private Integer threads = 2;

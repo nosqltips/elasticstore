@@ -14,10 +14,10 @@ public class ExportOptions {
     private String clustername = "elasticsearch";
     
     @Option(name="-i",usage="index to use")
-    private String index = "index";
+    private String index = null;
     
     @Option(name="-t",usage="type to use")
-    private String type = "type";
+    private String type = null;
 
     @Option(name="-f",usage="name of output file")
     private String outfilename = "out";

@@ -2,6 +2,7 @@ package com.nosqlrevolution;
 
 import com.nosqlrevolution.apps.Export;
 import com.nosqlrevolution.apps.Import;
+import com.nosqlrevolution.apps.Transfer;
 import java.io.IOException;
 import java.util.Arrays;
 
@@ -20,6 +21,7 @@ public class App {
             System.out.println("No parameters, exiting.");
             System.out.println("export");
             System.out.println("import");
+            System.out.println("transfer");
             return;
         }
         
@@ -27,9 +29,11 @@ public class App {
         String[] options = Arrays.copyOfRange(args, 1, args.length);
         
         if (command.equals("export")) {
-            Export.run(options);
+            new Export().run(options);
         } else if (command.equals("import")) {
-            Import.run(options);
+            new Import().run(options);
+        } else if (command.equals("transfer")) {
+            new Transfer().run(options);
         } else {
             System.out.println("1st parameter must be either export or import");
         }

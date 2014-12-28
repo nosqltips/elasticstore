@@ -8,6 +8,8 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.Callable;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 
@@ -16,15 +18,22 @@ import org.kohsuke.args4j.CmdLineParser;
  * 
  * @author cbrown
  */
-public class Export {
+public class Export extends PoolRunner {
     private final static String newLine = System.lineSeparator();
     private final static ObjectMapper mapper = new ObjectMapper();
+    private final int THREADS = 1;
+    private final int BLOCK_SIZE = 1000000;
+    private BufferedWriter writer;
     
-    public static void run(String[] args) throws IOException, Exception {
+    @Override
+    public void run(String[] args) throws IOException, Exception {        
         ExportOptions options = new ExportOptions();
         CmdLineParser parser = new CmdLineParser(options);
         try {
             parser.parseArgument(args);
+            if (options.getIndex() == null) {
+                throw new CmdLineException("Index must be specified.");
+            }
         } catch( CmdLineException e ) {
             System.err.println(e.getMessage());
             System.err.println("java -jar elasticstore.jar export [options...]");
@@ -44,58 +53,25 @@ public class Export {
         ElasticStore store = new ElasticStore().asTransport().withClusterName(options.getClustername()).withUniCast(options.getHostname()).execute();
         Index data = store.getIndex(ExportModel.class, options.getIndex(), options.getType());
         Cursor<ExportModel> cursor = data.findAll();
+        ElasticsearchBlocker blocker = new ElasticsearchBlocker(store.getIndex(String.class, options.getIndex(), options.getType()), BLOCK_SIZE);
 
         outFile.createNewFile();
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(outFile))) {
-            int totalCount = 0;
-            int elapsedCount = 0;
-            long startTime = System.currentTimeMillis();
-            long elapsedTimeStart = startTime;
-            for (ExportModel ex: cursor) {
-                writer.append(mapper.writeValueAsString(ex))
-                        .append(newLine);
-                totalCount ++;
-                elapsedCount ++;
-                if (totalCount % 1000 == 0) {
-                    long newElapsedTime = printStatus(totalCount, elapsedCount, elapsedTimeStart, startTime);
-                    if (newElapsedTime != elapsedTimeStart) {
-                        elapsedCount = 0;
-                    }
-                    elapsedTimeStart = newElapsedTime;
-                }
-            }
+        FileWriter fileWriter = null;
+        try {
+            fileWriter = new FileWriter(outFile);
+            writer = new BufferedWriter(fileWriter);
+            super.run(blocker, THREADS);
+        } catch (IOException ie) {
             
-            printStatus(totalCount, elapsedCount, elapsedTimeStart, startTime);
-            printTotals(totalCount, startTime);
+        } finally {
             writer.flush();
+            writer.close();
+            fileWriter.close();
         }
     }
-    
-    private static long printStatus(int totalCount, int elapsedCount, long elapsedTimeStart, long startTime) {
-        long currentTime = System.currentTimeMillis();
-        long elapsedTime = currentTime - elapsedTimeStart;
-        if (elapsedTime > 1000) {
-            long totalElapsedTime = currentTime - startTime;
-            long allSeconds = totalElapsedTime / 1000;
-            long minutes = allSeconds / 60;
-            long seconds = allSeconds - (minutes * 60);
-            float rate = (float)elapsedCount / (elapsedTime / 1000.0F);
-            
-            System.out.println("Pulled " + elapsedCount + " docs in " + minutes + " minutes " + seconds + " seconds at " + rate + " per second, " + totalCount + " total docs.");
-            return currentTime;
-        } else {
-            return elapsedTimeStart;
-        }
-    }
-    
-    private static void printTotals(int totalCount, long startTime) {
-        long currentTime = System.currentTimeMillis();
-        long totalElapsedTime = currentTime - startTime;
-        long allSeconds = totalElapsedTime / 1000;
-        long minutes = allSeconds / 60;
-        long seconds = allSeconds - (minutes * 60);
-        float rate = (float)totalCount / (totalElapsedTime / 1000.0F);
 
-        System.out.println("Pulled " + totalCount + " total docs in " + minutes + " minutes " + seconds + " seconds at " + rate + " per second, ");
+    @Override
+    protected Callable getNextCallable(List<String> nextBlock) throws Exception {
+        return new JsonExporter(writer, nextBlock);
     }
 }
