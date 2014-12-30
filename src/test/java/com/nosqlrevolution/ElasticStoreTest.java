@@ -38,7 +38,7 @@ public class ElasticStoreTest {
          ElasticStore es = new ElasticStore().asLocal().execute();
          assertNotNull(es);
 
-         ElasticStore esTransport = new ElasticStore().asTransport().withUniCast("127.0.0.1").execute();
+         ElasticStore esTransport = new ElasticStore().asTransport().withUnicast("127.0.0.1").execute();
          Client client = esTransport.getClient();
          assertNotNull(client);
          

@@ -13,7 +13,7 @@ import java.util.concurrent.Future;
  * 
  * @author cbrown
  */
-public abstract class PoolRunner {
+public abstract class AbstractPoolRunner {
     public abstract void run(String[] args) throws IOException, Exception;
     protected abstract Callable getNextCallable(List<String> nextBlock) throws Exception;
     

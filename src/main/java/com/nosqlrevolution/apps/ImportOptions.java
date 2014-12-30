@@ -28,6 +28,15 @@ public class ImportOptions {
     @Option(name="-b",usage="size of data blocks for processing")
     private int blockSize = 1000;
 
+    @Option(name="-l",usage="limit to the first N documents")
+    private int limit = -1;
+
+    @Option(name="-s",usage="keep only every Nth document")
+    private int sample = -1;
+
+    @Option(name="-n",usage="connect to cluster as node instead of as transport client")
+    private boolean node = false;
+
     public String getHostname() {
         return hostname;
     }
@@ -82,5 +91,29 @@ public class ImportOptions {
 
     public void setBlockSize(int blockSize) {
         this.blockSize = blockSize;
+    }
+
+    public int getLimit() {
+        return limit;
+    }
+
+    public void setLimit(int limit) {
+        this.limit = limit;
+    }
+
+    public int getSample() {
+        return sample;
+    }
+
+    public void setSample(int sample) {
+        this.sample = sample;
+    }
+
+    public boolean isNode() {
+        return node;
+    }
+
+    public void setNode(boolean node) {
+        this.node = node;
     }
 }

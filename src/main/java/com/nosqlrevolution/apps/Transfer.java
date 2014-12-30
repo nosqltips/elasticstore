@@ -12,7 +12,7 @@ import org.kohsuke.args4j.CmdLineParser;
  * 
  * @author cbrown
  */
-public class Transfer extends PoolRunner {
+public class Transfer extends AbstractPoolRunner {
     private ElasticStore destStore;
     private TransferOptions options;
     
@@ -45,15 +45,17 @@ public class Transfer extends PoolRunner {
                 " destination index=" + options.getDestIndex() + " destination type=" + options.getDestType());
 
         // Connect to ElasticSearch
-        destStore = new ElasticStore().asTransport().withClusterName(options.getDestClustername()).withUniCast(options.getDestHostname()).execute();
-        ElasticStore sourceStore = new ElasticStore().asTransport().withClusterName(options.getSourceClustername()).withUniCast(options.getSourceHostname()).execute();
-        ElasticsearchBlocker blocker = new ElasticsearchBlocker(sourceStore.getIndex(String.class, options.getSourceIndex(), options.getSourceType()), options.getBlockSize());
+        destStore = ElasticStoreUtil.createElasticStore(
+                options.getDestHostname(), options.getDestClustername(), options.getDestIndex(), options.getDestType(), options.isDestNode());
+        ElasticStore sourceStore = ElasticStoreUtil.createElasticStore(
+                options.getSourceHostname(), options.getSourceClustername(), options.getSourceIndex(), options.getSourceType(), options.isSourceNode());
+        JsonBlocker blocker = new JsonBlocker(sourceStore, options.getSourceIndex(), options.getSourceType(), options.getBlockSize(), options.getLimit(), options.getSample());
 
         super.run(blocker, options.getThreads());
     }
     
     @Override
     protected Callable getNextCallable(List<String> nextBlock) throws Exception {
-        return new JsonImporter(destStore.getIndex(String.class, options.getDestIndex(), options.getDestType()), nextBlock);
+        return new JsonImporter(destStore, options.getDestIndex(), options.getDestType(), nextBlock);
     }
 }

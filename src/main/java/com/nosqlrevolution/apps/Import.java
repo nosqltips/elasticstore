@@ -13,7 +13,7 @@ import org.kohsuke.args4j.CmdLineParser;
  * 
  * @author cbrown
  */
-public class Import extends PoolRunner {
+public class Import extends AbstractPoolRunner {
     private ElasticStore store;
     private ImportOptions options;
     
@@ -48,14 +48,15 @@ public class Import extends PoolRunner {
         }
         
         // Connect to ElasticSearch
-        store = new ElasticStore().asTransport().withClusterName(options.getClustername()).withUniCast(options.getHostname()).execute();
-        FileBlocker blocker = new FileBlocker(options.getInfilename(), options.getBlockSize());
+        store = ElasticStoreUtil.createElasticStore(
+                options.getHostname(), options.getClustername(), options.getIndex(), options.getType(), options.isNode());
+        FileBlocker blocker = new FileBlocker(options.getInfilename(), options.getBlockSize(), options.getLimit(), options.getSample());
         
         super.run(blocker, options.getThreads());
     }
     
     @Override
     protected Callable getNextCallable(List<String> nextBlock) throws Exception {
-        return new JsonImporter(store.getIndex(String.class, options.getIndex(), options.getType()), nextBlock);
+        return new JsonImporter(store, options.getIndex(), options.getType(), nextBlock);
     }
 }

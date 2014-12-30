@@ -25,6 +25,21 @@ public class ExportOptions {
     @Option(name="-g",usage="gzip the output file")
     private boolean gzip = false;
 
+    @Option(name="-b",usage="size of data blocks for processing")
+    private int blockSize = 10000;
+
+    @Option(name="-m",usage="use ExportModel to export data\nthis is useful for exporting documents that do not have an integral id field")
+    private boolean modelMode = false;
+
+    @Option(name="-l",usage="limit to the first N documents")
+    private int limit = -1;
+
+    @Option(name="-s",usage="keep only every Nth document")
+    private int sample = -1;
+
+    @Option(name="-n",usage="connect to cluster as node instead of as transport client")
+    private boolean node = false;
+
     public String getHostname() {
         return hostname;
     }
@@ -58,6 +73,12 @@ public class ExportOptions {
     }
 
     public String getOutfilename() {
+        if (isGzip()) {
+            if (! outfilename.endsWith(".gz") && ! outfilename.endsWith(".gzip")) {
+                return outfilename + ".gz";
+            }
+        }
+        
         return outfilename;
     }
 
@@ -71,5 +92,45 @@ public class ExportOptions {
 
     public void setGzip(boolean gzip) {
         this.gzip = gzip;
+    }
+
+    public int getBlockSize() {
+        return blockSize;
+    }
+
+    public void setBlockSize(int blockSize) {
+        this.blockSize = blockSize;
+    }
+
+    public boolean isModelMode() {
+        return modelMode;
+    }
+
+    public void setModelMode(boolean modelMode) {
+        this.modelMode = modelMode;
+    }
+
+    public int getLimit() {
+        return limit;
+    }
+
+    public void setLimit(int limit) {
+        this.limit = limit;
+    }
+
+    public int getSample() {
+        return sample;
+    }
+
+    public void setSample(int sample) {
+        this.sample = sample;
+    }
+
+    public boolean isNode() {
+        return node;
+    }
+
+    public void setNode(boolean node) {
+        this.node = node;
     }
 }

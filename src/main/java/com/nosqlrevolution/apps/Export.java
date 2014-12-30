@@ -1,15 +1,13 @@
 package com.nosqlrevolution.apps;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nosqlrevolution.ElasticStore;
-import com.nosqlrevolution.Index;
-import com.nosqlrevolution.cursor.Cursor;
-import java.io.BufferedWriter;
+import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.zip.GZIPOutputStream;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 
@@ -18,12 +16,9 @@ import org.kohsuke.args4j.CmdLineParser;
  * 
  * @author cbrown
  */
-public class Export extends PoolRunner {
-    private final static String newLine = System.lineSeparator();
-    private final static ObjectMapper mapper = new ObjectMapper();
+public class Export extends AbstractPoolRunner {
     private final int THREADS = 1;
-    private final int BLOCK_SIZE = 1000000;
-    private BufferedWriter writer;
+    private BufferedOutputStream oStream;
     
     @Override
     public void run(String[] args) throws IOException, Exception {        
@@ -50,28 +45,45 @@ public class Export extends PoolRunner {
         }
         
         // Connect to ElasticSearch
-        ElasticStore store = new ElasticStore().asTransport().withClusterName(options.getClustername()).withUniCast(options.getHostname()).execute();
-        Index data = store.getIndex(ExportModel.class, options.getIndex(), options.getType());
-        Cursor<ExportModel> cursor = data.findAll();
-        ElasticsearchBlocker blocker = new ElasticsearchBlocker(store.getIndex(String.class, options.getIndex(), options.getType()), BLOCK_SIZE);
+        ElasticStore store = ElasticStoreUtil.createElasticStore(
+                options.getHostname(), options.getClustername(), options.getIndex(), options.getType(), options.isNode());
+        AbstractBlocker blocker;
+        if (! options.isModelMode()) {
+            blocker = new JsonBlocker(store, options.getIndex(), options.getType(), options.getBlockSize(), options.getLimit(), options.getSample());
+        } else {
+            blocker = new ModelBlocker(store, options.getIndex(), options.getType(), options.getBlockSize(), options.getLimit(), options.getSample());
+        }
 
         outFile.createNewFile();
-        FileWriter fileWriter = null;
+        FileOutputStream fStream = null;
+        GZIPOutputStream gStream = null;
         try {
-            fileWriter = new FileWriter(outFile);
-            writer = new BufferedWriter(fileWriter);
+            fStream = new FileOutputStream(outFile);
+            if (options.isGzip()) {
+                gStream = new GZIPOutputStream(fStream);
+                oStream = new BufferedOutputStream(gStream);
+            } else {
+                oStream = new BufferedOutputStream(fStream);
+            }
             super.run(blocker, THREADS);
         } catch (IOException ie) {
-            
+            ie.printStackTrace();
         } finally {
-            writer.flush();
-            writer.close();
-            fileWriter.close();
+            if (oStream != null) {
+                oStream.flush();
+                oStream.close();
+            }
+            if (gStream != null) {
+                gStream.close();
+            }
+            if (fStream != null) {
+                fStream.close();
+            }
         }
     }
 
     @Override
     protected Callable getNextCallable(List<String> nextBlock) throws Exception {
-        return new JsonExporter(writer, nextBlock);
+        return new JsonExporter(oStream, nextBlock);
     }
 }

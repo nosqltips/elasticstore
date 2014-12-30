@@ -104,7 +104,7 @@ public class ElasticStore {
      * @param hosts
      * @return 
      */
-    public ElasticStore withUniCast(String... hosts) {
+    public ElasticStore withUnicast(String... hosts) {
         multicast = false;
         this.hosts = hosts;
         return this;

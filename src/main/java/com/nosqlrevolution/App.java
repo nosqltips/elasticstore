@@ -28,14 +28,19 @@ public class App {
         String command = args[0];
         String[] options = Arrays.copyOfRange(args, 1, args.length);
         
-        if (command.equals("export")) {
-            new Export().run(options);
-        } else if (command.equals("import")) {
-            new Import().run(options);
-        } else if (command.equals("transfer")) {
-            new Transfer().run(options);
-        } else {
-            System.out.println("1st parameter must be either export or import");
+        switch (command) {
+            case "export":
+                new Export().run(options);
+                break;
+            case "import":
+                new Import().run(options);
+                break;
+            case "transfer":
+                new Transfer().run(options);
+                break;
+            default:
+                System.out.println("1st parameter must be either export or import");
+                break;
         }
     }
 }

@@ -17,24 +17,37 @@ public abstract class AbstractBlocker implements Callable<Integer> {
     private List<String> buffer = null;
     private List<String> secondBuffer = new ArrayList<>();
     private final Object synchronizer = new Object();
-    private final int blockSize;
     private boolean done = false;
+    
+    private final int blockSize;
+    private final int limit;
+    private final int sample;
+    private int sampleCount = 0;
 
-    public AbstractBlocker(int blocksize) {
+    public AbstractBlocker(int blocksize, int limit, int sample) {
         this.blockSize = blocksize;
+        this.limit = limit;
+        this.sample = sample;
     }
     
     /**
      * This is the main implementation for the buffering algorithm.
      * Null means no more data and drain existing buffers.
      * 
+     * True return value means reached limit.
+     * 
      * @param s 
+     * @return  
      * @throws java.lang.InterruptedException 
      */
-    protected void bufferNext(String s) throws InterruptedException {
+    protected boolean bufferNext(String s) throws InterruptedException {
         if (s != null) {
-            secondBuffer.add(s);
-            totalCount ++;
+            // Take the sample rate into account. -1 means no sampling.
+            if (sample <= 0 || (sample > 0 && sampleCount >= sample)) {
+                secondBuffer.add(s);
+                totalCount ++;
+                sampleCount ++;
+            }
             
             if (secondBuffer.size() >= blockSize) {
                 synchronized(synchronizer) {
@@ -50,6 +63,11 @@ public abstract class AbstractBlocker implements Callable<Integer> {
                         synchronizer.notifyAll();
                     }
                 }
+            }
+            
+            // Check to see if we've hit the limit of the number of documents to return.
+            if (limit > 0 && totalCount >= limit) {
+                return false;
             }
         } else {
 
@@ -71,6 +89,9 @@ public abstract class AbstractBlocker implements Callable<Integer> {
                 done = true;
             }
         }
+        
+        // True means continue sending data.
+        return true;
     }
     
     /**
@@ -103,6 +124,13 @@ public abstract class AbstractBlocker implements Callable<Integer> {
             return returnBuffer;
         }
     }
+    
+    /**
+     * Return the total number of expected documents for calculations.
+     * 
+     * @return 
+     */
+    public abstract long getTotalDocs();
     
     /**
      * Close all of the opened resources.
