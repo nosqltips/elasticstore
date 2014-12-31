@@ -32,7 +32,7 @@ public class ModelBlocker extends AbstractBlocker {
         super(blockSize, limit, sample);
         Index esIndex = store.getIndex(ExportModel.class, index, type);
         cursor = esIndex.findAll();
-        totalDocs = cursor.size();
+        totalDocs = limit <= 0 ? cursor.size() : limit;
     }
     
     @Override    

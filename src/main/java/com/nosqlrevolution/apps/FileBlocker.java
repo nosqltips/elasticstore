@@ -37,7 +37,7 @@ public class FileBlocker extends AbstractBlocker {
         inFile = new File(filename);
 
         // Read the total number of documents first
-        totalDocs = getDocCount(inFile);
+        totalDocs = limit <= 0 ? getDocCount(inFile) : limit;
         
         // Set up our file access now.
         fis = new FileInputStream(inFile);
@@ -134,7 +134,7 @@ public class FileBlocker extends AbstractBlocker {
             }
         }
 
-        System.out.println("Counted " + total + " docs in " + ((System.currentTimeMillis() - startTime) / 1000) + "  seconds");
+        System.out.println("Counted " + total + " docs in " + ((System.currentTimeMillis() - startTime) / 1000) + " seconds");
 
         return total;
     }

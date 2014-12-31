@@ -15,14 +15,16 @@ import java.util.concurrent.Future;
  */
 public abstract class AbstractPoolRunner {
     public abstract void run(String[] args) throws IOException, Exception;
-    protected abstract Callable getNextCallable(List<String> nextBlock) throws Exception;
+    protected abstract Callable<CountsAndBytes> getNextCallable(List<String> nextBlock) throws Exception;
     
     protected void run(AbstractBlocker blocker, int threads) throws IOException, Exception {
         ExecutorService single = Executors.newSingleThreadExecutor();
         ExecutorService pool = Executors.newFixedThreadPool(threads);
         
         single.submit(blocker);
-        Stack<Future<Integer>> futureStack = new Stack<>();
+        long totalDocs = blocker.getTotalDocs();
+        
+        Stack<Future<CountsAndBytes>> futureStack = new Stack<>();
         
         // Initial creation of 
         for (int i = 0; i < threads; i++) {
@@ -36,18 +38,19 @@ public abstract class AbstractPoolRunner {
 
         boolean last = false;
         int totalCount = 0;
-        int elapsedCount = 0;
+        long totalBytes = 0;
         long startTime = System.currentTimeMillis();
         long elapsedTimeStart = startTime;
         while (! futureStack.empty()) {
-            Future<Integer> future = futureStack.pop();
-            int count = future.get();
-            elapsedCount += count;
+            Future<CountsAndBytes> future = futureStack.pop();
+            CountsAndBytes cbs = future.get();
+            int count = cbs.getCounts();
             totalCount += count;
+            long bytes = cbs.getBytes();
+            totalBytes += bytes;
             
-            long newElapsedTime = printStatus(totalCount, elapsedCount, elapsedTimeStart, startTime);
+            long newElapsedTime = printStatus(totalCount, count, elapsedTimeStart, startTime, bytes, totalDocs);
             if (newElapsedTime != elapsedTimeStart) {
-                elapsedCount = 0;
                 elapsedTimeStart = newElapsedTime;
             }
             
@@ -63,7 +66,7 @@ public abstract class AbstractPoolRunner {
             }
         }
         
-        printTotals(totalCount, startTime);
+        printTotals(totalCount, startTime, totalBytes);
         
         blocker.shudown();
         single.shutdown();
@@ -71,7 +74,7 @@ public abstract class AbstractPoolRunner {
         System.out.println("Done");
     }
     
-    private static long printStatus(int totalCount, int elapsedCount, long elapsedTimeStart, long startTime) {
+    private static long printStatus(int totalCount, int elapsedCount, long elapsedTimeStart, long startTime, long bytes, long totalDocs) {
         long currentTime = System.currentTimeMillis();
         long elapsedTime = currentTime - elapsedTimeStart;
         long totalElapsedTime = currentTime - startTime;
@@ -81,11 +84,11 @@ public abstract class AbstractPoolRunner {
         float elapsedRate = (float)elapsedCount / (elapsedTime / 1000.0F);
         float totalRate = (float)totalCount / (totalElapsedTime / 1000.0F);
 
-        System.out.println("Pushed " + elapsedCount + " docs in " + elapsedTime /1000.0F + " seconds at " + elapsedRate + " docs/second, " + totalCount + " total docs in " + minutes + " minutes " + seconds + " seconds at " + totalRate + " docs/second");
+        System.out.println("Pushed " + elapsedCount + " docs in " + elapsedTime/1000.0F + " secs at " + elapsedRate + " docs/sec " + getMegabytes(bytes) + " MB/sec, " + totalCount + " total docs in " + minutes + " minutes " + seconds + " seconds at " + totalRate + " docs/second " + getPercentComplete(totalCount, totalDocs) + "% complete");
         return currentTime;
     }
     
-    private static void printTotals(int totalCount, long startTime) {
+    private static void printTotals(int totalCount, long startTime, long totalBytes) {
         long currentTime = System.currentTimeMillis();
         long totalElapsedTime = currentTime - startTime;
         long allSeconds = totalElapsedTime / 1000;
@@ -93,6 +96,14 @@ public abstract class AbstractPoolRunner {
         long seconds = allSeconds - (minutes * 60);
         float rate = (float)totalCount / (totalElapsedTime / 1000.0F);
 
-        System.out.println("Pushed " + totalCount + " total docs in " + minutes + " minutes " + seconds + " seconds at " + rate + " per second, ");
+        System.out.println("Pushed " + totalCount + " total docs and " + getMegabytes(totalBytes) + "MB in " + minutes + " minutes " + seconds + " seconds at " + rate + " per second, ");
+    }
+    
+    private static float getMegabytes(long bytes) {
+        return (bytes / 1048576.0F);
+    }
+    
+    private static float getPercentComplete(int elapsedDocs, long totalDocs) {
+        return ((float)elapsedDocs / totalDocs) * 100;
     }
 }

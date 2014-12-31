@@ -13,11 +13,12 @@ import java.util.concurrent.Callable;
  *
  * @author cbrown
  */
-public class JsonImporter implements Callable<Integer> {
+public class JsonImporter implements Callable<CountsAndBytes> {
     private final ObjectMapper mapper = new ObjectMapper();
     private final Index esIndex;
     private final List<String> data;
     private int totalCount = 0;
+    private int totalBytes = 0;
     
     public JsonImporter(ElasticStore store, String index, String type, List<String> data) throws Exception {
         esIndex = store.getIndex(String.class, index, type);
@@ -25,13 +26,14 @@ public class JsonImporter implements Callable<Integer> {
     }
     
     @Override
-    public Integer call() throws Exception {
+    public CountsAndBytes call() throws Exception {
         for (String s: data) {
             // We want to render each JSON object to make sure it is valid before sending to ES.
             try {
                 mapper.readValue(s, new TypeReference<HashMap<String,Object>>() {});
                 esIndex.addBulk(s);
                 totalCount += 1;
+                totalBytes += s.getBytes().length;
             } catch (IOException ie) {
                 // TODO: write to a log file.
                 System.out.println("Bad JSON value = " + s);
@@ -39,6 +41,6 @@ public class JsonImporter implements Callable<Integer> {
         }
 
         esIndex.flushBulk();
-        return totalCount;
+        return new CountsAndBytes(totalCount, totalBytes);
     }
 }

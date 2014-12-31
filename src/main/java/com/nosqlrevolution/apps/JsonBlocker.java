@@ -29,7 +29,7 @@ public class JsonBlocker extends AbstractBlocker {
         super(blockSize, limit, sample);
         Index esIndex = store.getIndex(String.class, index, type);
         cursor = esIndex.findAll();
-        totalDocs = cursor.size();
+        totalDocs = limit <= 0 ? cursor.size() : limit;
     }
     
     /**
