@@ -147,38 +147,38 @@ public class JsonIndex<T> extends Index<String> {
         String[] json = service.realTimeMultiGet(getIndex(), getType(), ids);        
         return new MultiGetCursor<String>(clazz, json);
     }
-            
-    @Override
-    public OperationStatus removeById(String... ids) {
-        boolean r = service.deleteAll(getIndex(), getType(), ids);
-        return new OperationStatus()
-                .setSucceeded(true);
-    }
-    
-    @Override
-    public OperationStatus removeById(List<String> ids) {
-        boolean r = service.deleteAll(getIndex(), getType(), ids.toArray(new String[ids.size()]));
-        
-        return new OperationStatus()
-                .setSucceeded(true);
-    }
-    
-    @Override
-    public OperationStatus remove(String... json) {
-        if (json.length == 1) {
-            boolean r = service.delete(getIndex(), getType(), JsonUtil.getId(json[0], getIdField()));
-        } else if (json.length > 1) {
-            List<String> ids = new ArrayList<String>();
-            for (String js: json) {
-                ids.add(JsonUtil.getId(js, getIdField()));
-                // TODO: what do we do with null ids? bail with exception? Report the error with OperationStatus?
-            }
-            boolean r = service.deleteAll(getIndex(), getType(), ids.toArray(new String[ids.size()]));
-        }
-        
-        return new OperationStatus()
-                .setSucceeded(true);
-    }
+//            
+//    @Override
+//    public OperationStatus removeById(String... ids) {
+//        boolean r = service.deleteAll(getIndex(), getType(), ids);
+//        return new OperationStatus()
+//                .setSucceeded(true);
+//    }
+//    
+//    @Override
+//    public OperationStatus removeById(List<String> ids) {
+//        boolean r = service.deleteAll(getIndex(), getType(), ids.toArray(new String[ids.size()]));
+//        
+//        return new OperationStatus()
+//                .setSucceeded(true);
+//    }
+//    
+//    @Override
+//    public OperationStatus remove(String... json) {
+//        if (json.length == 1) {
+//            boolean r = service.delete(getIndex(), getType(), JsonUtil.getId(json[0], getIdField()));
+//        } else if (json.length > 1) {
+//            List<String> ids = new ArrayList<String>();
+//            for (String js: json) {
+//                ids.add(JsonUtil.getId(js, getIdField()));
+//                // TODO: what do we do with null ids? bail with exception? Report the error with OperationStatus?
+//            }
+//            boolean r = service.deleteAll(getIndex(), getType(), ids.toArray(new String[ids.size()]));
+//        }
+//        
+//        return new OperationStatus()
+//                .setSucceeded(true);
+//    }
     
     @Override
     public OperationStatus remove(Query query) {

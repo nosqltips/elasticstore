@@ -68,11 +68,7 @@ public class QueryResolverService {
                     break;
 
                 case IN:
-                    if (condition.getSpecialField() != null) {
-                        builders.add(QueryUtil.getIdQuery(condition.getValues()));
-                    } else {
-                        builders.add(QueryUtil.getInQuery(condition.getField(), condition.getValues()));
-                    }
+                    builders.add(QueryUtil.getTermQuery(condition.getField(), condition.getValue()));
                     break;
                 case NOT_IN:
                     builders.add(QueryUtil.getTermQuery(condition.getField(), condition.getValue()));

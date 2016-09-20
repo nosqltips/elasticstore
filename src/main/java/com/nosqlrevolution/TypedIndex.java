@@ -155,35 +155,35 @@ public class TypedIndex<T> extends Index<T> {
         return new MultiGetCursor<T>(clazz, json);
     }
     
-    @Override
-    public OperationStatus removeById(String... ids) {
-        OperationStatus status = new OperationStatus();
-        status.setSucceeded(service.deleteAll(getIndex(), getType(), ids));
-        return status;
-    }
-    
-    @Override
-    public OperationStatus removeById(List<String> ids) {
-        OperationStatus status = new OperationStatus();
-        status.setSucceeded(service.deleteAll(getIndex(), getType(), ids.toArray(new String[ids.size()])));
-        return status;
-    }
-    
-    @Override
-    public OperationStatus remove(T... t) {
-        OperationStatus status = new OperationStatus();
-        if (t.length == 1) {
-            status.setSucceeded(service.delete(getIndex(), getType(), AnnotationHelper.getDocumentId(t[0], getIdField())));
-        } else if (t.length > 1) {
-            List<String> list = new ArrayList<String>();
-            for (T o: t) {
-                list.add(AnnotationHelper.getDocumentId(o, getIdField()));
-                // TODO: what do we do with null ids? bail with exception? Report the error with OperationStatus?
-            }
-            status.setSucceeded(service.deleteAll(getIndex(), getType(), list.toArray(new String[list.size()])));
-        }
-        return status;
-    }
+//    @Override
+//    public OperationStatus removeById(String... ids) {
+//        OperationStatus status = new OperationStatus();
+//        status.setSucceeded(service.deleteAll(getIndex(), getType(), ids));
+//        return status;
+//    }
+//    
+//    @Override
+//    public OperationStatus removeById(List<String> ids) {
+//        OperationStatus status = new OperationStatus();
+//        status.setSucceeded(service.deleteAll(getIndex(), getType(), ids.toArray(new String[ids.size()])));
+//        return status;
+//    }
+//    
+//    @Override
+//    public OperationStatus remove(T... t) {
+//        OperationStatus status = new OperationStatus();
+//        if (t.length == 1) {
+//            status.setSucceeded(service.delete(getIndex(), getType(), AnnotationHelper.getDocumentId(t[0], getIdField())));
+//        } else if (t.length > 1) {
+//            List<String> list = new ArrayList<String>();
+//            for (T o: t) {
+//                list.add(AnnotationHelper.getDocumentId(o, getIdField()));
+//                // TODO: what do we do with null ids? bail with exception? Report the error with OperationStatus?
+//            }
+//            status.setSucceeded(service.deleteAll(getIndex(), getType(), list.toArray(new String[list.size()])));
+//        }
+//        return status;
+//    }
     
     @Override
     public OperationStatus remove(Query query) {

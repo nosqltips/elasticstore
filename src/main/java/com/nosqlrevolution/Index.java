@@ -265,7 +265,7 @@ public abstract class Index<T> {
      * @param mapping
      */
     public void applyMapping(String mapping) {
-        store.applyMapping(mapping, true, type, index);
+        store.applyMapping(mapping, type, index);
     }
     
     public void refresh() {

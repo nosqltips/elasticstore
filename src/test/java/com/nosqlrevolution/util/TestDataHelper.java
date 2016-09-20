@@ -1,12 +1,10 @@
 package com.nosqlrevolution.util;
 
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
-import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.common.settings.Settings;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
@@ -16,7 +14,7 @@ import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
  */
 public class TestDataHelper {
     public static Client createTestClient() {
-        ImmutableSettings.Builder builder = ImmutableSettings.settingsBuilder()
+        Settings.Builder builder = Settings.settingsBuilder()
             .put("es.index.storage.type", "memory")
             .put("index.number_of_shards", "1")
             .put("index.number_of_replicas", "0");

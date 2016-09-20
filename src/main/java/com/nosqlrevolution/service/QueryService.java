@@ -1,8 +1,6 @@
 package com.nosqlrevolution.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Lists;
-import com.nosqlrevolution.cursor.BlockCursor;
 import com.nosqlrevolution.WriteOperation;
 import com.nosqlrevolution.query.Query;
 import com.nosqlrevolution.util.JsonUtil;
@@ -18,8 +16,6 @@ import org.elasticsearch.action.count.CountRequestBuilder;
 import org.elasticsearch.action.count.CountResponse;
 import org.elasticsearch.action.delete.DeleteRequestBuilder;
 import org.elasticsearch.action.delete.DeleteResponse;
-import org.elasticsearch.action.deletebyquery.DeleteByQueryRequestBuilder;
-import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse;
 import org.elasticsearch.action.get.*;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
@@ -129,7 +125,7 @@ public class QueryService {
         if (qb != null) {
             builder.setQuery(qb);
         } else {
-            builder.setPostFilter(QueryUtil.getMatchAllFilter());
+            builder.setQuery(QueryUtil.getMatchAllQuery());
         }
         
         return builder;
@@ -360,44 +356,46 @@ public class QueryService {
         //response.notFound();
     }
     
-    /**
-     * Delete all documents as DeleteByQuery
-     * Passes in a default WriteOperation
-     * 
-     * @param index
-     * @param type
-     * @param ids
-     * @return 
-     */
-    public boolean deleteAll(String index, String type, String[] ids) {
-        return deleteAll(DEFAULT_WRITE, index, type, ids);
-    }
-    /**
-     * Delete all documents as DeleteByQuery
-     * 
-     * @param write
-     * @param index
-     * @param type
-     * @param id
-     * @return 
-     */
-    public boolean deleteAll(WriteOperation write, String index, String type, String[] id) {
-        DeleteByQueryRequestBuilder builder = client.prepareDeleteByQuery()
-                .setIndices(index)
-                .setTypes(type)
-                .setQuery(QueryUtil.getIdQuery(id))
-                
-                // Operations from WriteOperation
-                .setConsistencyLevel(write.getConsistencyLevel());
-        
-                // TODO: test no refresh for delete by query
-                //.setRefresh(write.getRefresh());
-        
-        DeleteByQueryResponse response = builder.execute().actionGet();
-        
-        // TODO: Need to iterate through and return a response
-        return true;
-    }
+    // Need to implement as a bulk operation.
+    
+//    /**
+//     * Delete all documents as DeleteByQuery
+//     * Passes in a default WriteOperation
+//     * 
+//     * @param index
+//     * @param type
+//     * @param ids
+//     * @return 
+//     */
+//    public boolean deleteAll(String index, String type, String[] ids) {
+//        return deleteAll(DEFAULT_WRITE, index, type, ids);
+//    }
+//    /**
+//     * Delete all documents as DeleteByQuery
+//     * 
+//     * @param write
+//     * @param index
+//     * @param type
+//     * @param id
+//     * @return 
+//     */
+//    public boolean deleteAll(WriteOperation write, String index, String type, String[] id) {
+//        DeleteByQueryRequestBuilder builder = client.prepareDeleteByQuery()
+//                .setIndices(index)
+//                .setTypes(type)
+//                .setQuery(QueryUtil.getIdQuery(id))
+//                
+//                // Operations from WriteOperation
+//                .setConsistencyLevel(write.getConsistencyLevel());
+//        
+//                // TODO: test no refresh for delete by query
+//                //.setRefresh(write.getRefresh());
+//        
+//        DeleteByQueryResponse response = builder.execute().actionGet();
+//        
+//        // TODO: Need to iterate through and return a response
+//        return true;
+//    }
     
     /**
      * Refresh the given index.

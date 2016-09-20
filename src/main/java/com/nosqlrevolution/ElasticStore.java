@@ -10,7 +10,8 @@ import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.client.transport.TransportClient.Builder;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
@@ -161,7 +162,7 @@ public class ElasticStore {
      * @return 
      */
     public ElasticStore execute() {
-        ImmutableSettings.Builder builder = ImmutableSettings.settingsBuilder()
+        Settings.Builder builder = Settings.settingsBuilder()
             .put("cluster.name", clusterName)
             .put("discovery.zen.ping.timeout", timeout)
             .put("discovery.zen.ping.multicast.enabled", multicast);
@@ -194,7 +195,7 @@ public class ElasticStore {
                     .node()
                     .client();
         } else {
-            TransportClient transClient = new TransportClient(builder.build());
+            TransportClient transClient = TransportClient.builder().settings(builder).build();
             if (! multicast) {
                 if (addresses != null) {
                     for (InetSocketAddress address: addresses) {
@@ -202,11 +203,11 @@ public class ElasticStore {
                     }
                 }
                 if (hosts != null) {
-                    for (String host: hosts) {
-                        transClient.addTransportAddress(new InetSocketTransportAddress(host, port));
+                    for (String host: hosts) {                        
+                        transClient.addTransportAddress(new InetSocketTransportAddress(new InetSocketAddress(host, port)));
                     }
                 } else {
-                    transClient.addTransportAddress(new InetSocketTransportAddress(DEFAULT_HOST, port));
+                    transClient.addTransportAddress(new InetSocketTransportAddress(new InetSocketAddress(DEFAULT_HOST, port)));
                 }
             }
             client = transClient;
@@ -341,9 +342,8 @@ public class ElasticStore {
      * @param mapping
      * @param indexes
      * @param type
-     * @param ignoreConflicts 
      */
-    protected void applyMapping(String mapping, boolean ignoreConflicts, String type, String... indexes) {
+    protected void applyMapping(String mapping, String type, String... indexes) {
         // Check to see if indexes exist and create if missing.
         for (String index: indexes) {
             if (! client.admin().indices().exists(new IndicesExistsRequest(index)).actionGet().isExists()) {
@@ -357,7 +357,6 @@ public class ElasticStore {
                 .putMapping(new PutMappingRequest(indexes)
                     .source(mapping)
                     .type(type)
-                    .ignoreConflicts(ignoreConflicts)
                 ).actionGet();
     }
 }
