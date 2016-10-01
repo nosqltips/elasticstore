@@ -49,6 +49,9 @@ public class TransferOptions {
     @Option(name="-s",usage="keep only every Nth document")
     private int sample = -1;
 
+    @Option(name="-id",usage="name of id field")
+    private String idField = null;
+
     public String getSourceHostname() {
         return sourceHostname;
     }
@@ -159,5 +162,13 @@ public class TransferOptions {
 
     public void setSample(int sample) {
         this.sample = sample;
+    }
+
+    public String getIdField() {
+        return idField;
+    }
+
+    public void setIdField(String idField) {
+        this.idField = idField;
     }
 }

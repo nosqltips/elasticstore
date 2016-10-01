@@ -202,7 +202,7 @@ public class TypedIndex<T> extends Index<T> {
                 list.add(mapping.get(o));
                 // TODO: what do we do with null ids? bail with exception? Report the error with OperationStatus?
             }
-            service.bulkIndex(getIndex(), getType(), list.toArray(new String[list.size()]));
+            service.bulkIndex(getIndex(), getType(), list.toArray(new String[list.size()]), getIdField());
         }
         status.setSucceeded(true);
         return status;
@@ -220,7 +220,7 @@ public class TypedIndex<T> extends Index<T> {
                 list.add(mapping.get(o));
                 // TODO: what do we do with null ids? bail with exception? Report the error with OperationStatus?
             }
-            service.bulkIndex(getIndex(), getType(), list.toArray(new String[list.size()]));
+            service.bulkIndex(getIndex(), getType(), list.toArray(new String[list.size()]), getIdField());
         }
         status.setSucceeded(true);
         return status;
@@ -238,7 +238,7 @@ public class TypedIndex<T> extends Index<T> {
                 list.add(mapping.get(o));
                 // TODO: what do we do with null ids? bail with exception? Report the error with OperationStatus?
             }
-            service.bulkIndex(getIndex(), getType(), list.toArray(new String[list.size()]));
+            service.bulkIndex(getIndex(), getType(), list.toArray(new String[list.size()]), getIdField());
         }
         status.setSucceeded(true);
         return status;
@@ -256,7 +256,7 @@ public class TypedIndex<T> extends Index<T> {
                 list.add(mapping.get(o));
                 // TODO: what do we do with null ids? bail with exception? Report the error with OperationStatus?
             }
-            service.bulkIndex(getIndex(), getType(), list.toArray(new String[list.size()]));
+            service.bulkIndex(getIndex(), getType(), list.toArray(new String[list.size()]), getIdField());
         }
         status.setSucceeded(true);
         return status;

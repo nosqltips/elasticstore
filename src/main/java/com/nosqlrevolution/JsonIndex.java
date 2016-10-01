@@ -191,7 +191,7 @@ public class JsonIndex<T> extends Index<String> {
         if (json.length == 1) {
             service.index(getIndex(), getType(), json[0], JsonUtil.getId(json[0], getIdField()));
         } else if (json.length > 1) {
-            service.bulkIndex(getIndex(), getType(), json);
+            service.bulkIndex(getIndex(), getType(), json, getIdField());
         }
         
         return new OperationStatus()
@@ -205,7 +205,7 @@ public class JsonIndex<T> extends Index<String> {
         if (json.length == 1) {
             service.index(getIndex(), getType(), json[0], JsonUtil.getId(json[0], getIdField()));
         } else if (json.length > 1) {
-            service.bulkIndex(getIndex(), getType(), json);
+            service.bulkIndex(getIndex(), getType(), json, getIdField());
         }
 
         return new OperationStatus()
@@ -218,7 +218,7 @@ public class JsonIndex<T> extends Index<String> {
         if (json.size() == 1) {
             service.index(getIndex(), getType(), json.get(0), JsonUtil.getId(json.get(0), getIdField()));
         } else if (json.size() > 1) {
-            service.bulkIndex(getIndex(), getType(), json.toArray(new String[json.size()]));
+            service.bulkIndex(getIndex(), getType(), json.toArray(new String[json.size()]), getIdField());
         }
 
         return new OperationStatus()
@@ -232,7 +232,7 @@ public class JsonIndex<T> extends Index<String> {
         if (json.size() == 1) {
             service.index(getIndex(), getType(), json.get(0), JsonUtil.getId(json.get(0), getIdField()));
         } else if (json.size() > 1) {
-            service.bulkIndex(getIndex(), getType(), json.toArray(new String[json.size()]));
+            service.bulkIndex(getIndex(), getType(), json.toArray(new String[json.size()]), getIdField());
         }
         
         return new OperationStatus()

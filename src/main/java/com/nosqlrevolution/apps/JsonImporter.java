@@ -17,20 +17,24 @@ public class JsonImporter implements Callable<CountsAndBytes> {
     private final ObjectMapper mapper = new ObjectMapper();
     private final Index esIndex;
     private final List<String> data;
+    private final String idField;
     private int totalCount = 0;
     private int totalBytes = 0;
     
-    public JsonImporter(ElasticStore store, String index, String type, List<String> data) throws Exception {
+    public JsonImporter(ElasticStore store, String index, String type, List<String> data, String idField) throws Exception {
         esIndex = store.getIndex(String.class, index, type);
+        esIndex.setIdField(idField);
         this.data = data;
+        this.idField = idField;
     }
     
     @Override
     public CountsAndBytes call() throws Exception {
         for (String s: data) {
-            // We want to render each JSON object to make sure it is valid before sending to ES.
             try {
-                mapper.readValue(s, new TypeReference<HashMap<String,Object>>() {});
+                // We want to render each JSON object to make sure it is valid before sending to ES.
+                HashMap<String, Object> hashValues = mapper.readValue(s, new TypeReference<HashMap<String,Object>>() {});
+
                 esIndex.addBulk(s);
                 totalCount += 1;
                 totalBytes += s.getBytes().length;

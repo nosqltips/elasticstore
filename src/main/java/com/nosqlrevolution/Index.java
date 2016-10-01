@@ -314,11 +314,11 @@ public abstract class Index<T> {
         return this;
     }
 
-    protected String getIdField() {
+    public String getIdField() {
         return idField;
     }
     
-    protected Index setIdField(String idField) {
+    public Index setIdField(String idField) {
         this.idField = idField;
         return this;
     }

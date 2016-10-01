@@ -56,6 +56,6 @@ public class Transfer extends AbstractPoolRunner {
     
     @Override
     protected Callable getNextCallable(List<String> nextBlock) throws Exception {
-        return new JsonImporter(destStore, options.getDestIndex(), options.getDestType(), nextBlock);
+        return new JsonImporter(destStore, options.getDestIndex(), options.getDestType(), nextBlock, options.getIdField());
     }
 }

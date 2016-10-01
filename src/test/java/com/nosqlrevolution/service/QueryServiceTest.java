@@ -141,7 +141,7 @@ public class QueryServiceTest {
         json[0] = new String(builder.bytes().array());
         builder = jsonBuilder().startObject().field("id", "8").field("name", "Lisa Simpson").field("username", "lsimpson").endObject();
         json[1] = new String(builder.bytes().array());
-        service.bulkIndex(index, type, json);
+        service.bulkIndex(index, type, json, "id");
         
         String s = service.realTimeGet(index, type, "7");
         assertNotNull(s);
@@ -159,7 +159,7 @@ public class QueryServiceTest {
         json[0] = new String(builder.bytes().array());
         builder = jsonBuilder().startObject().field("id", "8").field("name", "Lisa Simpson").field("username", "lsimpson").endObject();
         json[1] = new String(builder.bytes().array());
-        service.bulkIndex(index, type, json);
+        service.bulkIndex(index, type, json, "id");
         service.refresh(index);
 
         String s = service.realTimeGet(index, type, "6");

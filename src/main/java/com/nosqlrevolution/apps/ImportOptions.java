@@ -37,6 +37,9 @@ public class ImportOptions {
     @Option(name="-n",usage="connect to cluster as node instead of as transport client")
     private boolean node = false;
 
+    @Option(name="-id",usage="name of id field")
+    private String idField = null;
+
     public String getHostname() {
         return hostname;
     }
@@ -115,5 +118,13 @@ public class ImportOptions {
 
     public void setNode(boolean node) {
         this.node = node;
+    }
+
+    public String getIdField() {
+        return idField;
+    }
+
+    public void setIdField(String idField) {
+        this.idField = idField;
     }
 }

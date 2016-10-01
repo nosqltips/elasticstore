@@ -57,6 +57,6 @@ public class Import extends AbstractPoolRunner {
     
     @Override
     protected Callable getNextCallable(List<String> nextBlock) throws Exception {
-        return new JsonImporter(store, options.getIndex(), options.getType(), nextBlock);
+        return new JsonImporter(store, options.getIndex(), options.getType(), nextBlock, options.getIdField());
     }
 }

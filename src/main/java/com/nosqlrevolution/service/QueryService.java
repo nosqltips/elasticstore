@@ -288,8 +288,8 @@ public class QueryService {
      * @param type
      * @param source 
      */
-    public void bulkIndex(String index, String type, String[] source) {
-        bulkIndex(DEFAULT_WRITE, index, type, source);
+    public void bulkIndex(String index, String type, String[] source, String idField) {
+        bulkIndex(DEFAULT_WRITE, index, type, source, idField);
     }
     /**
      * Index a number of documents using the bulk indexing api
@@ -298,14 +298,15 @@ public class QueryService {
      * @param index
      * @param type
      * @param source 
+     * @param idField 
      */
-    public void bulkIndex(WriteOperation write, String index, String type, String[] source) {
+    public void bulkIndex(WriteOperation write, String index, String type, String[] source, String idField) {
         BulkRequestBuilder builder = client.prepareBulk();
 
         for (String json: source) {
             builder.add(client.prepareIndex(index, type)
                     // TODO: need to pass in an id field if available.
-                    .setId(JsonUtil.getId(json, null))
+                    .setId(JsonUtil.getId(json, idField))
                     .setSource(JsonUtil.getSource(json, json))
 
                     // Operations from WriteOperation

@@ -39,7 +39,7 @@ public class App {
                 new Transfer().run(options);
                 break;
             default:
-                System.out.println("1st parameter must be either export or import");
+                System.out.println("1st parameter must be either import, export or transfer");
                 break;
         }
     }
