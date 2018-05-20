@@ -116,6 +116,16 @@ public abstract class Index<T> {
 
     /**
      * Return a Cursor containing a list of documents in this index or indexes specified by the query.
+     * 
+     * @param query
+     * @return 
+     */
+    public Cursor findAllScroll(Query query) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Return a Cursor containing a list of documents in this index or indexes specified by the query.
      * The documents will be returned as specified by Class.
      * 
      * @param query

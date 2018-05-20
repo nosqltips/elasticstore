@@ -43,12 +43,24 @@ public class Transfer extends AbstractPoolRunner {
                 " threads=" + options.getThreads()+ " blockSize=" + options.getBlockSize());
         System.out.println("destination hostname=" + options.getDestHostname() + " destination clustername=" + options.getDestClustername() +  
                 " destination index=" + options.getDestIndex() + " destination type=" + options.getDestType());
+        System.out.println("source clusterId=" + options.getSourceClusterId() + " source region=" + options.getSourceRegion()+ " source username=" + options.getSourceUsername()+ " source password=" + options.getSourcePassword());
+        System.out.println("destination clusterId=" + options.getDestClusterId() + " destination region=" + options.getDestRegion()+ " destination username=" + options.getDestUsername()+ " destination password=" + options.getDestPassword());
 
         // Connect to ElasticSearch
         destStore = ElasticStoreUtil.createElasticStore(
-                options.getDestHostname(), options.getDestClustername(), options.getDestIndex(), options.getDestType(), options.isDestNode());
+                options.getDestHostname(), options.getDestClustername(), options.getDestIndex(), options.getDestType(), options.isDestNode(), options.isDestElastic());
+        if (options.getDestClusterId() != null) {
+            destStore.asElastic().withClusterId(options.getDestClusterId()).withRegion(options.getDestRegion()).withUsername(options.getDestUsername()).withPassword(options.getDestPassword());
+        }
+        destStore.execute();
+        
         ElasticStore sourceStore = ElasticStoreUtil.createElasticStore(
-                options.getSourceHostname(), options.getSourceClustername(), options.getSourceIndex(), options.getSourceType(), options.isSourceNode());
+                options.getSourceHostname(), options.getSourceClustername(), options.getSourceIndex(), options.getSourceType(), options.isSourceNode(), options.isSourceElastic());
+        if (options.getSourceClusterId() != null) {
+            sourceStore.asElastic().withClusterId(options.getSourceClusterId()).withRegion(options.getSourceRegion()).withUsername(options.getSourceUsername()).withPassword(options.getSourcePassword());
+        }
+        sourceStore.execute();
+        
         JsonBlocker blocker = new JsonBlocker(sourceStore, options.getSourceIndex(), options.getSourceType(), options.getBlockSize(), options.getLimit(), options.getSample());
 
         super.run(blocker, options.getThreads());

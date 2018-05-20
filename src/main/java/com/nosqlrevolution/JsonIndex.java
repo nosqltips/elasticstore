@@ -100,6 +100,20 @@ public class JsonIndex<T> extends Index<String> {
     }
 
     @Override
+    public Cursor<String> findAllScroll(Query query) {
+        SearchRequestBuilder builder = service.findAllScroll(query, getIndex(), getType());
+        SearchScrollRequestBuilder scroll = service.executeScroll(builder);
+        if (builder != null) {
+            try {
+                return new ScrollCursor<String>(String.class, scroll);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Failed to create new scroll.", e);
+            }
+        }
+        return null;
+    }
+
+    @Override
     public Cursor<String> findAll(Query query) {
         SearchRequestBuilder builder = service.findAll(query, getIndex(), getType(), false);
         SearchHits h = service.executeBuilder(builder);

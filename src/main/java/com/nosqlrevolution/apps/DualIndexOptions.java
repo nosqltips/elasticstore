@@ -6,7 +6,7 @@ import org.kohsuke.args4j.Option;
  *
  * @author cbrown
  */
-public class TransferOptions {
+public class DualIndexOptions {
     @Option(name="-sh",usage="source hostname of Elasticsearch server")
     private String sourceHostname = "localhost";
     
@@ -52,8 +52,11 @@ public class TransferOptions {
     @Option(name="-id",usage="name of id field")
     private String idField = null;
 
-    @Option(name="-f",usage="name of id field")
-    private String field = null;
+    @Option(name="-f",usage="name of output file")
+    private String outfilename = "out";
+    
+    @Option(name="-g",usage="gzip the output file")
+    private boolean gzip = false;
 
     // For Elastic service
     @Option(name="-se",usage="connect to source elastic service cluster")
@@ -207,6 +210,24 @@ public class TransferOptions {
         this.idField = idField;
     }
 
+    public String getOutfilename() {
+        if (isGzip()) {
+            if (! outfilename.endsWith(".gz") && ! outfilename.endsWith(".gzip")) {
+                return outfilename + ".gz";
+            }
+        }
+        
+        return outfilename;
+    }
+
+    public void setOutfilename(String outfilename) {
+        this.outfilename = outfilename;
+    }
+
+    public boolean isGzip() {
+        return gzip;
+    }
+
     public String getSourceUsername() {
         return sourceUsername;
     }
@@ -285,13 +306,5 @@ public class TransferOptions {
 
     public void setDestElastic(boolean destElastic) {
         this.destElastic = destElastic;
-    }
-
-    public String getField() {
-        return field;
-    }
-
-    public void setField(String field) {
-        this.field = field;
     }
 }

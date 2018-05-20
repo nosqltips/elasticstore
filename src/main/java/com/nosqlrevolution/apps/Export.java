@@ -38,6 +38,7 @@ public class Export extends AbstractPoolRunner {
         
         System.out.println("hostname=" + options.getHostname() + " outfilename=" + options.getOutfilename() + " clustername=" + options.getClustername() + 
                 " index=" + options.getIndex() + " type=" + options.getType());
+        System.out.println("elastic clusterId=" + options.getElasticClusterId()+ " elastic region=" + options.getElasticRegion()+ " shield username=" + options.getShieldUsername() + " shield password=" + options.getShieldPassword());
         File outFile = new File(options.getOutfilename());
         if (outFile.exists()) {
             System.out.println("File exists, exiting.");
@@ -46,7 +47,12 @@ public class Export extends AbstractPoolRunner {
         
         // Connect to ElasticSearch
         ElasticStore store = ElasticStoreUtil.createElasticStore(
-                options.getHostname(), options.getClustername(), options.getIndex(), options.getType(), options.isNode());
+                options.getHostname(), options.getClustername(), options.getIndex(), options.getType(), options.isNode(), options.isElastic());
+        if (options.getElasticClusterId() != null) {
+            store.asElastic().withClusterId(options.getElasticClusterId()).withRegion(options.getElasticRegion()).withUsername(options.getShieldUsername()).withPassword(options.getShieldPassword());
+        }
+        store.execute();
+        
         AbstractBlocker blocker;
         if (! options.isModelMode()) {
             blocker = new JsonBlocker(store, options.getIndex(), options.getType(), options.getBlockSize(), options.getLimit(), options.getSample());

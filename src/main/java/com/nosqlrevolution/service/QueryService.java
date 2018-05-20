@@ -92,6 +92,18 @@ public class QueryService {
     /**
      * Return the all of the documents from this index and type
      * 
+     * @param query
+     * @param index
+     * @param type
+     * @return 
+     */
+    public SearchRequestBuilder findAllScroll(Query query, String index, String type) {
+        return findAll(query, index, type, true);
+    }
+    
+    /**
+     * Return the all of the documents from this index and type
+     * 
      * @param index
      * @param type
      * @return 
@@ -119,6 +131,7 @@ public class QueryService {
         if (scroll) {
             builder.setSearchType(SearchType.SCAN);
             builder.setScroll(new TimeValue(600000));
+            builder.setSize(1000);
         }
         
         QueryBuilder qb = QueryResolverService.resolve(query);
@@ -168,7 +181,9 @@ public class QueryService {
         
         String[] out = new String[responses.length];
         for (int i=0; i<responses.length; i++) {
-            out[i] = responses[i].getResponse().getSourceAsString();
+            if (responses[i].getResponse() != null) {
+                out[i] = responses[i].getResponse().getSourceAsString();
+            }
         }
         return out;
     }

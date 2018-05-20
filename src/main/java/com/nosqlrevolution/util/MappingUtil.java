@@ -49,7 +49,7 @@ public class MappingUtil<T> {
                 return (T) json;
             }
             return mapper.readValue(json, clazz);
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             if (logger.isLoggable(Level.WARNING)) {
                 logger.log(Level.SEVERE, null, ex);
             }

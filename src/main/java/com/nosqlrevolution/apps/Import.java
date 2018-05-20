@@ -41,6 +41,7 @@ public class Import extends AbstractPoolRunner {
 
         System.out.println("hostname=" + options.getHostname() + " inFilename=" + options.getInfilename() + " clustername=" + options.getClustername() + 
                 " index=" + options.getIndex() + " type=" + options.getType() + " threads=" + options.getThreads()+ " blockSize=" + options.getBlockSize());
+        System.out.println("elastic clusterId=" + options.getElasticClusterId()+ " elastic region=" + options.getElasticRegion()+ " shield username=" + options.getShieldUsername() + " shield password=" + options.getShieldPassword());
         File inFile = new File(options.getInfilename());
         if (! inFile.exists()) {
             System.out.println("File does not exist, exiting.");
@@ -49,7 +50,12 @@ public class Import extends AbstractPoolRunner {
         
         // Connect to ElasticSearch
         store = ElasticStoreUtil.createElasticStore(
-                options.getHostname(), options.getClustername(), options.getIndex(), options.getType(), options.isNode());
+                options.getHostname(), options.getClustername(), options.getIndex(), options.getType(), options.isNode(), options.isElastic());
+        if (options.getElasticClusterId() != null) {
+            store.asElastic().withClusterId(options.getElasticClusterId()).withRegion(options.getElasticRegion()).withUsername(options.getShieldUsername()).withPassword(options.getShieldPassword());
+        }
+        store.execute();
+        
         FileBlocker blocker = new FileBlocker(options.getInfilename(), options.getBlockSize(), options.getLimit(), options.getSample());
         
         super.run(blocker, options.getThreads());

@@ -11,7 +11,7 @@ import static org.junit.Assert.*;
 public class ElasticStoreTest {
 
      @Test
-     public void testLocal() {
+     public void testLocal() throws Exception {
          ElasticStore es = new ElasticStore().asLocal().execute();
          assertNotNull(es);
 
@@ -22,7 +22,7 @@ public class ElasticStoreTest {
      }
 
      @Test
-     public void testNode() {
+     public void testNode() throws Exception {
          ElasticStore es = new ElasticStore().asLocal().execute();
          assertNotNull(es);
 
@@ -34,7 +34,7 @@ public class ElasticStoreTest {
      }
 
      @Test
-     public void testTransport() {
+     public void testTransport() throws Exception {
          ElasticStore es = new ElasticStore().asLocal().execute();
          assertNotNull(es);
 
@@ -46,7 +46,7 @@ public class ElasticStoreTest {
      }
 
      @Test
-     public void testMemory() {
+     public void testMemory() throws Exception {
          ElasticStore es = new ElasticStore().asMemoryOnly().execute();
          assertNotNull(es);
 

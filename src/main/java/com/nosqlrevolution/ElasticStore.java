@@ -2,7 +2,12 @@ package com.nosqlrevolution;
 
 import com.google.common.base.Joiner;
 import com.nosqlrevolution.util.AnnotationHelper;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
@@ -10,10 +15,10 @@ import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.client.transport.TransportClient.Builder;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
+import org.elasticsearch.shield.ShieldPlugin;
 
 /**
  *
@@ -28,6 +33,7 @@ public class ElasticStore {
     private static boolean node = true;
     private static boolean local = false;
     private static boolean memory = false;
+    private static boolean elastic = false;
     
     private Client client = null;
     private String[] hosts = null;
@@ -35,7 +41,14 @@ public class ElasticStore {
     private String clusterName = DEFAULT_CLUSTER_NAME;
     private int port = DEFAULT_PORT;
     private String timeout = DEFAULT_TIMEOUT;
-
+    
+    // for Elastic service
+    private String username = null;
+    private String password = null;
+    private String clusterId = null;
+    private String region = null;
+    private boolean enableSsl = false;
+    
     /**
      * Connect to the ElasticSearch cluster as a node.
      * 
@@ -76,6 +89,19 @@ public class ElasticStore {
     public ElasticStore asMemoryOnly() {
         local = true;
         memory = true;
+        return this;
+    }
+
+    /**
+     * Connect to the Elastic.co service. Requires usernamen and password.
+     * 
+     * @return 
+     */
+    public ElasticStore asElastic() {
+        elastic = true;
+        enableSsl = true;
+        node = false;
+        multicast = false;
         return this;
     }
 
@@ -155,13 +181,58 @@ public class ElasticStore {
         this.timeout = timeout;
         return this;
     }
+    
+    /**
+     * Specify a username to use with the Elastic.co service.
+     * 
+     * @param username
+     * @return 
+     */
+    public ElasticStore withUsername(String username) {
+        this.username = username;
+        return this;
+    }
+    
+    /**
+     * Specify a username to use with the Elastic.co service.
+     * 
+     * @param password
+     * @return 
+     */
+    public ElasticStore withPassword(String password) {
+        this.password = password;
+        return this;
+    }
+    
+    /**
+     * Specify a clusterId to use with the Elastic.co service.
+     * 
+     * @param clusterId
+     * @return 
+     */
+    public ElasticStore withClusterId(String clusterId) {
+        this.clusterId = clusterId;
+        return this;
+    }
+    
+    /**
+     * Specify a username to use with the Elastic.co service.
+     * 
+     * @param region
+     * @return 
+     */
+    public ElasticStore withRegion(String region) {
+        this.region = region;
+        return this;
+    }
 
     /**
      * Create an ElasticStore instance.
      * 
      * @return 
+     * @throws java.lang.Exception 
      */
-    public ElasticStore execute() {
+    public ElasticStore execute() throws Exception {
         Settings.Builder builder = Settings.settingsBuilder()
             .put("cluster.name", clusterName)
             .put("discovery.zen.ping.timeout", timeout)
@@ -194,6 +265,37 @@ public class ElasticStore {
                     .data(false)
                     .node()
                     .client();
+        } else if (elastic) {
+            // Build the settings for our client.
+            if (clusterId == null && region == null && username == null && password == null) {
+                throw new Exception("Elastic service not configured properly, aborting");
+            }
+            Settings settings = Settings.settingsBuilder()
+                .put("transport.ping_schedule", "5s")
+                .put("transport.sniff", false)
+                .put("cluster.name", clusterId)
+                .put("action.bulk.compress", false)
+                .put("shield.transport.ssl", enableSsl)
+                .put("request.headers.X-Found-Cluster", clusterId)
+                .put("shield.user", username + ":" + password)
+                .build();
+            
+            Map<String, String> settingsMap= settings.getAsMap();
+            for (String s: settingsMap.keySet()) {
+                System.out.println("key=" + s + " value=" + settingsMap.get(s));
+            }
+            String hostname = clusterId + "." + region + ".aws.found.io";
+            try {
+                // Instantiate a TransportClient and add the cluster to the list of addresses to connect to.
+                // Only port 9343 (SSL-encrypted) is currently supported.
+                client = TransportClient.builder()
+                        .addPlugin(ShieldPlugin.class)
+                        .settings(settings)
+                        .build()
+                        .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(hostname), 9343));
+            } catch (UnknownHostException ex) {
+                Logger.getLogger(ElasticStore.class.getName()).log(Level.SEVERE, null, ex);
+            }
         } else {
             TransportClient transClient = TransportClient.builder().settings(builder).build();
             if (! multicast) {
@@ -264,7 +366,7 @@ public class ElasticStore {
         }
 
         if (clazz == String.class) {
-            return new JsonIndex<String>(this, index, type);
+            return new JsonIndex<>(this, index, type);
         }
         
         // TODO: need to catch and throw an exception here

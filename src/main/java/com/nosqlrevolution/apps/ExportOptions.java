@@ -40,6 +40,22 @@ public class ExportOptions {
     @Option(name="-n",usage="connect to cluster as node instead of as transport client")
     private boolean node = false;
 
+    // For Elastic service
+    @Option(name="-e",usage="connect to elastic service cluster")
+    private boolean elastic = false;
+
+    @Option(name="-su",usage="shield username")
+    private String shieldUsername = null;
+
+    @Option(name="-sp",usage="shield password")
+    private String shieldPassword = null;
+
+    @Option(name="-eid",usage="elastic clusterId for Elastic")
+    private String elasticClusterId = null;
+
+    @Option(name="-ere",usage="elastic region for Elastic")
+    private String elasticRegion = null;
+
     public String getHostname() {
         return hostname;
     }
@@ -132,5 +148,45 @@ public class ExportOptions {
 
     public void setNode(boolean node) {
         this.node = node;
+    }
+
+    public boolean isElastic() {
+        return elastic;
+    }
+
+    public void setElastic(boolean elastic) {
+        this.elastic = elastic;
+    }
+
+    public String getShieldUsername() {
+        return shieldUsername;
+    }
+
+    public void setShieldUsername(String shieldUsername) {
+        this.shieldUsername = shieldUsername;
+    }
+
+    public String getShieldPassword() {
+        return shieldPassword;
+    }
+
+    public void setShieldPassword(String shieldPassword) {
+        this.shieldPassword = shieldPassword;
+    }
+
+    public String getElasticClusterId() {
+        return elasticClusterId;
+    }
+
+    public void setElasticClusterId(String elasticClusterId) {
+        this.elasticClusterId = elasticClusterId;
+    }
+
+    public String getElasticRegion() {
+        return elasticRegion;
+    }
+
+    public void setElasticRegion(String elasticRegion) {
+        this.elasticRegion = elasticRegion;
     }
 }
