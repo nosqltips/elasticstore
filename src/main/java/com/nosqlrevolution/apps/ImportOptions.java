@@ -18,6 +18,12 @@ public class ImportOptions {
     
     @Option(name="-t",usage="type to use")
     private String type = null;
+    
+    @Option(name="-si",usage="source index to use")
+    private String sourceIndex = null;
+    
+    @Option(name="-st",usage="source type to use")
+    private String sourceType = null;
 
     @Option(name="-f",usage="name of input file")
     private String infilename = null;
@@ -39,6 +45,9 @@ public class ImportOptions {
 
     @Option(name="-id",usage="name of id field")
     private String idField = null;
+
+    @Option(name="-o",usage="other file input")
+    private String otherField = null;
 
     // For Elastic service
     @Option(name="-e",usage="connect to elastic service cluster")
@@ -182,5 +191,29 @@ public class ImportOptions {
 
     public void setElasticRegion(String elasticRegion) {
         this.elasticRegion = elasticRegion;
+    }
+
+    public String getOtherField() {
+        return otherField;
+    }
+
+    public void setOtherField(String otherField) {
+        this.otherField = otherField;
+    }
+
+    public String getSourceIndex() {
+        return sourceIndex;
+    }
+
+    public void setSourceIndex(String sourceIndex) {
+        this.sourceIndex = sourceIndex;
+    }
+
+    public String getSourceType() {
+        return sourceType;
+    }
+
+    public void setSourceType(String sourceType) {
+        this.sourceType = sourceType;
     }
 }

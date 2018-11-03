@@ -18,10 +18,10 @@ public abstract class AbstractPoolRunner {
     protected abstract Callable<CountsAndBytes> getNextCallable(List<String> nextBlock) throws Exception;
     
     protected void run(AbstractBlocker blocker, int threads) throws IOException, Exception {
-        ExecutorService single = Executors.newSingleThreadExecutor();
+        ExecutorService master = Executors.newSingleThreadExecutor();
         ExecutorService pool = Executors.newFixedThreadPool(threads);
         
-        single.submit(blocker);
+        master.submit(blocker);
         long totalDocs = blocker.getTotalDocs();
         
         Stack<Future<CountsAndBytes>> futureStack = new Stack<>();
@@ -69,7 +69,7 @@ public abstract class AbstractPoolRunner {
         printTotals(totalCount, startTime, totalBytes);
         
         blocker.shudown();
-        single.shutdown();
+        master.shutdown();
         pool.shutdown();
         System.out.println("Done");
     }
