@@ -2,7 +2,6 @@ package com.nosqlrevolution.service;
 
 import com.nosqlrevolution.query.Condition.CompletedCondition;
 import com.nosqlrevolution.query.Query;
-import com.nosqlrevolution.query.QueryImpl;
 import com.nosqlrevolution.util.QueryUtil;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,18 +13,23 @@ import org.elasticsearch.index.query.QueryBuilder;
  * @author cbrown
  */
 public class QueryResolverService {
-    public static QueryBuilder resolve(Query query) {
+    public static Query resolve(Query query) {
         if (query == null) {
             return null;
         }
-        QueryImpl q = (QueryImpl) query;
         
-        List<QueryBuilder> builders = resolveConditions(q.getConditions());
+        if (query.getQueryBuilder() != null) {
+            return query;
+        }
+        
+        
+        List<QueryBuilder> builders = resolveConditions(query.getConditions());
         
         if (builders.isEmpty()) {
             return null;
         } else if (builders.size() == 1) {
-            return builders.get(0);
+            query.setQueryBuilder(builders.get(0));
+            return query;
         } else {
             
             // Need to return the proper querybuilder at some point.

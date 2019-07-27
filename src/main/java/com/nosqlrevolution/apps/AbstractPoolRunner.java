@@ -1,8 +1,9 @@
 package com.nosqlrevolution.apps;
 
 import java.io.IOException;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Stack;
+import java.util.Queue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -24,7 +25,7 @@ public abstract class AbstractPoolRunner {
         master.submit(blocker);
         long totalDocs = blocker.getTotalDocs();
         
-        Stack<Future<CountsAndBytes>> futureStack = new Stack<>();
+        Queue<Future<CountsAndBytes>> futureQueue = new LinkedList<>();
         
         // Initial creation of 
         for (int i = 0; i < threads; i++) {
@@ -33,7 +34,7 @@ public abstract class AbstractPoolRunner {
             if (nextBlock == null) {
                 break;
             }
-            futureStack.push(pool.submit(getNextCallable(nextBlock)));
+            futureQueue.offer(pool.submit(getNextCallable(nextBlock)));
         }
 
         boolean last = false;
@@ -41,8 +42,8 @@ public abstract class AbstractPoolRunner {
         long totalBytes = 0;
         long startTime = System.currentTimeMillis();
         long elapsedTimeStart = startTime;
-        while (! futureStack.empty()) {
-            Future<CountsAndBytes> future = futureStack.pop();
+        while (futureQueue.peek() != null) {
+            Future<CountsAndBytes> future = futureQueue.poll();
             CountsAndBytes cbs = future.get();
             int count = cbs.getCounts();
             totalCount += count;
@@ -61,7 +62,7 @@ public abstract class AbstractPoolRunner {
                 if (nextBlock == null) {
                     last = true;
                 } else {
-                    futureStack.push(pool.submit(getNextCallable(nextBlock)));
+                    futureQueue.offer(pool.submit(getNextCallable(nextBlock)));
                 }
             }
         }

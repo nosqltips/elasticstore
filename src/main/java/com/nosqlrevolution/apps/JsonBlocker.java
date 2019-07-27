@@ -3,6 +3,7 @@ package com.nosqlrevolution.apps;
 import com.nosqlrevolution.ElasticStore;
 import com.nosqlrevolution.Index;
 import com.nosqlrevolution.cursor.Cursor;
+import com.nosqlrevolution.query.Query;
 import java.io.IOException;
 
 /**
@@ -18,6 +19,7 @@ public class JsonBlocker extends AbstractBlocker {
      * Take a file input and break the file into blocks for processing.
      * 
      * @param store
+     * @param query
      * @param index
      * @param type
      * @param blockSize
@@ -25,10 +27,14 @@ public class JsonBlocker extends AbstractBlocker {
      * @param sample
      * @throws IOException 
      */
-    public JsonBlocker(ElasticStore store, String index, String type, int blockSize, int limit, int sample) throws IOException, Exception {
+    public JsonBlocker(ElasticStore store, Query query, String index, String type, int blockSize, int limit, int sample) throws IOException, Exception {
         super(blockSize, limit, sample);
         Index esIndex = store.getIndex(String.class, index, type);
-        cursor = esIndex.findAll();
+        if (query != null) {
+            cursor = esIndex.findAll(query);
+        } else {
+            cursor = esIndex.findAll();
+        }
         totalDocs = limit <= 0 ? cursor.size() : limit;
     }
     
@@ -42,7 +48,7 @@ public class JsonBlocker extends AbstractBlocker {
     public Integer call() throws Exception {
         for (String s: cursor) {
             if (s != null && ! s.isEmpty()) {
-                // A false value means we're reached a limit.
+                // A false value means we've reached a limit.
                 if (! super.bufferNext(s)) {
                     break;
                 }

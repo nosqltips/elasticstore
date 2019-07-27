@@ -62,20 +62,36 @@ public class QueryService {
      */
     public String getSingle(Query query, String index, String type) {
         SearchRequestBuilder builder = client.prepareSearch(index)
-                .setSearchType(SearchType.QUERY_THEN_FETCH)
+                .setSearchType(SearchType.DEFAULT)
                 .setTypes(type)
                 .setFrom(0)
                 .setSize(1);
 
-        SearchResponse response = builder.execute().actionGet();
-        
-        // Update the SearchQuery results
-        SearchHits h = response.getHits();
-        if (h.getHits().length > 0) {
-            return h.getHits()[0].getSourceAsString();
+        Query q = QueryResolverService.resolve(query);
+        if (q != null) {
+            builder.setQuery(q.getQueryBuilder());
+            if (query.getHighlights() != null) {
+                for (String s: query.getHighlights()) {
+                    builder.addHighlightedField(s);
+                }
+            }
         } else {
-            return null;
+            builder.setQuery(QueryUtil.getMatchAllQuery());
         }
+        
+        try {
+            SearchResponse response = builder.execute().actionGet();
+
+            // Update the SearchQuery results
+            SearchHits h = response.getHits();
+            if (h.getHits().length > 0) {
+                return h.getHits()[0].getSourceAsString();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        return null;
     }
     
     /**
@@ -118,6 +134,7 @@ public class QueryService {
      * @param query
      * @param index
      * @param type
+     * @param scroll
      * @return 
      */
     public SearchRequestBuilder findAll(Query query, String index, String type, boolean scroll) {
@@ -134,9 +151,14 @@ public class QueryService {
             builder.setSize(1000);
         }
         
-        QueryBuilder qb = QueryResolverService.resolve(query);
+        Query qb = QueryResolverService.resolve(query);
         if (qb != null) {
-            builder.setQuery(qb);
+            builder.setQuery(qb.getQueryBuilder());
+            if (query.getHighlights() != null) {
+                for (String s: query.getHighlights()) {
+                    builder.addHighlightedField(s);
+                }
+            }
         } else {
             builder.setQuery(QueryUtil.getMatchAllQuery());
         }
@@ -223,9 +245,11 @@ public class QueryService {
                 .setIndices(indexes)
                 .setTypes(types);
         
-        QueryBuilder qb = QueryResolverService.resolve(query);
+        Query qb = QueryResolverService.resolve(query);
         if (qb != null) {
-            builder.setQuery(qb);
+            builder.setQuery(qb.getQueryBuilder());
+        } else {
+            builder.setQuery(QueryUtil.getMatchAllQuery());
         }
         
         CountResponse response = builder.execute().actionGet();
@@ -245,9 +269,11 @@ public class QueryService {
                 .setIndices(index)
                 .setTypes(type);
         
-        QueryBuilder qb = QueryResolverService.resolve(query);
+        Query qb = QueryResolverService.resolve(query);
         if (qb != null) {
-            builder.setQuery(qb);
+            builder.setQuery(qb.getQueryBuilder());
+        } else {
+            builder.setQuery(QueryUtil.getMatchAllQuery());
         }
         
         CountResponse response = builder.execute().actionGet();

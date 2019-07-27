@@ -61,7 +61,7 @@ public class Transfer extends AbstractPoolRunner {
         }
         sourceStore.execute();
         
-        JsonBlocker blocker = new JsonBlocker(sourceStore, options.getSourceIndex(), options.getSourceType(), options.getBlockSize(), options.getLimit(), options.getSample());
+        JsonBlocker blocker = new JsonBlocker(sourceStore, null, options.getSourceIndex(), options.getSourceType(), options.getBlockSize(), options.getLimit(), options.getSample());
 
         super.run(blocker, options.getThreads());
     }

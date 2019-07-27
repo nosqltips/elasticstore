@@ -5,6 +5,7 @@ import com.nosqlrevolution.query.Query;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.elasticsearch.search.SearchHit;
 
 /**
  * This class represents all of the fun things we can do with an ElasticSearch index
@@ -123,6 +124,16 @@ public abstract class Index<T> {
     public Cursor findAllScroll(Query query) {
         throw new UnsupportedOperationException();
     }
+
+    /**
+     * Return a Cursor containing a list of raw SearchHuts in this index or indexes specified by the query.
+     * 
+     * @param query
+     * @return 
+     */
+    public Cursor<SearchHit> findAllScrollHit(Query query) {
+        throw new UnsupportedOperationException();
+    }    
 
     /**
      * Return a Cursor containing a list of documents in this index or indexes specified by the query.

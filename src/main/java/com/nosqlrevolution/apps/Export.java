@@ -55,9 +55,9 @@ public class Export extends AbstractPoolRunner {
         
         AbstractBlocker blocker;
         if (! options.isModelMode()) {
-            blocker = new JsonBlocker(store, options.getIndex(), options.getType(), options.getBlockSize(), options.getLimit(), options.getSample());
+            blocker = new JsonBlocker(store, null, options.getIndex(), options.getType(), options.getBlockSize(), options.getLimit(), options.getSample());
         } else {
-            blocker = new ModelBlocker(store, options.getIndex(), options.getType(), options.getBlockSize(), options.getLimit(), options.getSample());
+            blocker = new ModelBlocker(store, null, options.getIndex(), options.getType(), options.getBlockSize(), options.getLimit(), options.getSample());
         }
 
         outFile.createNewFile();

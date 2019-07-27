@@ -1,8 +1,8 @@
 package com.nosqlrevolution;
 
 import com.nosqlrevolution.cursor.MultiGetCursor;
-import com.nosqlrevolution.cursor.BlockCursor;
 import com.nosqlrevolution.cursor.Cursor;
+import com.nosqlrevolution.cursor.HitScrollCursor;
 import com.nosqlrevolution.cursor.ScrollCursor;
 import com.nosqlrevolution.query.Query;
 import com.nosqlrevolution.service.QueryService;
@@ -14,7 +14,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchScrollRequestBuilder;
-import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.SearchHit;
 
 /**
  * Accept and return json strings
@@ -112,26 +112,46 @@ public class JsonIndex<T> extends Index<String> {
         }
         return null;
     }
+    
+    @Override
+    public Cursor<SearchHit> findAllScrollHit(Query query) {
+        SearchRequestBuilder builder = service.findAllScroll(query, getIndex(), getType());
+        SearchScrollRequestBuilder scroll = service.executeScroll(builder);
+        if (builder != null) {
+            try {
+                return new HitScrollCursor(scroll);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Failed to create new scroll.", e);
+            }
+        }
+        return null;
+    }
 
     @Override
     public Cursor<String> findAll(Query query) {
-        SearchRequestBuilder builder = service.findAll(query, getIndex(), getType(), false);
-        SearchHits h = service.executeBuilder(builder);
-        if (h != null) {
-            return new BlockCursor<String>(String.class, builder, 0, 100);
+        SearchRequestBuilder builder = service.findAllScroll(query, getIndex(), getType());
+        SearchScrollRequestBuilder scroll = service.executeScroll(builder);
+        if (builder != null) {
+            try {
+                return new ScrollCursor<String>(String.class, scroll);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Failed to create new scroll.", e);
+            }
         }
-        
         return null;
     }
 
     @Override
     public Cursor<String> findAll(Query query, Class clazz) {
-        SearchRequestBuilder builder = service.findAll(query, getIndex(), getType(), false);
-        SearchHits h = service.executeBuilder(builder);
-        if (h != null) {
-            return new BlockCursor<String>(clazz, builder, 0, 100);
+        SearchRequestBuilder builder = service.findAllScroll(query, getIndex(), getType());
+        SearchScrollRequestBuilder scroll = service.executeScroll(builder);
+        if (builder != null) {
+            try {
+                return new ScrollCursor<String>(String.class, scroll);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Failed to create new scroll.", e);
+            }
         }
-        
         return null;
     }
 

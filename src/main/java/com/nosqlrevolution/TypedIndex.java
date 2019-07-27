@@ -96,7 +96,7 @@ public class TypedIndex<T> extends Index<T> {
         SearchScrollRequestBuilder scroll = service.executeScroll(builder);
         if (builder != null) {
             try {
-                return new ScrollCursor<T>(t, scroll);
+                return new ScrollCursor<>(t, scroll);
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Failed to create new scroll.", e);
             }
@@ -107,10 +107,14 @@ public class TypedIndex<T> extends Index<T> {
 
     @Override
     public Cursor findAll(Query query) {
-        SearchRequestBuilder builder = service.findAll(query, getIndex(), getType(), false);
-        SearchHits h = service.executeBuilder(builder);
-        if (h != null) {
-            return new BlockCursor<T>(t, builder, 0, 100);
+        SearchRequestBuilder builder = service.findAllScroll(getIndex(), getType());
+        SearchScrollRequestBuilder scroll = service.executeScroll(builder);
+        if (builder != null) {
+            try {
+                return new ScrollCursor<>(t, scroll);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Failed to create new scroll.", e);
+            }
         }
         
         return null;
@@ -118,10 +122,14 @@ public class TypedIndex<T> extends Index<T> {
 
     @Override
     public Cursor<T> findAll(Query query, Class clazz) {
-        SearchRequestBuilder builder = service.findAll(query, getIndex(), getType(), false);
-        SearchHits h = service.executeBuilder(builder);
-        if (h != null) {
-            return new BlockCursor<T>(clazz, builder, 0, 100);
+        SearchRequestBuilder builder = service.findAllScroll(getIndex(), getType());
+        SearchScrollRequestBuilder scroll = service.executeScroll(builder);
+        if (builder != null) {
+            try {
+                return new ScrollCursor<>(t, scroll);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Failed to create new scroll.", e);
+            }
         }
         
         return null;
