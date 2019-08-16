@@ -25,7 +25,7 @@ public abstract class CursorIterator<E> implements Iterator<E> {
 
     @Override
     public E next() {
-        E returnE = mapping.get(hits.getAt(iter).sourceAsString(), e);
+        E returnE = mapping.get(hits.getAt(iter).getSourceAsString(), e);
         iter ++;
         iterAll ++;
         return returnE;

@@ -1,7 +1,13 @@
 package com.nosqlrevolution.cursor;
 
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.SearchScrollRequestBuilder;
+import org.elasticsearch.action.search.SearchScrollRequest;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 
@@ -11,13 +17,17 @@ import org.elasticsearch.search.SearchHits;
  * @author cbrown
  */
 public class HitScrollCursorIterator extends CursorIterator<SearchHit> {
-    private final SearchScrollRequestBuilder scrollBuilder;
+    private static final Logger LOGGER = Logger.getLogger(HitScrollCursorIterator.class.getName());
+    private final SearchRequest initialRequest;
+    private final RestHighLevelClient restClient;
     private boolean hasNext = true;
+    private String scrollId = null;
     
-    protected HitScrollCursorIterator(SearchScrollRequestBuilder scrollBuilder) {
-        this.scrollBuilder = scrollBuilder;
-        hits = getNextPage();
-        totalSize = (int)hits.getTotalHits();
+    protected HitScrollCursorIterator(SearchRequest initialRequest, RestHighLevelClient restClient) {
+        this.initialRequest = initialRequest;
+        this.restClient = restClient;
+        hits = getInitialPage();
+        totalSize = hits.getTotalHits() != null ? (int) hits.getTotalHits().value : 0;
     }
     
     @Override
@@ -51,14 +61,48 @@ public class HitScrollCursorIterator extends CursorIterator<SearchHit> {
         return hit;
     }
 
-    private SearchHits getNextPage() {
-        // Get search response
-        SearchResponse response = scrollBuilder.execute().actionGet();
-
-        if (response.getHits().getHits().length == 0) {
-            hasNext = false;
+    private SearchHits getInitialPage() {
+        try {
+            // Get search response
+            SearchResponse response = restClient.search(initialRequest, RequestOptions.DEFAULT);
+            scrollId = response.getScrollId();
+            
+            if (response.getHits().getHits().length == 0) {
+                hasNext = false;
+            }
+            
+            // Return the next set of hits
+            return response.getHits();
+        } catch (IOException ie) {
+            LOGGER.log(Level.SEVERE, null, ie);
         }
-        // Return the next set of hits
-        return response.getHits();
+        
+        return null;
+    }
+
+    private SearchHits getNextPage() {
+        try {
+            SearchScrollRequest scrollRequst = new SearchScrollRequest(scrollId);
+            scrollRequst.scroll(initialRequest.scroll());
+            
+            // Get search response
+            SearchResponse response = restClient.search(initialRequest, RequestOptions.DEFAULT);
+            scrollId = response.getScrollId();
+            
+            if (response.getHits().getHits().length == 0) {
+                hasNext = false;
+            }
+            
+            // Return the next set of hits
+            return response.getHits();
+        } catch (IOException ie) {
+            LOGGER.log(Level.SEVERE, null, ie);
+        }
+        
+        return null;
+    }
+
+    public String getScrollId() {
+        return scrollId;
     }
 }

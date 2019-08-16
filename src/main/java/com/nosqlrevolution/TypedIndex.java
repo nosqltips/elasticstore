@@ -1,8 +1,6 @@
 package com.nosqlrevolution;
 
-import com.nosqlrevolution.apps.ExportModel;
 import com.nosqlrevolution.cursor.MultiGetCursor;
-import com.nosqlrevolution.cursor.BlockCursor;
 import com.nosqlrevolution.cursor.Cursor;
 import com.nosqlrevolution.cursor.ScrollCursor;
 import com.nosqlrevolution.query.Query;
@@ -13,9 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.elasticsearch.action.search.SearchScrollRequestBuilder;
-import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.client.RestHighLevelClient;
 
 /**
  * Accept and return strongly typed objects.
@@ -24,22 +21,24 @@ import org.elasticsearch.search.SearchHits;
  * @param <T>
  */
 public class TypedIndex<T> extends Index<T> {
-    private static final Logger logger = Logger.getLogger(TypedIndex.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(TypedIndex.class.getName());
     private final Class<T> t;
     private final QueryService service;
-    private final MappingUtil<T> mapping = new MappingUtil<T>();
+    private final MappingUtil<T> mapping = new MappingUtil<>();
+    private final RestHighLevelClient restClient;
     private List<T> bulk;
     
-    public TypedIndex(Class<T> t, ElasticStore store, String index, String iType) throws Exception {
+    public TypedIndex(Class<T> t, ElasticStore store, String index, String iType, RestHighLevelClient restClient) throws Exception {
         super (store, index, iType);
         this.t = t;
-        service = new QueryService(store.getClient());
+        this.restClient = restClient;
+        service = new QueryService(store.getRestClient());
     }
 
     @Override
     public void addBulk(T t) {
         if (bulk == null) {
-            bulk = new ArrayList<T>();
+            bulk = new ArrayList<>();
         }
         
         bulk.add(t);
@@ -92,13 +91,12 @@ public class TypedIndex<T> extends Index<T> {
     
     @Override
     public Cursor<T> findAll() {
-        SearchRequestBuilder builder = service.findAllScroll(getIndex(), getType());
-        SearchScrollRequestBuilder scroll = service.executeScroll(builder);
-        if (builder != null) {
+        SearchRequest request = service.findAllScroll(getIndex(), getType());
+        if (request != null) {
             try {
-                return new ScrollCursor<>(t, scroll);
+                return new ScrollCursor<>(t, request, restClient);
             } catch (Exception e) {
-                logger.log(Level.WARNING, "Failed to create new scroll.", e);
+                LOGGER.log(Level.WARNING, "Failed to create new scroll.", e);
             }
         }
         
@@ -107,13 +105,12 @@ public class TypedIndex<T> extends Index<T> {
 
     @Override
     public Cursor findAll(Query query) {
-        SearchRequestBuilder builder = service.findAllScroll(getIndex(), getType());
-        SearchScrollRequestBuilder scroll = service.executeScroll(builder);
-        if (builder != null) {
+        SearchRequest request = service.findAllScroll(getIndex(), getType());
+        if (request != null) {
             try {
-                return new ScrollCursor<>(t, scroll);
+                return new ScrollCursor<>(t, request, restClient);
             } catch (Exception e) {
-                logger.log(Level.WARNING, "Failed to create new scroll.", e);
+                LOGGER.log(Level.WARNING, "Failed to create new scroll.", e);
             }
         }
         
@@ -122,13 +119,12 @@ public class TypedIndex<T> extends Index<T> {
 
     @Override
     public Cursor<T> findAll(Query query, Class clazz) {
-        SearchRequestBuilder builder = service.findAllScroll(getIndex(), getType());
-        SearchScrollRequestBuilder scroll = service.executeScroll(builder);
-        if (builder != null) {
+        SearchRequest request = service.findAllScroll(getIndex(), getType());
+        if (request != null) {
             try {
-                return new ScrollCursor<>(t, scroll);
+                return new ScrollCursor<>(t, request, restClient);
             } catch (Exception e) {
-                logger.log(Level.WARNING, "Failed to create new scroll.", e);
+                LOGGER.log(Level.WARNING, "Failed to create new scroll.", e);
             }
         }
         
@@ -154,13 +150,13 @@ public class TypedIndex<T> extends Index<T> {
     @Override
     public Cursor findAllById(String... ids) {
         String[] json = service.realTimeMultiGet(getIndex(), getType(), ids);
-        return new MultiGetCursor<T>(t, json);
+        return new MultiGetCursor<>(t, json);
     }
     
     @Override
     public Cursor<T> findAllById(Class<T> clazz, String... ids) {
         String[] json = service.realTimeMultiGet(getIndex(), getType(), ids);        
-        return new MultiGetCursor<T>(clazz, json);
+        return new MultiGetCursor<>(clazz, json);
     }
     
 //    @Override
@@ -205,25 +201,7 @@ public class TypedIndex<T> extends Index<T> {
         if (t.length == 1) {
             service.index(getIndex(), getType(), mapping.get(t[0]), AnnotationHelper.getDocumentId(t[0], getIdField()));
         } else if (t.length > 1) {
-            List<String> list = new ArrayList<String>();
-            for (T o: t) {
-                list.add(mapping.get(o));
-                // TODO: what do we do with null ids? bail with exception? Report the error with OperationStatus?
-            }
-            service.bulkIndex(getIndex(), getType(), list.toArray(new String[list.size()]), getIdField());
-        }
-        status.setSucceeded(true);
-        return status;
-    }
-    
-    @Override
-    public OperationStatus write(WriteOperation builder, T... t) {
-        // TODO: need to gather operation results and return
-        OperationStatus status = new OperationStatus();
-        if (t.length == 1) {
-            service.index(getIndex(), getType(), mapping.get(t[0]), AnnotationHelper.getDocumentId(t[0], getIdField()));
-        } else if (t.length > 1) {
-            List<String> list = new ArrayList<String>();
+            List<String> list = new ArrayList<>();
             for (T o: t) {
                 list.add(mapping.get(o));
                 // TODO: what do we do with null ids? bail with exception? Report the error with OperationStatus?
@@ -241,25 +219,7 @@ public class TypedIndex<T> extends Index<T> {
         if (t.size() == 1) {
             service.index(getIndex(), getType(), mapping.get(t.get(0)), AnnotationHelper.getDocumentId(t.get(0), getIdField()));
         } else if (t.size() > 1) {
-            List<String> list = new ArrayList<String>();
-            for (T o: t) {
-                list.add(mapping.get(o));
-                // TODO: what do we do with null ids? bail with exception? Report the error with OperationStatus?
-            }
-            service.bulkIndex(getIndex(), getType(), list.toArray(new String[list.size()]), getIdField());
-        }
-        status.setSucceeded(true);
-        return status;
-    }
-    
-    @Override
-    public OperationStatus write(WriteOperation builder, List<? extends T> t) {
-        // TODO: need to gather operation results and return
-        OperationStatus status = new OperationStatus();
-        if (t.size() == 1) {
-            service.index(getIndex(), getType(), mapping.get(t.get(0)), AnnotationHelper.getDocumentId(t.get(0), getIdField()));
-        } else if (t.size() > 1) {
-            List<String> list = new ArrayList<String>();
+            List<String> list = new ArrayList<>();
             for (T o: t) {
                 list.add(mapping.get(o));
                 // TODO: what do we do with null ids? bail with exception? Report the error with OperationStatus?
@@ -272,6 +232,7 @@ public class TypedIndex<T> extends Index<T> {
 
     @Override
     public boolean exists() {
-        return service.exists(getType(), getType());
+//        return service.exists(getType(), getType());
+        return false;
     }
 }

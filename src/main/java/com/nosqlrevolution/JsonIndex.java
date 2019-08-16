@@ -12,8 +12,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchScrollRequestBuilder;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.search.SearchHit;
 
 /**
@@ -23,20 +25,22 @@ import org.elasticsearch.search.SearchHit;
  * @param <T>
  */
 public class JsonIndex<T> extends Index<String> {
-    private static final Logger logger = Logger.getLogger(JsonIndex.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(JsonIndex.class.getName());
     private final QueryService service;
-    private final MappingUtil<String> mapping = new MappingUtil<String>();
+    private final RestHighLevelClient restClient;
+    private final MappingUtil<String> mapping = new MappingUtil<>();
     private List<String> bulk;
     
     public JsonIndex(ElasticStore store, String index, String type) throws Exception {
         super(store, index, type);
-        service = new QueryService(store.getClient());
+        this.restClient = store.getRestClient();
+        service = new QueryService(store.getRestClient());
     }
 
     @Override
     public void addBulk(String json) {
         if (bulk == null) {
-            bulk = new ArrayList<String>();
+            bulk = new ArrayList<>();
         }
         
         bulk.add(json);
@@ -87,13 +91,12 @@ public class JsonIndex<T> extends Index<String> {
     
     @Override
     public Cursor<String> findAll() {
-        SearchRequestBuilder builder = service.findAllScroll(getIndex(), getType());
-        SearchScrollRequestBuilder scroll = service.executeScroll(builder);
-        if (builder != null) {
+        SearchRequest request = service.findAllScroll(getIndex(), getType());
+        if (request != null) {
             try {
-                return new ScrollCursor<String>(String.class, scroll);
+                return new ScrollCursor<>(String.class, request, restClient);
             } catch (Exception e) {
-                logger.log(Level.WARNING, "Failed to create new scroll.", e);
+                LOGGER.log(Level.WARNING, "Failed to create new scroll.", e);
             }
         }
         return null;
@@ -101,13 +104,12 @@ public class JsonIndex<T> extends Index<String> {
 
     @Override
     public Cursor<String> findAllScroll(Query query) {
-        SearchRequestBuilder builder = service.findAllScroll(query, getIndex(), getType());
-        SearchScrollRequestBuilder scroll = service.executeScroll(builder);
-        if (builder != null) {
+        SearchRequest request = service.findAllScroll(query, getIndex(), getType());
+        if (request != null) {
             try {
-                return new ScrollCursor<String>(String.class, scroll);
+                return new ScrollCursor<>(String.class, request, restClient);
             } catch (Exception e) {
-                logger.log(Level.WARNING, "Failed to create new scroll.", e);
+                LOGGER.log(Level.WARNING, "Failed to create new scroll.", e);
             }
         }
         return null;
@@ -115,13 +117,12 @@ public class JsonIndex<T> extends Index<String> {
     
     @Override
     public Cursor<SearchHit> findAllScrollHit(Query query) {
-        SearchRequestBuilder builder = service.findAllScroll(query, getIndex(), getType());
-        SearchScrollRequestBuilder scroll = service.executeScroll(builder);
-        if (builder != null) {
+        SearchRequest request = service.findAllScroll(query, getIndex(), getType());
+        if (request != null) {
             try {
-                return new HitScrollCursor(scroll);
+                return new HitScrollCursor(request, restClient);
             } catch (Exception e) {
-                logger.log(Level.WARNING, "Failed to create new scroll.", e);
+                LOGGER.log(Level.WARNING, "Failed to create new scroll.", e);
             }
         }
         return null;
@@ -129,13 +130,12 @@ public class JsonIndex<T> extends Index<String> {
 
     @Override
     public Cursor<String> findAll(Query query) {
-        SearchRequestBuilder builder = service.findAllScroll(query, getIndex(), getType());
-        SearchScrollRequestBuilder scroll = service.executeScroll(builder);
-        if (builder != null) {
+        SearchRequest request = service.findAllScroll(query, getIndex(), getType());
+        if (request != null) {
             try {
-                return new ScrollCursor<String>(String.class, scroll);
+                return new ScrollCursor<>(String.class, request, restClient);
             } catch (Exception e) {
-                logger.log(Level.WARNING, "Failed to create new scroll.", e);
+                LOGGER.log(Level.WARNING, "Failed to create new scroll.", e);
             }
         }
         return null;
@@ -143,13 +143,12 @@ public class JsonIndex<T> extends Index<String> {
 
     @Override
     public Cursor<String> findAll(Query query, Class clazz) {
-        SearchRequestBuilder builder = service.findAllScroll(query, getIndex(), getType());
-        SearchScrollRequestBuilder scroll = service.executeScroll(builder);
-        if (builder != null) {
+        SearchRequest request = service.findAllScroll(query, getIndex(), getType());
+        if (request != null) {
             try {
-                return new ScrollCursor<String>(String.class, scroll);
+                return new ScrollCursor<>(String.class, request, restClient);
             } catch (Exception e) {
-                logger.log(Level.WARNING, "Failed to create new scroll.", e);
+                LOGGER.log(Level.WARNING, "Failed to create new scroll.", e);
             }
         }
         return null;
@@ -173,13 +172,13 @@ public class JsonIndex<T> extends Index<String> {
     @Override
     public Cursor findAllById(String... ids) {
         String[] json = service.realTimeMultiGet(getIndex(), getType(), ids);
-        return new MultiGetCursor<String>(String.class, json);
+        return new MultiGetCursor<>(String.class, json);
     }
     
     @Override
     public Cursor<String> findAllById(Class clazz, String... ids) {
         String[] json = service.realTimeMultiGet(getIndex(), getType(), ids);        
-        return new MultiGetCursor<String>(clazz, json);
+        return new MultiGetCursor<>(clazz, json);
     }
 //            
 //    @Override
@@ -233,20 +232,6 @@ public class JsonIndex<T> extends Index<String> {
     }
     
     @Override
-    public OperationStatus write(WriteOperation builder, String... json) {
-        // TODO: need to gather operation results and return
-        // TODO: implement WriteOperation
-        if (json.length == 1) {
-            service.index(getIndex(), getType(), json[0], JsonUtil.getId(json[0], getIdField()));
-        } else if (json.length > 1) {
-            service.bulkIndex(getIndex(), getType(), json, getIdField());
-        }
-
-        return new OperationStatus()
-                .setSucceeded(true);
-    }
-    
-    @Override
     public OperationStatus write(List<? extends String> json) {
         // TODO: need to gather operation results and return
         if (json.size() == 1) {
@@ -258,23 +243,10 @@ public class JsonIndex<T> extends Index<String> {
         return new OperationStatus()
                 .setSucceeded(true);
     }
-    
-    @Override
-    public OperationStatus write(WriteOperation builder, List<? extends String> json) {
-        // TODO: need to gather operation results and return
-        // TODO: implement WriteOperation
-        if (json.size() == 1) {
-            service.index(getIndex(), getType(), json.get(0), JsonUtil.getId(json.get(0), getIdField()));
-        } else if (json.size() > 1) {
-            service.bulkIndex(getIndex(), getType(), json.toArray(new String[json.size()]), getIdField());
-        }
-        
-        return new OperationStatus()
-                .setSucceeded(true);
-    }
 
     @Override
     public boolean exists() {
-        return service.exists(getType(), getType());
+//        return service.exists(getType(), getType());
+        return false;
     }
 }

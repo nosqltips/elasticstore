@@ -1,8 +1,11 @@
 package com.nosqlrevolution.util;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -11,7 +14,9 @@ import java.util.logging.Logger;
  * @author cbrown
  */
 public class JsonUtil {    
-    private static final Logger logger = Logger.getLogger(JsonUtil.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(JsonUtil.class.getName());
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+    
     public static String getId(String s, String idField) {
         ObjectMapper mapper = new ObjectMapper();
         try {
@@ -59,8 +64,8 @@ public class JsonUtil {
                 } 
             }
         } catch (IOException ex) {
-            if (logger.isLoggable(Level.WARNING)) {
-                logger.log(Level.SEVERE, null, ex);
+            if (LOGGER.isLoggable(Level.WARNING)) {
+                LOGGER.log(Level.SEVERE, null, ex);
             }
         }
                         
@@ -68,7 +73,19 @@ public class JsonUtil {
         return null;
     }
     
-    public static String getSource(String s, String sourceField) {
+    public static String removeIdFromSource(String source, String idField) {
+        try {
+            Map<String, Object> sourceMap = MAPPER.readValue(source, new TypeReference<HashMap<String, Object>>(){});
+            sourceMap.remove("_id");
+            sourceMap.remove(idField);
+        } catch (IOException ie) {
+            ie.printStackTrace();
+        }
+        
+        return null;
+    }
+    
+    public static String getIdFromSource(String s, String sourceField) {
         ObjectMapper mapper = new ObjectMapper();
         try {
             JsonNode rootNode = mapper.readValue(s, JsonNode.class);
@@ -90,8 +107,8 @@ public class JsonUtil {
                 } 
             }
         } catch (IOException ex) {
-            if (logger.isLoggable(Level.WARNING)) {
-                logger.log(Level.SEVERE, null, ex);
+            if (LOGGER.isLoggable(Level.WARNING)) {
+                LOGGER.log(Level.SEVERE, null, ex);
             }
         }
                         

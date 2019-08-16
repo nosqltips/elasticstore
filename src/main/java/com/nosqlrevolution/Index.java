@@ -246,35 +246,11 @@ public abstract class Index<T> {
     
     /**
      * Write one or more documents to the index.
-     * Write parameters can be specified by a WriteOperation.
-     * 
-     * @param builder
-     * @param t
-     * @return 
-     */
-    public OperationStatus write(WriteOperation builder, T... t) {
-        throw new UnsupportedOperationException();
-    }
-    
-    /**
-     * Write one or more documents to the index.
      * 
      * @param t
      * @return 
      */
     public OperationStatus write(List<? extends T> t) {
-        throw new UnsupportedOperationException();
-    }
-    
-    /**
-     * Write one or more documents to the index.
-     * Write parameters can be specified by a WriteOperation.
-     * 
-     * @param builder
-     * @param t
-     * @return 
-     */
-    public OperationStatus write(WriteOperation builder, List<? extends T> t) {
         throw new UnsupportedOperationException();
     }
     
@@ -292,7 +268,7 @@ public abstract class Index<T> {
     public void refresh() {
         // TODO: maybe do something better here.
         try {
-            store.refreshIndex(this);
+            //store.refreshIndex(this);
         } catch (Exception ex) {
             Logger.getLogger(Index.class.getName()).log(Level.SEVERE, null, ex);
         }

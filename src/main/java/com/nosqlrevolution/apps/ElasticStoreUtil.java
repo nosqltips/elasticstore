@@ -14,17 +14,12 @@ public class ElasticStoreUtil {
     
     // Create new ElasticStore
     public static ElasticStore createElasticStore(String hostname, String clustername, String index, String type, boolean asNode, boolean asElastic) throws Exception {
-        if (asElastic) {
-            return new ElasticStore().asElastic().withClusterName(clustername);
-        } else if (! asNode) {
-            return new ElasticStore().asTransport().withClusterName(clustername).withUnicast(getAddresses(hostname));
-        } else {
-            return new ElasticStore().asNode().withClusterName(clustername).withUnicast(getHosts(hostname));
-        }
+        return new ElasticStore().asElastic().withClusterName(clustername).withUnicast(getAddresses(hostname));
     }
     
     public static InetSocketAddress[] getAddresses(String hostnames) {
         String[] hosts = hostnames.split(",");
+        System.out.println("hostnames=" + hostnames + " hosts=" + hosts);
         List<InetSocketAddress> addresses = new ArrayList<>();
         for (String host: hosts) {
             if (host.contains(":")) {

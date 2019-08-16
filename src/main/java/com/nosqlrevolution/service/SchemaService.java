@@ -68,6 +68,6 @@ public class SchemaService {
             builder.endObject();
         builder.endObject();
 
-        return builder.string();
+        return builder.toString();
     }
 }

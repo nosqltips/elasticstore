@@ -1,44 +1,49 @@
 package com.nosqlrevolution.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nosqlrevolution.WriteOperation;
 import com.nosqlrevolution.query.Query;
 import com.nosqlrevolution.util.JsonUtil;
 import com.nosqlrevolution.util.QueryUtil;
+import java.io.IOException;
+import static org.elasticsearch.action.DocWriteResponse.Result.DELETED;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
 import org.elasticsearch.action.admin.indices.exists.types.TypesExistsRequest;
 import org.elasticsearch.action.admin.indices.exists.types.TypesExistsResponse;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.count.CountRequestBuilder;
-import org.elasticsearch.action.count.CountResponse;
+import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteRequestBuilder;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.*;
-import org.elasticsearch.action.index.IndexRequestBuilder;
+import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequestBuilder;
 import org.elasticsearch.action.search.SearchType;
-import org.elasticsearch.client.Client;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
+import static org.elasticsearch.common.settings.Settings.builder;
 import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 
 /**
  *
  * @author cbrown
  */
 public class QueryService {
-    private final Client client;
-    private final ObjectMapper mapper = new ObjectMapper();
-    private final WriteOperation DEFAULT_WRITE = new WriteOperation();
+    private final RestHighLevelClient restClient;
+    private final ObjectMapper MAPPER = new ObjectMapper();
     
-    public QueryService(Client client) {
-        this.client = client;
+    public QueryService(RestHighLevelClient restClient) {
+        this.restClient = restClient;
     }
     
     /**
@@ -61,26 +66,34 @@ public class QueryService {
      * @return 
      */
     public String getSingle(Query query, String index, String type) {
-        SearchRequestBuilder builder = client.prepareSearch(index)
-                .setSearchType(SearchType.DEFAULT)
-                .setTypes(type)
-                .setFrom(0)
-                .setSize(1);
+        SearchSourceBuilder builder = new SearchSourceBuilder()
+                .from(0)
+                .size(1);
 
         Query q = QueryResolverService.resolve(query);
         if (q != null) {
-            builder.setQuery(q.getQueryBuilder());
+            builder.query(q.getQueryBuilder());
+            if (q.getFields() != null) {
+                builder.fetchSource(q.getFields(), null);
+            }
             if (query.getHighlights() != null) {
+                HighlightBuilder highlightBuilder = new HighlightBuilder(); 
                 for (String s: query.getHighlights()) {
-                    builder.addHighlightedField(s);
+                    HighlightBuilder.Field highlightField = new HighlightBuilder.Field(s); 
+                    highlightBuilder.field(highlightField);
                 }
+                builder.highlighter(highlightBuilder);
             }
         } else {
-            builder.setQuery(QueryUtil.getMatchAllQuery());
+            builder.query(QueryUtil.getMatchAllQuery());
         }
+
+        SearchRequest request = new SearchRequest(index)
+                .searchType(SearchType.DEFAULT)
+                .source(builder);
         
         try {
-            SearchResponse response = builder.execute().actionGet();
+            SearchResponse response = restClient.search(request, RequestOptions.DEFAULT);
 
             // Update the SearchQuery results
             SearchHits h = response.getHits();
@@ -101,7 +114,7 @@ public class QueryService {
      * @param type
      * @return 
      */
-    public SearchRequestBuilder findAllScroll(String index, String type) {
+    public SearchRequest findAllScroll(String index, String type) {
         return findAll(null, index, type, true);
     }
     
@@ -113,7 +126,7 @@ public class QueryService {
      * @param type
      * @return 
      */
-    public SearchRequestBuilder findAllScroll(Query query, String index, String type) {
+    public SearchRequest findAllScroll(Query query, String index, String type) {
         return findAll(query, index, type, true);
     }
     
@@ -124,7 +137,7 @@ public class QueryService {
      * @param type
      * @return 
      */
-    public SearchRequestBuilder findAll(String index, String type) {
+    public SearchRequest findAll(String index, String type) {
         return findAll(null, index, type, false);
     }
     
@@ -137,33 +150,38 @@ public class QueryService {
      * @param scroll
      * @return 
      */
-    public SearchRequestBuilder findAll(Query query, String index, String type, boolean scroll) {
-        SearchRequestBuilder builder = client.prepareSearch(index)
-                .setSearchType(SearchType.QUERY_THEN_FETCH)
-                .setTypes(type)
-                .setFrom(0)
-                .setSize(100);
-
-        // Set parameters if we're performing a scroll.
-        if (scroll) {
-            builder.setSearchType(SearchType.SCAN);
-            builder.setScroll(new TimeValue(600000));
-            builder.setSize(1000);
-        }
+    public SearchRequest findAll(Query query, String index, String type, boolean scroll) {
+        SearchSourceBuilder builder = new SearchSourceBuilder();
         
-        Query qb = QueryResolverService.resolve(query);
-        if (qb != null) {
-            builder.setQuery(qb.getQueryBuilder());
+        Query q = QueryResolverService.resolve(query);
+        if (q != null) {
+            builder.query(q.getQueryBuilder())
+                    .from(0)
+                    .size(10000);
+            if (q.getFields() != null) {
+                builder.fetchSource(q.getFields(), null);
+            }
             if (query.getHighlights() != null) {
+                HighlightBuilder highlightBuilder = new HighlightBuilder(); 
                 for (String s: query.getHighlights()) {
-                    builder.addHighlightedField(s);
+                    HighlightBuilder.Field highlightField = new HighlightBuilder.Field(s); 
+                    highlightBuilder.field(highlightField);
                 }
+                builder.highlighter(highlightBuilder);
             }
         } else {
-            builder.setQuery(QueryUtil.getMatchAllQuery());
+            builder.query(QueryUtil.getMatchAllQuery());
+        }
+
+        SearchRequest request = new SearchRequest(index)
+                .searchType(SearchType.DEFAULT)
+                .source(builder);
+
+        if (scroll) {
+            request.scroll(new TimeValue(600000));
         }
         
-        return builder;
+        return request;
     }
     
     /**
@@ -175,14 +193,19 @@ public class QueryService {
      * @return 
      */
     public String realTimeGet(String index, String type, String id) {
-        GetRequestBuilder builder = client.prepareGet()
-                .setIndex(index)
-                .setType(type)
-                .setId(id)
-                .setRealtime(Boolean.TRUE);
+        GetRequest getRequest = new GetRequest()
+                .index(index)
+                .id(id)
+                .realtime(Boolean.TRUE);
         
-        GetResponse response = builder.execute().actionGet();
-        return response.getSourceAsString();
+        try {
+            GetResponse response = restClient.get(getRequest, RequestOptions.DEFAULT);
+            return response.getSourceAsString();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+        
+        return null;
     }
 
     /**
@@ -194,20 +217,32 @@ public class QueryService {
      * @return 
      */
     public String[] realTimeMultiGet(String index, String type, String[] ids) {
-        MultiGetRequestBuilder builder = client.prepareMultiGet()
-                .add(index, type, ids)
-                .setRealtime(Boolean.TRUE);
-        
-        MultiGetResponse response = builder.execute().actionGet();
-        MultiGetItemResponse[] responses = response.getResponses();
-        
-        String[] out = new String[responses.length];
-        for (int i=0; i<responses.length; i++) {
-            if (responses[i].getResponse() != null) {
-                out[i] = responses[i].getResponse().getSourceAsString();
-            }
+        MultiGetRequest multiRequest = null;
+        try {
+            multiRequest = new MultiGetRequest()
+                    .add(index, type, ids, new FetchSourceContext(false), null, null, false)
+                    .realtime(Boolean.TRUE);
+        } catch (IOException ie) {
+            ie.printStackTrace();
         }
-        return out;
+
+        try {
+            MultiGetResponse response = restClient.multiGet(multiRequest, RequestOptions.DEFAULT);
+            MultiGetItemResponse[] responses = response.getResponses();
+            
+            String[] out = new String[responses.length];
+            for (int i=0; i<responses.length; i++) {
+                if (responses[i].getResponse() != null) {
+                    out[i] = responses[i].getResponse().getSourceAsString();
+                }
+            }
+            
+            return out;
+        } catch (IOException ie) {
+            ie.printStackTrace();
+        }
+
+        return null;
     }
     
     /**
@@ -241,19 +276,30 @@ public class QueryService {
      * @return 
      */
     public long count(Query query, String[] indexes, String[] types) {
-        CountRequestBuilder builder = client.prepareCount()
-                .setIndices(indexes)
-                .setTypes(types);
+        SearchSourceBuilder builder = new SearchSourceBuilder()
+                .from(0)
+                .size(0);
         
-        Query qb = QueryResolverService.resolve(query);
-        if (qb != null) {
-            builder.setQuery(qb.getQueryBuilder());
+        Query q = QueryResolverService.resolve(query);
+        if (q != null) {
+            builder.query(q.getQueryBuilder());
         } else {
-            builder.setQuery(QueryUtil.getMatchAllQuery());
+            builder.query(QueryUtil.getMatchAllQuery());
+        }
+
+        SearchRequest request = new SearchRequest(indexes)
+                .searchType(SearchType.DEFAULT)
+                .source(builder);
+        
+        try {
+            SearchResponse response = restClient.search(request, RequestOptions.DEFAULT);
+            if (response.getHits().getTotalHits() != null) {
+                return response.getHits().getTotalHits().value;
+            }
+        } catch (IOException e) {
         }
         
-        CountResponse response = builder.execute().actionGet();
-        return response.getCount();
+        return 0;
     }
 
     /**
@@ -265,24 +311,33 @@ public class QueryService {
      * @return 
      */
     public long count(Query query, String index, String type) {
-        CountRequestBuilder builder = client.prepareCount()
-                .setIndices(index)
-                .setTypes(type);
+        SearchSourceBuilder builder = new SearchSourceBuilder()
+                .from(0)
+                .size(0);
         
-        Query qb = QueryResolverService.resolve(query);
-        if (qb != null) {
-            builder.setQuery(qb.getQueryBuilder());
+        Query q = QueryResolverService.resolve(query);
+        if (q != null) {
+            builder.query(q.getQueryBuilder());
         } else {
-            builder.setQuery(QueryUtil.getMatchAllQuery());
+            builder.query(QueryUtil.getMatchAllQuery());
+        }
+
+        SearchRequest request = new SearchRequest(index)
+                .searchType(SearchType.DEFAULT)
+                .source(builder);
+        try {
+            SearchResponse response = restClient.search(request, RequestOptions.DEFAULT);
+            if (response.getHits().getTotalHits() != null) {
+                return response.getHits().getTotalHits().value;
+            }
+        } catch (IOException e) {
         }
         
-        CountResponse response = builder.execute().actionGet();
-        return response.getCount();
+        return 0;
     }
     
     /**
      * Index a single document using the standard indexing api
-     * Passes in a default WriteOperation
      * 
      * @param index
      * @param type
@@ -290,29 +345,17 @@ public class QueryService {
      * @param id 
      */
     public void index(String index, String type, String source, String id) {
-        index(DEFAULT_WRITE, index, type, source, id);
-    }
-    /**
-     * Index a single document using the standard indexing api
-     * 
-     * @param write
-     * @param index
-     * @param type
-     * @param source
-     * @param id 
-     */
-    public void index(WriteOperation write, String index, String type, String source, String id) {
-        IndexRequestBuilder builder = client.prepareIndex()
-                .setIndex(index)
-                .setType(type)
-                .setSource(source)
-                .setId(id)
-                
-                // Operations from WriteOperation
-                .setConsistencyLevel(write.getConsistencyLevel())
-                .setRefresh(write.getRefresh());
+        IndexRequest request = new IndexRequest()
+                .index(index)
+                .type(type)
+                .source(source)
+                .id(id);
         
-        IndexResponse response = builder.execute().actionGet();
+        try {
+            IndexResponse response = restClient.index(request, RequestOptions.DEFAULT);
+        } catch (IOException ie) {
+            ie.printStackTrace();
+        }
 
         // TODO: could return version of the object
         //response.version();
@@ -320,82 +363,51 @@ public class QueryService {
         // TODO: could return id of the object
         //response.id();
     }
-
-    /**
-     * Index a number of documents using the bulk indexing api
-     * Passes in a default WriteOperation
-     * 
-     * @param index
-     * @param type
-     * @param source 
-     */
-    public void bulkIndex(String index, String type, String[] source, String idField) {
-        bulkIndex(DEFAULT_WRITE, index, type, source, idField);
-    }
     /**
      * Index a number of documents using the bulk indexing api
      * 
-     * @param write
      * @param index
      * @param type
      * @param source 
      * @param idField 
      */
-    public void bulkIndex(WriteOperation write, String index, String type, String[] source, String idField) {
-        BulkRequestBuilder builder = client.prepareBulk();
+    public void bulkIndex(String index, String type, String[] source, String idField) {
+        BulkRequest bulkRequest = new BulkRequest();
 
         for (String json: source) {
-            builder.add(client.prepareIndex(index, type)
-                    // TODO: need to pass in an id field if available.
-                    .setId(JsonUtil.getId(json, idField))
-                    .setSource(JsonUtil.getSource(json, json))
-
-                    // Operations from WriteOperation
-                    .setConsistencyLevel(write.getConsistencyLevel())
-                    .setRefresh(write.getRefresh())
-                );
+            bulkRequest.add(new IndexRequest()
+                    .index(index)
+                    .type(type)
+                    .id(JsonUtil.getId(json, idField))
+                    .source(JsonUtil.removeIdFromSource(json, idField), XContentType.JSON));
         }
         
-        BulkResponse response = builder.execute().actionGet();
+        try {
+            BulkResponse response = restClient.bulk(bulkRequest, RequestOptions.DEFAULT);
+        } catch (IOException ie) {
+            ie.printStackTrace();
+        }
         
         // TODO: Need to return failures at some point
     }
-    
     /**
      * Delete a single document
-     * Passes in a default WriteOperation
-     * 
+     *
      * @param index
      * @param type
      * @param id
      * @return 
      */
     public boolean delete(String index, String type, String id) {
-        return delete(DEFAULT_WRITE, index, type, id);
-    }
-    /**
-     * Delete a single document
-     *
-     * @param write
-     * @param index
-     * @param type
-     * @param id
-     * @return 
-     */
-    public boolean delete(WriteOperation write, String index, String type, String id) {
-        DeleteRequestBuilder builder = client.prepareDelete()
-                .setIndex(index)
-                .setType(type)
-                .setId(id)
-                
-                // Operations from WriteOperation
-                .setConsistencyLevel(write.getConsistencyLevel())
-                .setRefresh(write.getRefresh());
+        DeleteRequest request = new DeleteRequest(index, type, id);
+        try {
+            DeleteResponse response = restClient.delete(request, RequestOptions.DEFAULT);
+            return response.getResult().equals(DELETED);
+        } catch (IOException ie) {
+            ie.printStackTrace();
+        }
         
-        DeleteResponse response = builder.execute().actionGet();
-        return response.isFound();
-        // TODO: Could return if found.
-        //response.notFound();
+        return false;
     }
     
     // Need to implement as a bulk operation.
@@ -439,14 +451,14 @@ public class QueryService {
 //        return true;
 //    }
     
-    /**
-     * Refresh the given index.
-     * 
-     * @param index 
-     */
-    public void refresh(String index) {
-        client.admin().indices().refresh(new RefreshRequest(index)).actionGet();
-    }
+//    /**
+//     * Refresh the given index.
+//     * 
+//     * @param index 
+//     */
+//    public void refresh(String index) {
+//        restClient.admin().indices().refresh(new RefreshRequest(index)).actionGet();
+//    }
 
     /**
      * Execute a SearchRequestBuilder and get a SearchResponse.
@@ -465,42 +477,42 @@ public class QueryService {
         return null;
     }
     
-    /**
-     * Execute a SearchRequestBuilder and get a SearchResponse.
-     * 
-     * @param builder
-     * @return 
-     */
-    public SearchScrollRequestBuilder executeScroll(SearchRequestBuilder builder) {
-        try {
-            if (builder.request().searchType() == SearchType.SCAN) {
-                SearchResponse response = builder.execute().actionGet();
-                return client.prepareSearchScroll(response.getScrollId()).setScroll(new TimeValue(600000));
-            } else {
-                throw new Exception("SearchRequest must be of type scan.");
-            }
-        } catch (Exception e) {}
-
-        return null;
-    }
+//    /**
+//     * Execute a SearchRequestBuilder and get a SearchResponse.
+//     * 
+//     * @param builder
+//     * @return 
+//     */
+//    public SearchScrollRequestBuilder executeScroll(SearchRequestBuilder builder) {
+//        try {
+//            if (builder.request().searchType() == SearchType.QUERY_THEN_FETCH) {
+//                SearchResponse response = builder.execute().actionGet();
+//                return restClient.prepareSearchScroll(response.getScrollId()).setScroll(new TimeValue(600000));
+//            } else {
+//                throw new Exception("SearchRequest must be of type scan.");
+//            }
+//        } catch (Exception e) {}
+//
+//        return null;
+//    }
     
-    /**
-     * Check to see if indeces or types exists in the ElasticSearch cluster.
-     * 
-     * @param index
-     * @param type
-     * @return 
-     */
-    public boolean exists(String index, String type) {
-        if (type == null) {
-            IndicesExistsRequest indicesRequest = new IndicesExistsRequest(index);
-            IndicesExistsResponse response = client.admin().indices().exists(indicesRequest).actionGet();
-            return response.isExists();
-        } else {
-            String[] indices = new String[] {index};
-            TypesExistsRequest typesRequest = new TypesExistsRequest(indices, type);
-            TypesExistsResponse response = client.admin().indices().typesExists(typesRequest).actionGet();
-            return response.isExists();
-        }
-    }
+//    /**
+//     * Check to see if indeces or types exists in the ElasticSearch cluster.
+//     * 
+//     * @param index
+//     * @param type
+//     * @return 
+//     */
+//    public boolean exists(String index, String type) {
+//        if (type == null) {
+//            IndicesExistsRequest indicesRequest = new IndicesExistsRequest(index);
+//            IndicesExistsResponse response = restClient.admin().indices().exists(indicesRequest).actionGet();
+//            return response.isExists();
+//        } else {
+//            String[] indices = new String[] {index};
+//            TypesExistsRequest typesRequest = new TypesExistsRequest(indices, type);
+//            TypesExistsResponse response = restClient.admin().indices().typesExists(typesRequest).actionGet();
+//            return response.isExists();
+//        }
+//    }
 }

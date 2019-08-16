@@ -19,12 +19,12 @@ public class JsonTypedIndexTest {
     public static void setUpClass() throws Exception {
          elasticStore = new ElasticStore().asMemoryOnly().execute();
          assertNotNull(elasticStore);
-         assertNotNull(elasticStore.getClient());
+         assertNotNull(elasticStore.getRestClient());
     }
 
     @AfterClass
     public static void tearDownClass() throws Exception {
-        elasticStore.removeIndex(index);
+//        elasticStore.removeIndex(index);
         elasticStore.close();
     }
     

@@ -100,7 +100,7 @@ public class QueryUtil {
             }
         }
         
-        bq.minimumNumberShouldMatch(1);
+        bq.minimumShouldMatch(1);
         return bq;
     }
     
@@ -112,7 +112,7 @@ public class QueryUtil {
             }
         }
         
-        bq.minimumNumberShouldMatch(1);
+        bq.minimumShouldMatch(1);
         return bq;
     }
     
@@ -156,7 +156,6 @@ public class QueryUtil {
     
     public static QueryBuilder getTextQuery(String field, String terms) {
         return matchQuery(field, terms)
-                .slop(1)
                 .analyzer("simple");                
     }    
  }

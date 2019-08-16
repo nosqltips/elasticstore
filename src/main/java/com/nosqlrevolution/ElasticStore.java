@@ -1,41 +1,38 @@
 package com.nosqlrevolution;
 
-import com.google.common.base.Joiner;
 import com.nosqlrevolution.util.AnnotationHelper;
-import java.net.InetAddress;
+import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
-import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
-import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
-import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
-import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.client.transport.TransportClient;
+import org.apache.http.HttpHost;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestClientBuilder;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
-import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
-import org.elasticsearch.shield.ShieldPlugin;
 
 /**
  *
  * @author cbrown
  */
 public class ElasticStore {
-    private static final int DEFAULT_PORT = 9300;
+    private static final int DEFAULT_PORT = 9243;
     private static final String DEFAULT_HOST = "127.0.0.1";
     private static final String DEFAULT_TIMEOUT = "10s";
     private static final String DEFAULT_CLUSTER_NAME = "elasticsearch";
     private static boolean multicast = true;
-    private static boolean node = true;
     private static boolean local = false;
     private static boolean memory = false;
-    private static boolean elastic = false;
     
-    private Client client = null;
+    private RestHighLevelClient restClient = null;
     private String[] hosts = null;
     private InetSocketAddress[] addresses = null;
     private String clusterName = DEFAULT_CLUSTER_NAME;
@@ -48,26 +45,6 @@ public class ElasticStore {
     private String clusterId = null;
     private String region = null;
     private boolean enableSsl = false;
-    
-    /**
-     * Connect to the ElasticSearch cluster as a node.
-     * 
-     * @return 
-     */
-    public ElasticStore asNode() {
-        node = true;
-        return this;
-    }
-    
-    /**
-     * Connect to the ElasticSearch cluster as a TCP transport. This requires a list of address to connect to.
-     * 
-     * @return 
-     */
-    public ElasticStore asTransport() {
-        node = false;
-        return this;
-    }
 
     /**
      * Run a local instance of ElasticSearch.
@@ -98,9 +75,7 @@ public class ElasticStore {
      * @return 
      */
     public ElasticStore asElastic() {
-        elastic = true;
         enableSsl = true;
-        node = false;
         multicast = false;
         return this;
     }
@@ -233,96 +208,53 @@ public class ElasticStore {
      * @throws java.lang.Exception 
      */
     public ElasticStore execute() throws Exception {
-        Settings.Builder builder = Settings.settingsBuilder()
+        Settings.Builder builder = Settings.builder()
             .put("cluster.name", clusterName)
-            .put("discovery.zen.ping.timeout", timeout)
-            .put("discovery.zen.ping.multicast.enabled", multicast);
+            .put("discovery.zen.ping.timeout", timeout);
         
-        if (local) {
-            client = nodeBuilder()
-                .local(true)
-                .data(true)
-                .node()
-                .client();
-        } else if (node) {            
-            if (memory) {
-                builder.put("es.index.storage.type", "memory");
-                builder.put("index.number_of_shards", "1");
-                builder.put("index.number_of_replicas", "0");
-            }
-            
-            if (! multicast) {
-                if (hosts != null) {
-                    builder.put("discovery.zen.ping.unicast.hosts", Joiner.on(",").join(hosts));
-                } else {
-                    builder.put("discovery.zen.ping.unicast.hosts", DEFAULT_HOST);
-                }
-            }
-            
-            client = nodeBuilder()
-                    .settings(builder.build())
-                    .client(true)
-                    .data(false)
-                    .node()
-                    .client();
-        } else if (elastic) {
-            // Build the settings for our client.
-            if (clusterId == null && region == null && username == null && password == null) {
-                throw new Exception("Elastic service not configured properly, aborting");
-            }
-            Settings settings = Settings.settingsBuilder()
-                .put("transport.ping_schedule", "5s")
-                .put("transport.sniff", false)
-                .put("cluster.name", clusterId)
-                .put("action.bulk.compress", false)
-                .put("shield.transport.ssl", enableSsl)
-                .put("request.headers.X-Found-Cluster", clusterId)
-                .put("shield.user", username + ":" + password)
-                .build();
-            
-            Map<String, String> settingsMap= settings.getAsMap();
-            for (String s: settingsMap.keySet()) {
-                System.out.println("key=" + s + " value=" + settingsMap.get(s));
-            }
-            String hostname = clusterId + "." + region + ".aws.found.io";
-            try {
-                // Instantiate a TransportClient and add the cluster to the list of addresses to connect to.
-                // Only port 9343 (SSL-encrypted) is currently supported.
-                client = TransportClient.builder()
-                        .addPlugin(ShieldPlugin.class)
-                        .settings(settings)
-                        .build()
-                        .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(hostname), 9343));
-            } catch (UnknownHostException ex) {
-                Logger.getLogger(ElasticStore.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        } else {
-            TransportClient transClient = TransportClient.builder().settings(builder).build();
-            if (! multicast) {
-                if (addresses != null) {
-                    for (InetSocketAddress address: addresses) {
-                        transClient.addTransportAddress(new InetSocketTransportAddress(address));
-                    }
-                }
-                if (hosts != null) {
-                    for (String host: hosts) {                        
-                        transClient.addTransportAddress(new InetSocketTransportAddress(new InetSocketAddress(host, port)));
-                    }
-                } else {
-                    transClient.addTransportAddress(new InetSocketTransportAddress(new InetSocketAddress(DEFAULT_HOST, port)));
-                }
-            }
-            client = transClient;
+        if (local || memory) {
+            builder.put("es.index.storage.type", "memory");
+            builder.put("index.number_of_shards", "1");
+            builder.put("index.number_of_replicas", "0");
         }
         
-        // Wait for client connection.
-        client.admin()
-                .cluster()
-                .prepareHealth()
-                .setWaitForYellowStatus()
-                .execute()
-                .actionGet();
-    
+        if (! multicast) {
+            if (hosts != null) {
+                builder.put("discovery.zen.ping.unicast.hosts", String.join(",", hosts));
+            } else {
+                builder.put("discovery.zen.ping.unicast.hosts", DEFAULT_HOST);
+            }
+        }
+        
+        HttpHost[] httpHosts = new HttpHost[addresses.length];
+        for (int i=0; i < addresses.length; i++) {
+            httpHosts[i] = new HttpHost(addresses[i].getHostName(), addresses[i].getPort(), "https");
+            System.out.println("hosts[i]=" +addresses[i].getHostName() + " port=" + addresses[i].getPort());
+        }
+
+        // Build the settings for our client.
+        if (clusterId == null && region == null && username == null && password == null) {
+            throw new Exception("Elastic service not configured properly, aborting");
+        }
+
+        final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+        credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(username, password));
+
+        RestClientBuilder restClientBuilder = RestClient.builder(httpHosts)
+            .setRequestConfigCallback(
+                    (RequestConfig.Builder requestConfigBuilder) -> 
+                            requestConfigBuilder.setConnectTimeout(20000)
+                                    .setSocketTimeout(300000))
+            .setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
+                @Override
+                public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpClientBuilder) {
+                    return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+                }
+            });
+
+        restClient = new RestHighLevelClient(restClientBuilder);
+
+        restClient.cluster().health(new ClusterHealthRequest(), RequestOptions.DEFAULT);
         return this;
     }
     
@@ -331,23 +263,29 @@ public class ElasticStore {
      * @return 
      */
     public boolean isInitialized() {
-        return client != null;
+        return restClient != null;
     }
 
     /**
-     * Access the ElasticSearch client.
+     * Access the ElasticSearch REST client.
      * 
      * @return 
      */
-    public Client getClient() {
-        return client;
+    public RestHighLevelClient getRestClient() {
+        return restClient;
     }
     
     /**
      * Close ElasticStore
      */
     public void close() {
-        client.close();
+        try {
+            if (restClient != null) {
+                restClient.close();
+            }
+        } catch (IOException ex) {
+            Logger.getLogger(ElasticStore.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     /**
@@ -361,7 +299,7 @@ public class ElasticStore {
      */
     // TODO: Need to type the exception more strongly
     public Index getIndex(Class clazz, String index, String type) throws Exception {
-        if (client == null) {
+        if (restClient == null) {
             throw new IllegalArgumentException("ElasticStore is not executed");
         }
 
@@ -370,7 +308,7 @@ public class ElasticStore {
         }
         
         // TODO: need to catch and throw an exception here
-        return new TypedIndex(clazz, this, index, type);
+        return new TypedIndex(clazz, this, index, type, restClient);
     }
 
     /**
@@ -383,7 +321,7 @@ public class ElasticStore {
      */
     // TODO: Need to type the exception more strongly
     public Index getIndex(Class clazz) throws Exception {
-        if (client == null) {
+        if (restClient == null) {
             throw new IllegalArgumentException("ElasticStore is not executed");
         }
 
@@ -394,47 +332,47 @@ public class ElasticStore {
         }
 
         // TODO: need to catch and throw an exception here
-        return new TypedIndex(clazz, this, index, type);
+        return new TypedIndex(clazz, this, index, type, restClient);
     }
 
-    /**
-     * Remove an index from ElasticStore as specified by an Index.
-     * 
-     * @param index
-     * @throws Exception 
-     */
-    public void removeIndex(Index index) throws Exception {
-        client.admin()
-                .indices()
-                .delete(new DeleteIndexRequest(index.getIndex()))
-                .actionGet();
-    }
-
-    /**
-     * Remove an index from ElasticStore as specified by an index name..
-     * 
-     * @param index
-     * @throws Exception 
-     */
-    public void removeIndex(String index) throws Exception {
-        client.admin()
-                .indices()
-                .delete(new DeleteIndexRequest(index))
-                .actionGet();
-    }
-
-    /**
-     * Refresh the index,
-     * 
-     * @param index
-     * @throws Exception 
-     */
-    public void refreshIndex(Index index) throws Exception {
-        client.admin()
-                .indices()
-                .refresh(new RefreshRequest(index.getIndex()))
-                .actionGet();
-    }
+//    /**
+//     * Remove an index from ElasticStore as specified by an Index.
+//     * 
+//     * @param index
+//     * @throws Exception 
+//     */
+//    public void removeIndex(Index index) throws Exception {
+//        client.admin()
+//                .indices()
+//                .delete(new DeleteIndexRequest(index.getIndex()))
+//                .actionGet();
+//    }
+//
+//    /**
+//     * Remove an index from ElasticStore as specified by an index name..
+//     * 
+//     * @param index
+//     * @throws Exception 
+//     */
+//    public void removeIndex(String index) throws Exception {
+//        client.admin()
+//                .indices()
+//                .delete(new DeleteIndexRequest(index))
+//                .actionGet();
+//    }
+//
+//    /**
+//     * Refresh the index,
+//     * 
+//     * @param index
+//     * @throws Exception 
+//     */
+//    public void refreshIndex(Index index) throws Exception {
+//        client.admin()
+//                .indices()
+//                .refresh(new RefreshRequest(index.getIndex()))
+//                .actionGet();
+//    }
 
     /**
      * Apply type mapping to one or more indexes.
@@ -448,17 +386,17 @@ public class ElasticStore {
     protected void applyMapping(String mapping, String type, String... indexes) {
         // Check to see if indexes exist and create if missing.
         for (String index: indexes) {
-            if (! client.admin().indices().exists(new IndicesExistsRequest(index)).actionGet().isExists()) {
-                client.admin().indices().create(new CreateIndexRequest(index)).actionGet();
-            }
+//            if (! client.admin().indices().exists(new IndicesExistsRequest(index)).actionGet().isExists()) {
+//                client.admin().indices().create(new CreateIndexRequest(index)).actionGet();
+//            }
         }
         
-        // Apply the new mapping to the index
-        client.admin()
-                .indices()
-                .putMapping(new PutMappingRequest(indexes)
-                    .source(mapping)
-                    .type(type)
-                ).actionGet();
+//        // Apply the new mapping to the index
+//        client.admin()
+//                .indices()
+//                .putMapping(new PutMappingRequest(indexes)
+//                    .source(mapping)
+//                    .type(type)
+//                ).actionGet();
     }
 }

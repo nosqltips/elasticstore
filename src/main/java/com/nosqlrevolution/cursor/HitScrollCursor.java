@@ -1,7 +1,8 @@
 package com.nosqlrevolution.cursor;
 
 import java.util.Iterator;
-import org.elasticsearch.action.search.SearchScrollRequestBuilder;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.search.SearchHit;
 
 /**
@@ -11,13 +12,13 @@ import org.elasticsearch.search.SearchHit;
  * @author cbrown
  */
 public class HitScrollCursor extends Cursor<SearchHit> {
-    private final SearchScrollRequestBuilder scrollBuilder;
+    private final SearchRequest scrollRequest;
     private final CursorIterator<SearchHit> iterator;
     
-    public HitScrollCursor(SearchScrollRequestBuilder scrollBuilder) throws Exception {
+    public HitScrollCursor(SearchRequest scrollRequest, RestHighLevelClient restClient) throws Exception {
         // TODO: may need to check for null here.
-        this.scrollBuilder = scrollBuilder;
-        this.iterator = new HitScrollCursorIterator(scrollBuilder);
+        this.scrollRequest = scrollRequest;
+        this.iterator = new HitScrollCursorIterator(scrollRequest, restClient);
     }
 
     @Override

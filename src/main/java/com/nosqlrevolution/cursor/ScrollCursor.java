@@ -1,7 +1,8 @@
 package com.nosqlrevolution.cursor;
 
 import java.util.Iterator;
-import org.elasticsearch.action.search.SearchScrollRequestBuilder;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.client.RestHighLevelClient;
 
 /**
  * Used to automatically scroll through a set of search results 
@@ -11,14 +12,14 @@ import org.elasticsearch.action.search.SearchScrollRequestBuilder;
  * @param <E>
  */
 public class ScrollCursor<E> extends Cursor<E> {
-    private final SearchScrollRequestBuilder scrollBuilder;
+    private final SearchRequest scrollRequest;
     private final CursorIterator<E> iterator;
     
-    public ScrollCursor(Class<E> e, SearchScrollRequestBuilder scrollBuilder) throws Exception {
+    public ScrollCursor(Class<E> e, SearchRequest scrollRequest, RestHighLevelClient restClient) throws Exception {
         // TODO: may need to check for null here.
         this.e = e;
-        this.scrollBuilder = scrollBuilder;
-        this.iterator = new ScrollCursorIterator(e, scrollBuilder);
+        this.scrollRequest = scrollRequest;
+        this.iterator = new ScrollCursorIterator(e, scrollRequest, restClient);
     }
 
     @Override

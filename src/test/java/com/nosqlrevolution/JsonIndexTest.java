@@ -16,7 +16,7 @@ public class JsonIndexTest {
     public static void setUpClass() throws Exception {
          elasticStore = new ElasticStore().asMemoryOnly().execute();
          assertNotNull(elasticStore);
-         assertNotNull(elasticStore.getClient());
+         assertNotNull(elasticStore.getRestClient());
     }
 
     @AfterClass

@@ -23,7 +23,7 @@ public class BlockCursorIterator<E> extends CursorIterator<E> {
         this.from = from;
         this.size = size;
         hits = getNextPage();
-        totalSize = (int)hits.getTotalHits();
+        totalSize = hits.getTotalHits() != null ? (int) hits.getTotalHits().value : 0;
     }
     
     @Override
@@ -46,7 +46,7 @@ public class BlockCursorIterator<E> extends CursorIterator<E> {
         
         // Return the next object
         SearchHit hit = hits.getAt(iter);
-        String source = hit.sourceAsString();
+        String source = hit.getSourceAsString();
         E returnE;
         
         if (e == ExportModel.class) {

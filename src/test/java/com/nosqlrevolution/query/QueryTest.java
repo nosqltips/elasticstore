@@ -1,8 +1,6 @@
 package com.nosqlrevolution.query;
 
 import com.nosqlrevolution.ElasticStore;
-import com.nosqlrevolution.Index;
-import com.nosqlrevolution.model.Person;
 import org.junit.Test;
 import static com.nosqlrevolution.query.Condition.*;
 import static com.nosqlrevolution.query.Query.*;
@@ -22,7 +20,7 @@ public class QueryTest {
     public static void setUpClass() throws Exception {
          elasticStore = new ElasticStore().asMemoryOnly().withTimeout("1").execute();
          assertNotNull(elasticStore);
-         assertNotNull(elasticStore.getClient());
+         assertNotNull(elasticStore.getRestClient());
     }
 
     @AfterClass
