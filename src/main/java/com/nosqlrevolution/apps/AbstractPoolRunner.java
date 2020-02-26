@@ -69,8 +69,11 @@ public abstract class AbstractPoolRunner {
         
         printTotals(totalCount, startTime, totalBytes);
         
+        System.out.println("blocker.shudown()");
         blocker.shudown();
+        System.out.println("master.shutdown()");
         master.shutdown();
+        System.out.println("pool.shutdown()");
         pool.shutdown();
         System.out.println("Done");
     }

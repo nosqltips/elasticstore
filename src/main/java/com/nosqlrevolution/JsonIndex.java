@@ -13,8 +13,6 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.elasticsearch.action.search.SearchScrollRequestBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.search.SearchHit;
 
@@ -53,7 +51,9 @@ public class JsonIndex<T> extends Index<String> {
     @Override
     public boolean flushBulk() {
         OperationStatus status = write(bulk);
-        bulk.clear();
+        if (bulk != null) {
+            bulk.clear();
+        }
         return status.succeeded();
     }
 
@@ -221,9 +221,10 @@ public class JsonIndex<T> extends Index<String> {
     @Override
     public OperationStatus write(String... json) {
         // TODO: need to gather operation results and return
-        if (json.length == 1) {
-            service.index(getIndex(), getType(), json[0], JsonUtil.getId(json[0], getIdField()));
-        } else if (json.length > 1) {
+//        if (json != null && json.length == 1) {
+//            service.index(getIndex(), getType(), json[0], JsonUtil.getId(json[0], getIdField()));
+//        } else if (json != null && json.length > 1) {
+        if (json != null && json.length > 1) {
             service.bulkIndex(getIndex(), getType(), json, getIdField());
         }
         
@@ -234,9 +235,10 @@ public class JsonIndex<T> extends Index<String> {
     @Override
     public OperationStatus write(List<? extends String> json) {
         // TODO: need to gather operation results and return
-        if (json.size() == 1) {
-            service.index(getIndex(), getType(), json.get(0), JsonUtil.getId(json.get(0), getIdField()));
-        } else if (json.size() > 1) {
+//        if (json != null && json.size() == 1) {
+//            service.index(getIndex(), getType(), json.get(0), JsonUtil.getId(json.get(0), getIdField()));
+//        } else if (json != null && json.size() > 1) {
+        if (json != null && json.size() > 1) {
             service.bulkIndex(getIndex(), getType(), json.toArray(new String[json.size()]), getIdField());
         }
 

@@ -6,15 +6,9 @@ import com.nosqlrevolution.util.JsonUtil;
 import com.nosqlrevolution.util.QueryUtil;
 import java.io.IOException;
 import static org.elasticsearch.action.DocWriteResponse.Result.DELETED;
-import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
-import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
-import org.elasticsearch.action.admin.indices.exists.types.TypesExistsRequest;
-import org.elasticsearch.action.admin.indices.exists.types.TypesExistsResponse;
-import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
-import org.elasticsearch.action.delete.DeleteRequestBuilder;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.*;
 import org.elasticsearch.action.index.IndexRequest;
@@ -22,11 +16,9 @@ import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.SearchScrollRequestBuilder;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
-import static org.elasticsearch.common.settings.Settings.builder;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.search.SearchHits;
@@ -68,7 +60,8 @@ public class QueryService {
     public String getSingle(Query query, String index, String type) {
         SearchSourceBuilder builder = new SearchSourceBuilder()
                 .from(0)
-                .size(1);
+                .size(1)
+                .trackTotalHits(true);
 
         Query q = QueryResolverService.resolve(query);
         if (q != null) {
@@ -157,7 +150,8 @@ public class QueryService {
         if (q != null) {
             builder.query(q.getQueryBuilder())
                     .from(0)
-                    .size(10000);
+                    .size(10000)
+                    .trackTotalHits(true);
             if (q.getFields() != null) {
                 builder.fetchSource(q.getFields(), null);
             }
@@ -196,8 +190,7 @@ public class QueryService {
         GetRequest getRequest = new GetRequest()
                 .index(index)
                 .id(id)
-                .realtime(Boolean.TRUE);
-        
+                .realtime(Boolean.TRUE);        
         try {
             GetResponse response = restClient.get(getRequest, RequestOptions.DEFAULT);
             return response.getSourceAsString();
@@ -278,7 +271,8 @@ public class QueryService {
     public long count(Query query, String[] indexes, String[] types) {
         SearchSourceBuilder builder = new SearchSourceBuilder()
                 .from(0)
-                .size(0);
+                .size(0)
+                .trackTotalHits(true);
         
         Query q = QueryResolverService.resolve(query);
         if (q != null) {
@@ -313,7 +307,8 @@ public class QueryService {
     public long count(Query query, String index, String type) {
         SearchSourceBuilder builder = new SearchSourceBuilder()
                 .from(0)
-                .size(0);
+                .size(0)
+                .trackTotalHits(true);
         
         Query q = QueryResolverService.resolve(query);
         if (q != null) {
@@ -345,16 +340,17 @@ public class QueryService {
      * @param id 
      */
     public void index(String index, String type, String source, String id) {
-        IndexRequest request = new IndexRequest()
-                .index(index)
-                .type(type)
-                .source(source)
-                .id(id);
-        
-        try {
-            IndexResponse response = restClient.index(request, RequestOptions.DEFAULT);
-        } catch (IOException ie) {
-            ie.printStackTrace();
+        if (source != null && ! source.isEmpty()) {
+            IndexRequest request = new IndexRequest()
+                    .index(index)
+                    .source(source)
+                    .id(id);
+
+            try {
+                IndexResponse response = restClient.index(request, RequestOptions.DEFAULT);
+            } catch (IOException ie) {
+                ie.printStackTrace();
+            }
         }
 
         // TODO: could return version of the object
@@ -372,20 +368,24 @@ public class QueryService {
      * @param idField 
      */
     public void bulkIndex(String index, String type, String[] source, String idField) {
-        BulkRequest bulkRequest = new BulkRequest();
+        if (source != null && source.length > 0) {
+            BulkRequest bulkRequest = new BulkRequest();
 
-        for (String json: source) {
-            bulkRequest.add(new IndexRequest()
-                    .index(index)
-                    .type(type)
-                    .id(JsonUtil.getId(json, idField))
-                    .source(JsonUtil.removeIdFromSource(json, idField), XContentType.JSON));
-        }
-        
-        try {
-            BulkResponse response = restClient.bulk(bulkRequest, RequestOptions.DEFAULT);
-        } catch (IOException ie) {
-            ie.printStackTrace();
+            for (String json: source) {
+                bulkRequest.add(new IndexRequest()
+                        .index(index)
+                        .id(JsonUtil.getId(json, idField))
+                        .source(JsonUtil.removeIdFromSource(json, idField), XContentType.JSON));
+            }
+
+            try {
+                BulkResponse response = restClient.bulk(bulkRequest, RequestOptions.DEFAULT);
+                if (response.hasFailures()) {
+                    System.out.println(response.buildFailureMessage());
+                }
+            } catch (IOException ie) {
+                ie.printStackTrace();
+            }
         }
         
         // TODO: Need to return failures at some point
@@ -399,7 +399,7 @@ public class QueryService {
      * @return 
      */
     public boolean delete(String index, String type, String id) {
-        DeleteRequest request = new DeleteRequest(index, type, id);
+        DeleteRequest request = new DeleteRequest(index, id);
         try {
             DeleteResponse response = restClient.delete(request, RequestOptions.DEFAULT);
             return response.getResult().equals(DELETED);

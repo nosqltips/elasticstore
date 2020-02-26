@@ -14,6 +14,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 
@@ -56,7 +57,7 @@ public class ScrollCursorIterator<E> extends CursorIterator<E> {
             iter = 0;
             
             // TODO: What to do if we get a call for next and we don't have any results?
-            if (hits.getHits().length == 0) {
+            if (hits == null || hits.getHits().length == 0) {
                 return null;
             }
         }
@@ -92,6 +93,9 @@ public class ScrollCursorIterator<E> extends CursorIterator<E> {
 
     private SearchHits getInitialPage() {
         try {
+            // Initialize the scroll
+            initialRequest.scroll(new TimeValue(60000));
+            
             // Get search response
             SearchResponse response = restClient.search(initialRequest, RequestOptions.DEFAULT);
             scrollId = response.getScrollId();
@@ -111,11 +115,12 @@ public class ScrollCursorIterator<E> extends CursorIterator<E> {
     
     private SearchHits getNextPage() {
         try {
-            SearchScrollRequest scrollRequst = new SearchScrollRequest(scrollId);
-            scrollRequst.scroll(initialRequest.scroll());
+            SearchScrollRequest scrollRequest = new SearchScrollRequest()
+                    .scrollId(scrollId)
+                    .scroll(new TimeValue(60000));
             
             // Get search response
-            SearchResponse response = restClient.search(initialRequest, RequestOptions.DEFAULT);
+            SearchResponse response = restClient.searchScroll(scrollRequest, RequestOptions.DEFAULT);
             scrollId = response.getScrollId();
             
             if (response.getHits().getHits().length == 0) {

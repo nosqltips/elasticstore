@@ -12,7 +12,7 @@ import org.elasticsearch.search.SearchHits;
  */
 public abstract class CursorIterator<E> implements Iterator<E> {
     protected Class<E> e;
-    protected final MappingUtil<E> mapping = new MappingUtil<E>();
+    protected final MappingUtil<E> mapping = new MappingUtil<>();
     protected SearchHits hits;
     protected int iter = 0;
     protected int iterAll = 0;

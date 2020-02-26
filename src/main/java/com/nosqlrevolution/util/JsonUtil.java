@@ -78,6 +78,7 @@ public class JsonUtil {
             Map<String, Object> sourceMap = MAPPER.readValue(source, new TypeReference<HashMap<String, Object>>(){});
             sourceMap.remove("_id");
             sourceMap.remove(idField);
+            return MAPPER.writeValueAsString(sourceMap);
         } catch (IOException ie) {
             ie.printStackTrace();
         }
