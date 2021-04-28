@@ -3,6 +3,8 @@ package com.nosqlrevolution.cursor;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.elasticsearch.action.search.ClearScrollRequest;
+import org.elasticsearch.action.search.ClearScrollResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
@@ -32,7 +34,8 @@ public class HitScrollCursorIterator extends CursorIterator<SearchHit> {
     
     @Override
     public boolean hasNext() {
-        if (! hasNext) { 
+        if (! hasNext) {
+            clearScrollContext();
             return false;
         } else {
             return iterAll < totalSize;
@@ -100,6 +103,19 @@ public class HitScrollCursorIterator extends CursorIterator<SearchHit> {
         }
         
         return null;
+    }
+
+        /**
+     * Clear the scroll context
+     */
+    public void clearScrollContext() {
+        ClearScrollRequest request = new ClearScrollRequest();
+        request.addScrollId(scrollId);
+        try {
+            ClearScrollResponse response = restClient.clearScroll(request, RequestOptions.DEFAULT);
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE, scrollId, e);
+        }
     }
 
     public String getScrollId() {

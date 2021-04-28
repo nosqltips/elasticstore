@@ -6,7 +6,6 @@ import com.nosqlrevolution.cursor.HitScrollCursor;
 import com.nosqlrevolution.cursor.ScrollCursor;
 import com.nosqlrevolution.query.Query;
 import com.nosqlrevolution.service.QueryService;
-import com.nosqlrevolution.util.JsonUtil;
 import com.nosqlrevolution.util.MappingUtil;
 import java.util.ArrayList;
 import java.util.List;

@@ -171,6 +171,7 @@ public class QueryService {
                 .searchType(SearchType.DEFAULT)
                 .source(builder);
 
+        System.out.println("builder=" + builder.toString());
         if (scroll) {
             request.scroll(new TimeValue(600000));
         }
