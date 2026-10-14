@@ -15,9 +15,6 @@ public class TransferOptions {
     
     @Option(name="-si",usage="source index to use")
     private String sourceIndex = null;
-    
-    @Option(name="-st",usage="source type to use")
-    private String sourceType = null;
 
     @Option(name="-sn",usage="connect to source cluster as node instead of as transport client")
     private boolean sourceNode = false;
@@ -30,9 +27,6 @@ public class TransferOptions {
     
     @Option(name="-di",usage="destination index to use")
     private String destIndex =  null;
-    
-    @Option(name="-dt",usage="destination type to use")
-    private String destType = null;
 
     @Option(name="-dn",usage="connect to destination cluster as node instead of as transport client")
     private boolean destNode = false;
@@ -52,8 +46,8 @@ public class TransferOptions {
     @Option(name="-id",usage="name of id field")
     private String idField = null;
 
-    @Option(name="-f",usage="name of id field")
-    private String field = null;
+    @Option(name="-f",usage="file reference")
+    private String file = null;
 
     // For Elastic service
     @Option(name="-se",usage="connect to source elastic service cluster")
@@ -111,14 +105,6 @@ public class TransferOptions {
         this.sourceIndex = sourceIndex;
     }
 
-    public String getSourceType() {
-        return sourceType;
-    }
-
-    public void setSourceType(String sourceType) {
-        this.sourceType = sourceType;
-    }
-
     public boolean isSourceNode() {
         return sourceNode;
     }
@@ -149,14 +135,6 @@ public class TransferOptions {
 
     public void setDestIndex(String descIndex) {
         this.destIndex = descIndex;
-    }
-
-    public String getDestType() {
-        return destType;
-    }
-
-    public void setDestType(String destType) {
-        this.destType = destType;
     }
 
     public boolean isDestNode() {
@@ -287,11 +265,11 @@ public class TransferOptions {
         this.destElastic = destElastic;
     }
 
-    public String getField() {
-        return field;
+    public String getFile() {
+        return file;
     }
 
-    public void setField(String field) {
-        this.field = field;
+    public void setFile(String field) {
+        this.file = field;
     }
 }

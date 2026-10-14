@@ -1,5 +1,6 @@
 package com.nosqlrevolution.util.schema;
 
+import com.nosqlrevolution.schema.IPTypeUtil;
 import com.nosqlrevolution.annotation.schema.IPType;
 import com.nosqlrevolution.enums.Schema;
 import java.io.IOException;

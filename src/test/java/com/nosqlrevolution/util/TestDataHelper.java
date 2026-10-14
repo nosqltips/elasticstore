@@ -1,23 +1,18 @@
 package com.nosqlrevolution.util;
 
-import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.common.settings.Settings;
-import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import static co.elastic.clients.elasticsearch.indices.get.Feature.Settings;
 
 /**
  *
  * @author Craig
  */
 public class TestDataHelper {
-    public static RestHighLevelClient createTestClient() {
-        Settings.Builder builder = Settings.builder()
-            .put("es.index.storage.type", "memory")
-            .put("index.number_of_shards", "1")
-            .put("index.number_of_replicas", "0");
+    public static ElasticsearchClient createTestClient() {
+//        Settings.Builder builder = Settings.builder()
+//            .put("es.index.storage.type", "memory")
+//            .put("index.number_of_shards", "1")
+//            .put("index.number_of_replicas", "0");
             
 //        Client client = nodeBuilder()
 //                .settings(builder.build())

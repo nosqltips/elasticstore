@@ -1,5 +1,6 @@
 package com.nosqlrevolution.apps;
 
+import co.elastic.clients.json.JsonData;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nosqlrevolution.ElasticStore;
@@ -21,8 +22,8 @@ public class JsonImporter implements Callable<CountsAndBytes> {
     private int totalCount = 0;
     private int totalBytes = 0;
     
-    public JsonImporter(ElasticStore store, String index, String type, List<String> data, String idField) throws Exception {
-        esIndex = store.getIndex(String.class, index, type);
+    public JsonImporter(ElasticStore store, String index, List<String> data, String idField) throws Exception {
+        esIndex = store.getIndex(JsonData.class, index);
         esIndex.setIdField(idField);
         this.data = data;
         this.idField = idField;

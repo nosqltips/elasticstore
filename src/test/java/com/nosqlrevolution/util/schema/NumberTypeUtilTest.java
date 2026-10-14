@@ -1,5 +1,6 @@
 package com.nosqlrevolution.util.schema;
 
+import com.nosqlrevolution.schema.NumberTypeUtil;
 import com.nosqlrevolution.annotation.schema.NumberType;
 import com.nosqlrevolution.enums.Schema;
 import java.io.IOException;

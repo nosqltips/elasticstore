@@ -15,9 +15,6 @@ public class DualIndexOptions {
     
     @Option(name="-si",usage="source index to use")
     private String sourceIndex = null;
-    
-    @Option(name="-st",usage="source type to use")
-    private String sourceType = null;
 
     @Option(name="-sn",usage="connect to source cluster as node instead of as transport client")
     private boolean sourceNode = false;
@@ -30,9 +27,6 @@ public class DualIndexOptions {
     
     @Option(name="-di",usage="destination index to use")
     private String destIndex =  null;
-    
-    @Option(name="-dt",usage="destination type to use")
-    private String destType = null;
 
     @Option(name="-dn",usage="connect to destination cluster as node instead of as transport client")
     private boolean destNode = false;
@@ -114,14 +108,6 @@ public class DualIndexOptions {
         this.sourceIndex = sourceIndex;
     }
 
-    public String getSourceType() {
-        return sourceType;
-    }
-
-    public void setSourceType(String sourceType) {
-        this.sourceType = sourceType;
-    }
-
     public boolean isSourceNode() {
         return sourceNode;
     }
@@ -152,14 +138,6 @@ public class DualIndexOptions {
 
     public void setDestIndex(String descIndex) {
         this.destIndex = descIndex;
-    }
-
-    public String getDestType() {
-        return destType;
-    }
-
-    public void setDestType(String destType) {
-        this.destType = destType;
     }
 
     public boolean isDestNode() {

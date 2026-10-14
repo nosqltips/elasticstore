@@ -18,7 +18,7 @@ public class PersonIndexTest {
     public static void setUpClass() throws Exception {
          elasticStore = new ElasticStore().asMemoryOnly().execute();
          assertNotNull(elasticStore);
-         assertNotNull(elasticStore.getRestClient());
+         assertNotNull(elasticStore.getClient());
     }
 
     @AfterClass
@@ -29,7 +29,7 @@ public class PersonIndexTest {
     
      @Test
      public void testCRUD() throws Exception {
-            index = elasticStore.getIndex(Person.class, "index", "type");
+            index = elasticStore.getIndex(Person.class, "index");
             
             // Create
             Person p = new Person()

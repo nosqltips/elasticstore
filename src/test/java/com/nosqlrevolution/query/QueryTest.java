@@ -3,7 +3,7 @@ package com.nosqlrevolution.query;
 import com.nosqlrevolution.ElasticStore;
 import org.junit.Test;
 import static com.nosqlrevolution.query.Condition.*;
-import static com.nosqlrevolution.query.Query.*;
+import static com.nosqlrevolution.query.ElasticStoreQuery.*;
 import org.junit.AfterClass;
 import static org.junit.Assert.assertNotNull;
 import org.junit.BeforeClass;
@@ -20,7 +20,7 @@ public class QueryTest {
     public static void setUpClass() throws Exception {
          elasticStore = new ElasticStore().asMemoryOnly().withTimeout("1").execute();
          assertNotNull(elasticStore);
-         assertNotNull(elasticStore.getRestClient());
+         assertNotNull(elasticStore.getClient());
     }
 
     @AfterClass

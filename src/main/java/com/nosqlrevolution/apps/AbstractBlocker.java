@@ -78,7 +78,7 @@ public abstract class AbstractBlocker implements Callable<Integer> {
                     synchronizer.wait();
                 }
 
-                if (secondBuffer.size() > 0) {
+                if (!secondBuffer.isEmpty()) {
                     buffer = secondBuffer;
                     synchronizer.notifyAll();
                     synchronizer.wait();

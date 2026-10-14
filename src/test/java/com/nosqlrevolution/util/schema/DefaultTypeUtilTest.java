@@ -1,5 +1,6 @@
 package com.nosqlrevolution.util.schema;
 
+import com.nosqlrevolution.schema.DefaultTypeUtil;
 import com.nosqlrevolution.annotation.schema.DefaultType;
 import java.io.IOException;
 import java.lang.reflect.Field;

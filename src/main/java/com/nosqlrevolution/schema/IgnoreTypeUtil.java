@@ -1,4 +1,4 @@
-package com.nosqlrevolution.util.schema;
+package com.nosqlrevolution.schema;
 
 import com.nosqlrevolution.enums.Field;
 import com.nosqlrevolution.enums.Schema;

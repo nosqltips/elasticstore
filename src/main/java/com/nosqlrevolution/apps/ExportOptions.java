@@ -15,9 +15,6 @@ public class ExportOptions {
     
     @Option(name="-i",usage="index to use")
     private String index = null;
-    
-    @Option(name="-t",usage="type to use")
-    private String type = null;
 
     @Option(name="-f",usage="name of output file")
     private String outfilename = "out";
@@ -80,13 +77,6 @@ public class ExportOptions {
         this.index = index;
     }
 
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
 
     public String getOutfilename() {
         if (isGzip()) {

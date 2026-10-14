@@ -18,7 +18,7 @@ public class TypedIndexTest {
     public static void setUpClass() throws Exception {
          elasticStore = new ElasticStore().asMemoryOnly().execute();
          assertNotNull(elasticStore);
-         assertNotNull(elasticStore.getRestClient());
+         assertNotNull(elasticStore.getClient());
     }
 
     @AfterClass
@@ -29,10 +29,9 @@ public class TypedIndexTest {
     @Test
     public void createSingleIndex() {
         try {
-            Index<Object> index = elasticStore.getIndex(Object.class, "index", "type");
+            Index<Object> index = elasticStore.getIndex(Object.class, "index");
             assertNotNull(index);
             assertEquals("index",  index.getIndex());
-            assertEquals("type",  index.getType());
         } catch (Exception ex) {
             Logger.getLogger(TypedIndexTest.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -44,7 +43,6 @@ public class TypedIndexTest {
             Index<PersonIndex> index = elasticStore.getIndex(PersonIndex.class);
             assertNotNull(index);
             assertEquals("test",  index.getIndex());
-            assertEquals("person",  index.getType());
         } catch (Exception ex) {
             Logger.getLogger(TypedIndexTest.class.getName()).log(Level.SEVERE, null, ex);
             fail();

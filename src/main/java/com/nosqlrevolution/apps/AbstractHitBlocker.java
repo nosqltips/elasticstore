@@ -1,12 +1,13 @@
 package com.nosqlrevolution.apps;
 
+import co.elastic.clients.elasticsearch.core.search.Hit;
+import co.elastic.clients.json.JsonData;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.elasticsearch.search.SearchHit;
 
 /**
  * Take a file input and break the file into blocks for processing.
@@ -15,8 +16,8 @@ import org.elasticsearch.search.SearchHit;
  */
 public abstract class AbstractHitBlocker implements Callable<Integer> {
     protected int totalCount;
-    private List<SearchHit> buffer = null;
-    private List<SearchHit> secondBuffer = new ArrayList<>();
+    private List<Hit<JsonData>> buffer = null;
+    private List<Hit<JsonData>> secondBuffer = new ArrayList<>();
     private final Object synchronizer = new Object();
     private boolean done = false;
     
@@ -41,7 +42,7 @@ public abstract class AbstractHitBlocker implements Callable<Integer> {
      * @return  
      * @throws java.lang.InterruptedException 
      */
-    protected boolean bufferNext(SearchHit h) throws InterruptedException {
+    protected boolean bufferNext(Hit<JsonData> h) throws InterruptedException {
         if (h != null) {
             // Take the sample rate into account. -1 means no sampling.
             if (sample <= 0 || (sample > 0 && sampleCount >= sample)) {
@@ -65,7 +66,7 @@ public abstract class AbstractHitBlocker implements Callable<Integer> {
                     }
                 }
             }
-            
+                    
             // Check to see if we've hit the limit of the number of documents to return.
             if (limit > 0 && totalCount >= limit) {
                 return false;
@@ -79,14 +80,6 @@ public abstract class AbstractHitBlocker implements Callable<Integer> {
                     synchronizer.wait();
                 }
 
-                if (secondBuffer.size() > 0) {
-                    buffer = secondBuffer;
-                    synchronizer.notifyAll();
-                    synchronizer.wait();
-                } else {
-                    synchronizer.notifyAll();
-                }
-
                 done = true;
             }
         }
@@ -95,13 +88,14 @@ public abstract class AbstractHitBlocker implements Callable<Integer> {
         return true;
     }
     
+    
     /**
      * Return available data or wait till ready.
      * Null return means no more data.
      * 
      * @return 
      */
-    public List<SearchHit> getNext() {
+    public List<Hit<JsonData>> getNext() {
         synchronized(synchronizer) {
             // Returning null signals that we're all done.
             if (done) {
@@ -118,13 +112,14 @@ public abstract class AbstractHitBlocker implements Callable<Integer> {
             }
             
             // Copy the data reference then null to continue.
-            List<SearchHit> returnBuffer = buffer;
+            List<Hit<JsonData>> returnBuffer = buffer;
             buffer = null;
             synchronizer.notifyAll();
-            
+
             return returnBuffer;
         }
     }
+    
     
     /**
      * Return the total number of expected documents for calculations.

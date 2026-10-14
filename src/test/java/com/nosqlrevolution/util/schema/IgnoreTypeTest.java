@@ -1,5 +1,6 @@
 package com.nosqlrevolution.util.schema;
 
+import com.nosqlrevolution.schema.IgnoreTypeUtil;
 import com.nosqlrevolution.annotation.schema.IgnoreType;
 import java.io.IOException;
 import java.util.Map;

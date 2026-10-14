@@ -1,7 +1,11 @@
 package com.nosqlrevolution;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.json.JsonData;
+import co.elastic.clients.json.jackson.JacksonJsonpMapper;
+import co.elastic.clients.transport.ElasticsearchTransport;
+import co.elastic.clients.transport.rest_client.RestClientTransport;
 import com.nosqlrevolution.util.AnnotationHelper;
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -12,12 +16,8 @@ import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.client.RestClient;
 
 /**
  *
@@ -32,7 +32,7 @@ public class ElasticStore {
     private static boolean local = false;
     private static boolean memory = false;
     
-    private RestHighLevelClient restClient = null;
+    private ElasticsearchClient client = null;
     private String[] hosts = null;
     private InetSocketAddress[] addresses = null;
     private String clusterName = DEFAULT_CLUSTER_NAME;
@@ -207,25 +207,7 @@ public class ElasticStore {
      * @return 
      * @throws java.lang.Exception 
      */
-    public ElasticStore execute() throws Exception {
-        Settings.Builder builder = Settings.builder()
-            .put("cluster.name", clusterName)
-            .put("discovery.zen.ping.timeout", timeout);
-        
-        if (local || memory) {
-            builder.put("es.index.storage.type", "memory");
-            builder.put("index.number_of_shards", "1");
-            builder.put("index.number_of_replicas", "0");
-        }
-        
-        if (! multicast) {
-            if (hosts != null) {
-                builder.put("discovery.zen.ping.unicast.hosts", String.join(",", hosts));
-            } else {
-                builder.put("discovery.zen.ping.unicast.hosts", DEFAULT_HOST);
-            }
-        }
-        
+    public ElasticStore execute() throws Exception {        
         HttpHost[] httpHosts = new HttpHost[addresses.length];
         for (int i=0; i < addresses.length; i++) {
             httpHosts[i] = new HttpHost(addresses[i].getHostName(), addresses[i].getPort(), "https");
@@ -233,7 +215,7 @@ public class ElasticStore {
         }
 
         // Build the settings for our client.
-        if (clusterId == null && region == null && username == null && password == null) {
+        if (username == null && password == null) {
             throw new Exception("Elastic service not configured properly, aborting");
         }
 
@@ -252,9 +234,17 @@ public class ElasticStore {
                 }
             });
 
-        restClient = new RestHighLevelClient(restClientBuilder);
+//        // Create the low-level client
+//        RestClient restClient = RestClient.builder(httpHosts).build();
 
-        restClient.cluster().health(new ClusterHealthRequest(), RequestOptions.DEFAULT);
+        // Create the transport with a Jackson mapper
+        ElasticsearchTransport transport = new RestClientTransport(
+            restClientBuilder.build(), new JacksonJsonpMapper());
+
+        // And create the API client
+        client = new ElasticsearchClient(transport);
+        client.cluster().health();
+
         return this;
     }
     
@@ -263,7 +253,7 @@ public class ElasticStore {
      * @return 
      */
     public boolean isInitialized() {
-        return restClient != null;
+        return client != null;
     }
 
     /**
@@ -271,19 +261,19 @@ public class ElasticStore {
      * 
      * @return 
      */
-    public RestHighLevelClient getRestClient() {
-        return restClient;
+    public ElasticsearchClient getClient() {
+        return client;
     }
-    
+  
     /**
      * Close ElasticStore
      */
     public void close() {
         try {
-            if (restClient != null) {
-                restClient.close();
+            if (client != null) {
+                client.shutdown();
             }
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             Logger.getLogger(ElasticStore.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
@@ -293,22 +283,21 @@ public class ElasticStore {
      * 
      * @param clazz
      * @param index
-     * @param type
      * @return
      * @throws Exception 
      */
     // TODO: Need to type the exception more strongly
-    public Index getIndex(Class clazz, String index, String type) throws Exception {
-        if (restClient == null) {
+    public Index getIndex(Class clazz, String index) throws Exception {
+        if (client == null) {
             throw new IllegalArgumentException("ElasticStore is not executed");
         }
 
-        if (clazz == String.class) {
-            return new JsonIndex<>(this, index, type);
+        if (clazz == String.class || clazz == JsonData.class) {
+            return new JsonIndex<>(this, index);
         }
         
         // TODO: need to catch and throw an exception here
-        return new TypedIndex(clazz, this, index, type, restClient);
+        return new TypedIndex(clazz, this, index, client);
     }
 
     /**
@@ -321,7 +310,7 @@ public class ElasticStore {
      */
     // TODO: Need to type the exception more strongly
     public Index getIndex(Class clazz) throws Exception {
-        if (restClient == null) {
+        if (client == null) {
             throw new IllegalArgumentException("ElasticStore is not executed");
         }
 
@@ -332,7 +321,7 @@ public class ElasticStore {
         }
 
         // TODO: need to catch and throw an exception here
-        return new TypedIndex(clazz, this, index, type, restClient);
+        return new TypedIndex(clazz, this, index, client);
     }
 
 //    /**
@@ -381,9 +370,8 @@ public class ElasticStore {
      * 
      * @param mapping
      * @param indexes
-     * @param type
      */
-    protected void applyMapping(String mapping, String type, String... indexes) {
+    protected void applyMapping(String mapping, String... indexes) {
         // Check to see if indexes exist and create if missing.
         for (String index: indexes) {
 //            if (! client.admin().indices().exists(new IndicesExistsRequest(index)).actionGet().isExists()) {

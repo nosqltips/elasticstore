@@ -13,7 +13,7 @@ public class ElasticStoreUtil {
     private static final int DEFAULT_PORT = 9300;
     
     // Create new ElasticStore
-    public static ElasticStore createElasticStore(String hostname, String clustername, String index, String type, boolean asNode, boolean asElastic) throws Exception {
+    public static ElasticStore createElasticStore(String hostname, String clustername, String index, boolean asNode, boolean asElastic) throws Exception {
         return new ElasticStore().asElastic().withClusterName(clustername).withUnicast(getAddresses(hostname));
     }
     

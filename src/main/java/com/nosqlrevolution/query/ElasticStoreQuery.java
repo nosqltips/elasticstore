@@ -1,13 +1,15 @@
 package com.nosqlrevolution.query;
 
+import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.elasticsearch._types.query_dsl.QueryBase;
 import com.nosqlrevolution.query.Condition.CompletedCondition;
-import org.elasticsearch.index.query.QueryBuilder;
+
 
 /**
  *
  * @author cbrown
  */
-public class Query {
+public class ElasticStoreQuery {
     private String[] fields;
     protected String[] sort;
     private String[] highlights;
@@ -17,26 +19,26 @@ public class Query {
     protected long limit;
     protected long skip;
     protected long blockSize;
-    private QueryBuilder queryBuilder;
+    private Query query;
 
-    public static Query select(String[] fields) {
-        return new Query().setFields(fields);
+    public static ElasticStoreQuery select(String[] fields) {
+        return new ElasticStoreQuery().setFields(fields);
     }
 
-    public static Query select() {
-        return new Query();
+    public static ElasticStoreQuery select() {
+        return new ElasticStoreQuery();
     }
     
     public String[] getSort() {
         return sort;
     }
     
-    public Query sort(String... sort) {
+    public ElasticStoreQuery sort(String... sort) {
         this.sort = sort;
         return this;
     }
 
-    public Query where(CompletedCondition... conditions) {
+    public ElasticStoreQuery where(CompletedCondition... conditions) {
         this.conditions = conditions;
         return this;
     }
@@ -53,7 +55,7 @@ public class Query {
         return skip;
     }
     
-    public Query skip(long skip) {
+    public ElasticStoreQuery skip(long skip) {
         this.skip = skip;
         return this;
     }
@@ -78,7 +80,7 @@ public class Query {
         return limit;
     }
     
-    public Query limit(long limit) {
+    public ElasticStoreQuery limit(long limit) {
         this.limit = limit;
         return this;
     }
@@ -87,17 +89,17 @@ public class Query {
         return blockSize;
     }
     
-    public Query blockSize(long blockSize) {
+    public ElasticStoreQuery blockSize(long blockSize) {
         this.blockSize = blockSize;
         return this;
     }
 
-    public QueryBuilder getQueryBuilder() {
-        return queryBuilder;
+    public Query getQuery() {
+        return query;
     }
 
-    public Query setQueryBuilder(QueryBuilder queryBuilder) {
-        this.queryBuilder = queryBuilder;
+    public ElasticStoreQuery setQuery(Query query) {
+        this.query = query;
         return this;
     }
 
@@ -109,7 +111,7 @@ public class Query {
         return fields;
     }
 
-    public Query setFields(String[] fields) {
+    public ElasticStoreQuery setFields(String[] fields) {
         this.fields = fields;
         return this;
     }

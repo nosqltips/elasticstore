@@ -1,9 +1,10 @@
 package com.nosqlrevolution.apps;
 
+import co.elastic.clients.json.JsonData;
 import com.nosqlrevolution.ElasticStore;
 import com.nosqlrevolution.Index;
 import com.nosqlrevolution.cursor.Cursor;
-import com.nosqlrevolution.query.Query;
+import com.nosqlrevolution.query.ElasticStoreQuery;
 import java.io.IOException;
 
 /**
@@ -21,15 +22,14 @@ public class JsonBlocker extends AbstractBlocker {
      * @param store
      * @param query
      * @param index
-     * @param type
      * @param blockSize
      * @param limit
      * @param sample
      * @throws IOException 
      */
-    public JsonBlocker(ElasticStore store, Query query, String index, String type, int blockSize, int limit, int sample) throws IOException, Exception {
+    public JsonBlocker(ElasticStore store, ElasticStoreQuery query, String index, int blockSize, int limit, int sample) throws IOException, Exception {
         super(blockSize, limit, sample);
-        Index esIndex = store.getIndex(String.class, index, type);
+        Index esIndex = store.getIndex(JsonData.class, index);
         if (query != null) {
             cursor = esIndex.findAll(query);
         } else {

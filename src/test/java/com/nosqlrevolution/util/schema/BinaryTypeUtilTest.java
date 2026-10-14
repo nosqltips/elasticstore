@@ -1,5 +1,6 @@
 package com.nosqlrevolution.util.schema;
 
+import com.nosqlrevolution.schema.BinaryTypeUtil;
 import com.nosqlrevolution.annotation.schema.BinaryType;
 import java.io.IOException;
 import java.lang.reflect.Field;

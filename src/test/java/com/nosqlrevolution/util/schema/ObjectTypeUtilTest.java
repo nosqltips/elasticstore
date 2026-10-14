@@ -1,5 +1,6 @@
 package com.nosqlrevolution.util.schema;
 
+import com.nosqlrevolution.schema.ObjectTypeUtil;
 import com.nosqlrevolution.annotation.schema.BooleanType;
 import com.nosqlrevolution.annotation.schema.ObjectType;
 import com.nosqlrevolution.enums.Schema;

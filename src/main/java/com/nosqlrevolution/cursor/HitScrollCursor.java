@@ -1,9 +1,11 @@
 package com.nosqlrevolution.cursor;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch.core.SearchRequest;
+import co.elastic.clients.elasticsearch.core.search.Hit;
+import co.elastic.clients.json.JsonData;
 import java.util.Iterator;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.search.SearchHit;
+
 
 /**
  * Used to automatically scroll through a set of search results 
@@ -11,14 +13,14 @@ import org.elasticsearch.search.SearchHit;
  * 
  * @author cbrown
  */
-public class HitScrollCursor extends Cursor<SearchHit> {
-    private final SearchRequest scrollRequest;
-    private final CursorIterator<SearchHit> iterator;
+public class HitScrollCursor extends Cursor<Hit<JsonData>> {
+    private final SearchRequest pitRequest;
+    private final CursorIterator<Hit<JsonData>> iterator;
     
-    public HitScrollCursor(SearchRequest scrollRequest, RestHighLevelClient restClient) throws Exception {
+    public HitScrollCursor(SearchRequest pitRequest, ElasticsearchClient client) throws Exception {
         // TODO: may need to check for null here.
-        this.scrollRequest = scrollRequest;
-        this.iterator = new HitScrollCursorIterator(scrollRequest, restClient);
+        this.pitRequest = pitRequest;
+        this.iterator = new HitScrollCursorIterator(pitRequest, client);
     }
 
     @Override
@@ -32,7 +34,7 @@ public class HitScrollCursor extends Cursor<SearchHit> {
     }
 
     @Override
-    public Iterator<SearchHit> iterator() {
+    public Iterator<Hit<JsonData>> iterator() {
         return iterator;
     }
 }

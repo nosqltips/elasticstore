@@ -1,6 +1,6 @@
 package com.nosqlrevolution;
 
-import org.elasticsearch.client.RestHighLevelClient;
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import org.junit.*;
 import static org.junit.Assert.*;
 
@@ -15,7 +15,7 @@ public class ElasticStoreTest {
          ElasticStore es = new ElasticStore().asLocal().execute();
          assertNotNull(es);
 
-         RestHighLevelClient client = es.getRestClient();
+         ElasticsearchClient client = es.getClient();
          assertNotNull(client);
          
          es.close();
@@ -27,7 +27,7 @@ public class ElasticStoreTest {
          assertNotNull(es);
 
          ElasticStore esNode = new ElasticStore().asLocal().execute();
-         RestHighLevelClient client = es.getRestClient();
+         ElasticsearchClient client = es.getClient();
          assertNotNull(client);
          
          es.close();
@@ -39,7 +39,7 @@ public class ElasticStoreTest {
          assertNotNull(es);
 
          ElasticStore esTransport = new ElasticStore().asElastic().withUnicast("127.0.0.1").execute();
-         RestHighLevelClient client = es.getRestClient();
+         ElasticsearchClient client = es.getClient();
          assertNotNull(client);
          
          es.close();
@@ -51,7 +51,7 @@ public class ElasticStoreTest {
          assertNotNull(es);
 
          ElasticStore esNode = new ElasticStore().asMemoryOnly().execute();
-         RestHighLevelClient client = es.getRestClient();
+         ElasticsearchClient client = es.getClient();
          assertNotNull(client);
          
          es.close();

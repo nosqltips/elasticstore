@@ -21,7 +21,7 @@ public class SchemaServiceTest {
         assertEquals(expected, json);
 
         ElasticStore es = new ElasticStore().asLocal().asMemoryOnly().execute();
-        Index<Basic> index = es.getIndex(Basic.class, "twitter", "type");
+        Index<Basic> index = es.getIndex(Basic.class, "twitter");
         index.applyMapping(json);
         
         index.write(new Basic().setField("something"));

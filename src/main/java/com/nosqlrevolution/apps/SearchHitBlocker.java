@@ -1,12 +1,13 @@
 package com.nosqlrevolution.apps;
 
+import co.elastic.clients.elasticsearch.core.search.Hit;
+import co.elastic.clients.json.JsonData;
 import com.nosqlrevolution.ElasticStore;
 import com.nosqlrevolution.Index;
 import com.nosqlrevolution.cursor.Cursor;
-import com.nosqlrevolution.query.Query;
+import com.nosqlrevolution.query.ElasticStoreQuery;
 import com.nosqlrevolution.util.QueryUtil;
 import java.io.IOException;
-import org.elasticsearch.search.SearchHit;
 
 /**
  * Take a file input and break the file into blocks for processing.
@@ -14,7 +15,7 @@ import org.elasticsearch.search.SearchHit;
  * @author cbrown
  */
 public class SearchHitBlocker extends AbstractHitBlocker {
-    private final Cursor<SearchHit> cursor;
+    private final Cursor<Hit<JsonData>> cursor;
     private final long totalDocs;
     
     /**
@@ -23,20 +24,19 @@ public class SearchHitBlocker extends AbstractHitBlocker {
      * @param store
      * @param query
      * @param index
-     * @param type
      * @param blockSize
      * @param limit
      * @param sample
      * @throws IOException 
      */
-    public SearchHitBlocker(ElasticStore store, Query query, String index, String type, int blockSize, int limit, int sample) throws IOException, Exception {
+    public SearchHitBlocker(ElasticStore store, ElasticStoreQuery query, String index, int blockSize, int limit, int sample) throws IOException, Exception {
         super(blockSize, limit, sample);
-        Index esIndex = store.getIndex(String.class, index, type);
+        Index esIndex = store.getIndex(JsonData.class, index);
         if (query != null) {
             cursor = esIndex.findAllScrollHit(query);
         } else {
-            Query q = new Query();
-            q.setQueryBuilder(QueryUtil.getMatchAllQuery());
+            ElasticStoreQuery q = new ElasticStoreQuery();
+            q.setQuery(QueryUtil.getMatchAllQuery());
             cursor = esIndex.findAllScrollHit(q);
         }
         totalDocs = limit <= 0 ? cursor.size() : limit;
@@ -50,7 +50,8 @@ public class SearchHitBlocker extends AbstractHitBlocker {
      */
     @Override    
     public Integer call() throws Exception {
-        for (SearchHit hit: cursor) {
+        System.out.println("something");
+        for (Hit<JsonData> hit: cursor) {
             if (hit != null) {
                 // A false value means we've reached a limit.
                 if (! super.bufferNext(hit)) {

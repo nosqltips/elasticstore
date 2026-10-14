@@ -1,22 +1,23 @@
 package com.nosqlrevolution.cursor;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch.core.SearchRequest;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.elasticsearch.core.search.Hit;
+import co.elastic.clients.elasticsearch.core.search.HitsMetadata;
+import co.elastic.clients.elasticsearch.core.search.PointInTimeReference;
+import co.elastic.clients.json.JsonData;
+import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nosqlrevolution.apps.ExportModel;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.SearchScrollRequest;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
 
 /**
  * This iterator can go back to the search engine and iterate through blocks of data returned from ES.
@@ -24,20 +25,22 @@ import org.elasticsearch.search.SearchHits;
  * @author cbrown
  * @param <E>
  */
-public class ScrollCursorIterator<E> extends CursorIterator<E> {
+public class ScrollCursorIterator<E> extends CursorIterator<Hit<E>> {
     private static final Logger LOGGER = Logger.getLogger(ScrollCursorIterator.class.getName());
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = new JacksonJsonpMapper().objectMapper();
     private final SearchRequest initialRequest;
-    private final RestHighLevelClient restClient;
+    private final ElasticsearchClient client;
     private boolean hasNext = true;
-    private String scrollId = null;
-    
-    protected ScrollCursorIterator(Class<E> e, SearchRequest initialRequest, RestHighLevelClient restClient) {
+    private String pitId = null;
+    private List<String> searchAfter = null;
+
+    protected ScrollCursorIterator(Class<Hit<E>> e, SearchRequest initialRequest, ElasticsearchClient client) {
         this.e = e;
         this.initialRequest = initialRequest;
-        this.restClient = restClient;
-        hits = getInitialPage();
-        totalSize = hits.getTotalHits() != null ? (int) hits.getTotalHits().value : 0;
+        this.client = client;
+        HitsMetadata<E> initial = getInitialPage();
+        hits = initial.hits();
+        totalSize = initial.total() != null ? (int) initial.total().value() : 0;
     }
     
     @Override
@@ -50,62 +53,43 @@ public class ScrollCursorIterator<E> extends CursorIterator<E> {
     }
 
     @Override
-    public E next() {
+    public Hit<E> next() {
         // Need to check if we need to get the next block of data.
-        if (iter >= hits.getHits().length) {
-            hits = getNextPage();
+        if (iter >= hits.size()) {
+            hits = getNextPage().hits();
             iter = 0;
             
             // TODO: What to do if we get a call for next and we don't have any results?
-            if (hits == null || hits.getHits().length == 0) {
+            if (hits == null || hits.isEmpty()) {
                 return null;
             }
         }
         
         // Return the next object
-        SearchHit hit = hits.getAt(iter);
-        String source = hit.getSourceAsString();
-        
-        // Add the document id into the source document
-        try {
-            Map<String, Object> sourceMap = MAPPER.readValue(source, new TypeReference<HashMap<String, Object>>(){});
-            sourceMap.put("_id", hit.getId());
-            source = MAPPER.writeValueAsString(sourceMap);
-        } catch (JsonProcessingException ex) {
-            LOGGER.log(Level.SEVERE, null, ex);
-        } catch (IOException ex) {
-            LOGGER.log(Level.SEVERE, null, ex);
-        }
-        
-        E returnE;
-        if (e == ExportModel.class) {
-            returnE = (E) new ExportModel()
-                    .setId(hit.getId())
-                    .setJson(source);
-        } else {
-            returnE = mapping.get(source, e);
-        }
+        Hit<E> hit = hits.get(iter);
         
         iter ++;
         iterAll ++;
-        return returnE;
+        return hit;
     }
 
-    private SearchHits getInitialPage() {
+    private HitsMetadata<E> getInitialPage() {
         try {
             // Initialize the scroll
-            initialRequest.scroll(new TimeValue(60000));
+            initialRequest.pit();
             
             // Get search response
-            SearchResponse response = restClient.search(initialRequest, RequestOptions.DEFAULT);
-            scrollId = response.getScrollId();
+            SearchResponse response = client.search(initialRequest, e.getClass());
+            pitId = response.pitId();
+            searchAfter = getSearchAfter(response);
             
-            if (response.getHits().getHits().length == 0) {
+            System.out.println("pitId=" + pitId);
+            if (response.hits().hits().isEmpty()) {
                 hasNext = false;
             }
             
             // Return the next set of hits
-            return response.getHits();
+            return response.hits();
         } catch (IOException ie) {
             LOGGER.log(Level.SEVERE, null, ie);
         }
@@ -113,22 +97,31 @@ public class ScrollCursorIterator<E> extends CursorIterator<E> {
         return null;
     }
     
-    private SearchHits getNextPage() {
+    private HitsMetadata<E> getNextPage() {
         try {
-            SearchScrollRequest scrollRequest = new SearchScrollRequest()
-                    .scrollId(scrollId)
-                    .scroll(new TimeValue(60000));
+            SearchRequest request = SearchRequest.of(r -> r
+                .size(10000)
+                .query(initialRequest.query())
+                .highlight(initialRequest.highlight())
+                .sort(initialRequest.sort())
+                .pit(PointInTimeReference.of(p -> p.
+                        id(pitId)))
+                .searchAfter(searchAfter)
+            );
             
             // Get search response
-            SearchResponse response = restClient.searchScroll(scrollRequest, RequestOptions.DEFAULT);
-            scrollId = response.getScrollId();
+            SearchResponse response = client.search(request, e.getClass());
+            pitId = response.pitId();
             
-            if (response.getHits().getHits().length == 0) {
+            if (response.hits().hits().isEmpty()) {
                 hasNext = false;
+            } else {
+                pitId = response.pitId();
+                searchAfter = getSearchAfter(response);
             }
             
             // Return the next set of hits
-            return response.getHits();
+            return response.hits();
         } catch (IOException ie) {
             LOGGER.log(Level.SEVERE, null, ie);
         }
@@ -136,7 +129,14 @@ public class ScrollCursorIterator<E> extends CursorIterator<E> {
         return null;
     }
 
-    public String getScrollId() {
-        return scrollId;
+        private List<String> getSearchAfter(SearchResponse response) {
+        List<Hit<JsonData>> h = response.hits().hits();
+        Hit<JsonData> hit = h.get(h.size() -1);
+        return hit.sort();
+    }
+
+
+    public String getPitId() {
+        return pitId;
     }
 }

@@ -1,11 +1,12 @@
 package com.nosqlrevolution;
 
+import co.elastic.clients.elasticsearch.core.search.Hit;
+import co.elastic.clients.json.JsonData;
 import com.nosqlrevolution.cursor.Cursor;
-import com.nosqlrevolution.query.Query;
+import com.nosqlrevolution.query.ElasticStoreQuery;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.elasticsearch.search.SearchHit;
 
 /**
  * This class represents all of the fun things we can do with an ElasticSearch index
@@ -15,18 +16,16 @@ import org.elasticsearch.search.SearchHit;
 public abstract class Index<T> {
     private ElasticStore store;
     private String index;
-    private String type;
     private String idField;
     private int bulkSize = 1000;
     private boolean autoFlush = true;
 
-    public Index(ElasticStore store, String index, String type) throws Exception {
+    public Index(ElasticStore store, String index) throws Exception {
         if ((store == null) || (! store.isInitialized())) {
             throw new Exception("ElasticStore is not initialized!!!!");
         }
         this.store = store;
         this.index = index;
-        this.type = type;
     }
 
     public abstract void addBulk(T t);
@@ -48,7 +47,7 @@ public abstract class Index<T> {
      * @param query
      * @return 
      */
-    public abstract long count(Query query);
+    public abstract long count(ElasticStoreQuery query);
     
     /**
      * Return a single document from the entire index.
@@ -79,7 +78,7 @@ public abstract class Index<T> {
      * @param query
      * @return 
      */
-    public T find(Query query) {
+    public T find(ElasticStoreQuery query) {
         throw new UnsupportedOperationException();
     }
     
@@ -92,7 +91,7 @@ public abstract class Index<T> {
      * @param clazz
      * @return 
      */
-    public <T>T find(Query query, Class<T> clazz) {
+    public <T>T find(ElasticStoreQuery query, Class<T> clazz) {
         throw new UnsupportedOperationException();
     }
 
@@ -111,7 +110,7 @@ public abstract class Index<T> {
      * @param query
      * @return 
      */
-    public Cursor findAll(Query query) {
+    public Cursor findAll(ElasticStoreQuery query) {
         throw new UnsupportedOperationException();
     }
 
@@ -121,7 +120,7 @@ public abstract class Index<T> {
      * @param query
      * @return 
      */
-    public Cursor findAllScroll(Query query) {
+    public Cursor findAllScroll(ElasticStoreQuery query) {
         throw new UnsupportedOperationException();
     }
 
@@ -131,7 +130,7 @@ public abstract class Index<T> {
      * @param query
      * @return 
      */
-    public Cursor<SearchHit> findAllScrollHit(Query query) {
+    public Cursor<Hit<JsonData>> findAllScrollHit(ElasticStoreQuery query) {
         throw new UnsupportedOperationException();
     }    
 
@@ -143,7 +142,7 @@ public abstract class Index<T> {
      * @param clazz
      * @return 
      */
-    public Cursor findAll(Query query, Class clazz) {
+    public Cursor findAll(ElasticStoreQuery query, Class clazz) {
         throw new UnsupportedOperationException();
     }
 
@@ -230,7 +229,7 @@ public abstract class Index<T> {
      * @param query
      * @return 
      */
-    public OperationStatus remove(Query query) {
+    public OperationStatus remove(ElasticStoreQuery query) {
         throw new UnsupportedOperationException();
     }
     
@@ -262,7 +261,7 @@ public abstract class Index<T> {
      * @param mapping
      */
     public void applyMapping(String mapping) {
-        store.applyMapping(mapping, type, index);
+        store.applyMapping(mapping, index);
     }
     
     public void refresh() {
@@ -295,20 +294,6 @@ public abstract class Index<T> {
 
     protected String getIndex() {
         return index;
-    }
-
-    protected String getType() {
-        return type;
-    }
-    
-    protected Index setType(String type) {
-        this.type = type;
-        return this;
-    }
-
-    protected Index addType(String type) {
-        // TODO: Implement this call
-        return this;
     }
 
     public String getIdField() {

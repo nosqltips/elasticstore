@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nosqlrevolution.ElasticStore;
 import com.nosqlrevolution.Index;
 import com.nosqlrevolution.cursor.Cursor;
-import com.nosqlrevolution.query.Query;
+import com.nosqlrevolution.query.ElasticStoreQuery;
 import java.io.IOException;
 
 /**
@@ -29,9 +29,9 @@ public class ModelBlocker extends AbstractBlocker {
      * @param sample
      * @throws IOException 
      */
-    public ModelBlocker(ElasticStore store, Query query, String index, String type, int blockSize, int limit, int sample) throws IOException, Exception {
+    public ModelBlocker(ElasticStore store, ElasticStoreQuery query, String index, int blockSize, int limit, int sample) throws IOException, Exception {
         super(blockSize, limit, sample);
-        Index esIndex = store.getIndex(ExportModel.class, index, type);
+        Index esIndex = store.getIndex(ExportModel.class, index);
         if (query != null) {
             cursor = esIndex.findAll(query);
         } else {

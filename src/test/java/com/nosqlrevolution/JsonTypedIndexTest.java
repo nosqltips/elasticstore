@@ -19,7 +19,7 @@ public class JsonTypedIndexTest {
     public static void setUpClass() throws Exception {
          elasticStore = new ElasticStore().asMemoryOnly().execute();
          assertNotNull(elasticStore);
-         assertNotNull(elasticStore.getRestClient());
+         assertNotNull(elasticStore.getClient());
     }
 
     @AfterClass
@@ -30,7 +30,7 @@ public class JsonTypedIndexTest {
     
      @Test
      public void testCRUD() throws Exception {
-        index = elasticStore.getIndex(String.class, "json", "string");
+        index = elasticStore.getIndex(String.class, "json");
         ObjectMapper mapper = new ObjectMapper();
 
         // Create

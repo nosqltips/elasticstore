@@ -1,4 +1,4 @@
-package com.nosqlrevolution.util.schema;
+package com.nosqlrevolution.schema;
 
 import com.nosqlrevolution.annotation.schema.GeoPointType;
 import com.nosqlrevolution.enums.Field;

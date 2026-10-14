@@ -1,6 +1,6 @@
-package com.nosqlrevolution.util.schema;
+package com.nosqlrevolution.schema;
 
-import com.nosqlrevolution.annotation.schema.DateType;
+import com.nosqlrevolution.annotation.schema.BooleanType;
 import com.nosqlrevolution.enums.Field;
 import com.nosqlrevolution.enums.Schema.INCLUDE_IN_ALL;
 import com.nosqlrevolution.enums.Schema.INDEX;
@@ -14,27 +14,21 @@ import java.util.Map;
  * 
  * @author cbrown
  */
-public class DateTypeUtil {
-    public static Map<String, Object> generateSchema(DateType anno) {
+public class BooleanTypeUtil {
+    public static Map<String, Object> generateSchema(BooleanType anno) {
         // Make sure annotation is valid
         if (anno == null) { return null; }
         
         Map<String, Object> map = new HashMap<String, Object>();
-        map.put(Field.TYPE.getName(), Type.DATE.getName());
+        map.put(Field.TYPE.getName(), Type.BOOLEAN.getName());
         if (! anno.index_name().isEmpty()) {
             map.put(Field.INDEX_NAME.getName(), anno.index_name());
-        }
-        if (! anno.format().equals("dateOptionalTime")) {
-            map.put(Field.FORMAT.getName(), anno.format());
         }
         if (anno.store() != STORE.DEFAULT) {
             map.put(Field.STORE.getName(), anno.store().name().toLowerCase());
         }
         if (anno.index() != INDEX.DEFAULT) {
             map.put(Field.INDEX.getName(), anno.index().name().toLowerCase());
-        }
-        if (anno.precision_step() != 4) {
-            map.put(Field.PRECISION_STEP.getName(), new Integer(anno.precision_step()));
         }
         if (anno.boost() != 1.0f) {
             map.put(Field.BOOST.getName(), new Float(anno.boost()));

@@ -28,9 +28,6 @@ public class Transfer extends AbstractPoolRunner {
             if (options.getDestIndex()== null) {
                 throw new CmdLineException("Destination index must be specified.");
             }
-            if (options.getDestType()== null) {
-                throw new CmdLineException("Destination type must be specified.");
-            }
         } catch( CmdLineException e ) {
             System.err.println(e.getMessage());
             System.err.println("java -jar elasticstore.jar transfer [options...]");
@@ -39,35 +36,35 @@ public class Transfer extends AbstractPoolRunner {
         }        
 
         System.out.println("source hostname=" + options.getSourceHostname() + " source clustername=" + options.getSourceClustername() + 
-                " source index=" + options.getSourceIndex() + " source type=" + options.getSourceType() + 
+                " source index=" + options.getSourceIndex() + 
                 " threads=" + options.getThreads()+ " blockSize=" + options.getBlockSize());
         System.out.println("destination hostname=" + options.getDestHostname() + " destination clustername=" + options.getDestClustername() +  
-                " destination index=" + options.getDestIndex() + " destination type=" + options.getDestType());
+                " destination index=" + options.getDestIndex());
         System.out.println("source clusterId=" + options.getSourceClusterId() + " source region=" + options.getSourceRegion()+ " source username=" + options.getSourceUsername()+ " source password=" + options.getSourcePassword());
         System.out.println("destination clusterId=" + options.getDestClusterId() + " destination region=" + options.getDestRegion()+ " destination username=" + options.getDestUsername()+ " destination password=" + options.getDestPassword());
 
         // Connect to ElasticSearch
         destStore = ElasticStoreUtil.createElasticStore(
-                options.getDestHostname(), options.getDestClustername(), options.getDestIndex(), options.getDestType(), options.isDestNode(), options.isDestElastic());
+                options.getDestHostname(), options.getDestClustername(), options.getDestIndex(), options.isDestNode(), options.isDestElastic());
         if (options.getDestClusterId() != null) {
             destStore.asElastic().withClusterId(options.getDestClusterId()).withRegion(options.getDestRegion()).withUsername(options.getDestUsername()).withPassword(options.getDestPassword());
         }
         destStore.execute();
         
         ElasticStore sourceStore = ElasticStoreUtil.createElasticStore(
-                options.getSourceHostname(), options.getSourceClustername(), options.getSourceIndex(), options.getSourceType(), options.isSourceNode(), options.isSourceElastic());
+                options.getSourceHostname(), options.getSourceClustername(), options.getSourceIndex(), options.isSourceNode(), options.isSourceElastic());
         if (options.getSourceClusterId() != null) {
             sourceStore.asElastic().withClusterId(options.getSourceClusterId()).withRegion(options.getSourceRegion()).withUsername(options.getSourceUsername()).withPassword(options.getSourcePassword());
         }
         sourceStore.execute();
         
-        JsonBlocker blocker = new JsonBlocker(sourceStore, null, options.getSourceIndex(), options.getSourceType(), options.getBlockSize(), options.getLimit(), options.getSample());
+        JsonBlocker blocker = new JsonBlocker(sourceStore, null, options.getSourceIndex(), options.getBlockSize(), options.getLimit(), options.getSample());
 
         super.run(blocker, options.getThreads());
     }
     
     @Override
     protected Callable getNextCallable(List<String> nextBlock) throws Exception {
-        return new JsonImporter(destStore, options.getDestIndex(), options.getDestType(), nextBlock, options.getIdField());
+        return new JsonImporter(destStore, options.getDestIndex(), nextBlock, options.getIdField());
     }
 }

@@ -16,14 +16,8 @@ public class ImportOptions {
     @Option(name="-i",usage="index to use")
     private String index = null;
     
-    @Option(name="-t",usage="type to use")
-    private String type = null;
-    
     @Option(name="-si",usage="source index to use")
     private String sourceIndex = null;
-    
-    @Option(name="-st",usage="source type to use")
-    private String sourceType = null;
 
     @Option(name="-f",usage="name of input file")
     private String infilename = null;
@@ -87,14 +81,6 @@ public class ImportOptions {
 
     public void setIndex(String index) {
         this.index = index;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
     }
 
     public String getInfilename() {
@@ -207,13 +193,5 @@ public class ImportOptions {
 
     public void setSourceIndex(String sourceIndex) {
         this.sourceIndex = sourceIndex;
-    }
-
-    public String getSourceType() {
-        return sourceType;
-    }
-
-    public void setSourceType(String sourceType) {
-        this.sourceType = sourceType;
     }
 }

@@ -26,9 +26,6 @@ public class Import extends AbstractPoolRunner {
             if (options.getIndex() == null) {
                 throw new CmdLineException("Index must be specified.");
             }
-            if (options.getType() == null) {
-                throw new CmdLineException("Type must be specified.");
-            }
             if (options.getInfilename() == null) {
                 throw new CmdLineException("Input file must be specified.");
             }
@@ -40,7 +37,7 @@ public class Import extends AbstractPoolRunner {
         }        
 
         System.out.println("hostname=" + options.getHostname() + " inFilename=" + options.getInfilename() + " clustername=" + options.getClustername() + 
-                " index=" + options.getIndex() + " type=" + options.getType() + " threads=" + options.getThreads()+ " blockSize=" + options.getBlockSize());
+                " index=" + options.getIndex() + " threads=" + options.getThreads()+ " blockSize=" + options.getBlockSize());
         System.out.println("elastic clusterId=" + options.getElasticClusterId()+ " elastic region=" + options.getElasticRegion()+ " shield username=" + options.getShieldUsername() + " shield password=" + options.getShieldPassword());
         File inFile = new File(options.getInfilename());
         if (! inFile.exists()) {
@@ -50,7 +47,7 @@ public class Import extends AbstractPoolRunner {
         
         // Connect to ElasticSearch
         store = ElasticStoreUtil.createElasticStore(
-                options.getHostname(), options.getClustername(), options.getIndex(), options.getType(), options.isNode(), options.isElastic());
+                options.getHostname(), options.getClustername(), options.getIndex(), options.isNode(), options.isElastic());
         if (options.getElasticClusterId() != null) {
             store.asElastic().withClusterId(options.getElasticClusterId()).withRegion(options.getElasticRegion()).withUsername(options.getShieldUsername()).withPassword(options.getShieldPassword());
         }
@@ -63,6 +60,6 @@ public class Import extends AbstractPoolRunner {
     
     @Override
     protected Callable getNextCallable(List<String> nextBlock) throws Exception {
-        return new JsonImporter(store, options.getIndex(), options.getType(), nextBlock, options.getIdField());
+        return new JsonImporter(store, options.getIndex(), nextBlock, options.getIdField());
     }
 }

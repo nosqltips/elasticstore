@@ -1,5 +1,6 @@
 package com.nosqlrevolution.util.schema;
 
+import com.nosqlrevolution.schema.GeoPointTypeUtil;
 import com.nosqlrevolution.annotation.schema.GeoPointType;
 import com.nosqlrevolution.enums.Schema;
 import java.io.IOException;

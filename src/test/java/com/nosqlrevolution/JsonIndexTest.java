@@ -16,7 +16,7 @@ public class JsonIndexTest {
     public static void setUpClass() throws Exception {
          elasticStore = new ElasticStore().asMemoryOnly().execute();
          assertNotNull(elasticStore);
-         assertNotNull(elasticStore.getRestClient());
+         assertNotNull(elasticStore.getClient());
     }
 
     @AfterClass
@@ -27,7 +27,7 @@ public class JsonIndexTest {
      @Test
      public void createSingleIndex() {
         try {
-            Index<String> index = elasticStore.getIndex(String.class, "index", "type");
+            Index<String> index = elasticStore.getIndex(String.class, "index");
         } catch (Exception ex) {
             Logger.getLogger(JsonIndexTest.class.getName()).log(Level.SEVERE, null, ex);
         }
