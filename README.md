@@ -125,3 +125,24 @@ These tests cover cancellation, failure cleanup, partial blocks, sampling, concu
 JSON output, and real client serialization over a local HTTP fixture. They do not
 require Elasticsearch; `CursorPayloadTest` needs permission to bind to loopback.
 The older cluster-dependent tests need a separately configured Elasticsearch server.
+
+For opt-in live validation, start an isolated Elasticsearch instance:
+
+```sh
+docker run -d --name elasticstore-validation --memory=2g \
+  -p 127.0.0.1:19200:9200 \
+  -e discovery.type=single-node -e xpack.security.enabled=false \
+  -e ES_JAVA_OPTS="-Xms512m -Xmx512m" \
+  docker.elastic.co/elasticsearch/elasticsearch:8.2.2
+# Wait until curl http://127.0.0.1:19200/ responds, then run:
+mvn -Dtest=PipelineTest,PagingFailureTest,CursorPayloadTest,LivePipelineTest \
+  -Delasticstore.test.url=http://127.0.0.1:19200 test
+docker rm -f elasticstore-validation
+```
+
+`LivePipelineTest` skips unless the URL property is supplied. It creates uniquely
+named test indices and deletes them afterward. The test verifies all 1,021 documents
+through import, export/reimport and transfer, including multiple search pages and a
+one-document final block, and checks failure cleanup after a real mapping rejection.
+It injects an HTTP client into the store for the isolated Docker test; the CLI's
+existing HTTPS connection and credential setup are unchanged.
