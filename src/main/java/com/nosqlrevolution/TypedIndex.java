@@ -97,7 +97,7 @@ public class TypedIndex<T> extends Index<T> {
             try {
                 return new ScrollCursor<>(t, request, client);
             } catch (Exception e) {
-                LOGGER.log(Level.WARNING, "Failed to create new scroll.", e);
+                throw new IllegalStateException("Failed to create document cursor", e);
             }
         }
         
@@ -105,13 +105,13 @@ public class TypedIndex<T> extends Index<T> {
     }
 
     @Override
-    public Cursor findAll(ElasticStoreQuery query) {
-        SearchRequest request = service.findAllScroll(getIndex());
+    public Cursor<T> findAll(ElasticStoreQuery query) {
+        SearchRequest request = service.findAllScroll(query, getIndex());
         if (request != null) {
             try {
                 return new ScrollCursor<>(t, request, client);
             } catch (Exception e) {
-                LOGGER.log(Level.WARNING, "Failed to create new scroll.", e);
+                throw new IllegalStateException("Failed to create document cursor", e);
             }
         }
         
@@ -120,12 +120,12 @@ public class TypedIndex<T> extends Index<T> {
 
     @Override
     public Cursor<T> findAll(ElasticStoreQuery query, Class clazz) {
-        SearchRequest request = service.findAllScroll(getIndex());
+        SearchRequest request = service.findAllScroll(query, getIndex());
         if (request != null) {
             try {
                 return new ScrollCursor<>(t, request, client);
             } catch (Exception e) {
-                LOGGER.log(Level.WARNING, "Failed to create new scroll.", e);
+                throw new IllegalStateException("Failed to create document cursor", e);
             }
         }
         

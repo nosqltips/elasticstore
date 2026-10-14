@@ -1,6 +1,9 @@
 package com.nosqlrevolution.apps;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import co.elastic.clients.elasticsearch.core.search.Hit;
+import co.elastic.clients.json.JsonData;
+import com.nosqlrevolution.util.QueryUtil;
 import com.nosqlrevolution.ElasticStore;
 import com.nosqlrevolution.Index;
 import com.nosqlrevolution.cursor.Cursor;
@@ -14,15 +17,15 @@ import java.io.IOException;
  */
 public class ModelBlocker extends AbstractBlocker {
     private final ObjectMapper mapper = new ObjectMapper();
-    private final Cursor<ExportModel> cursor;
+    private final Cursor<Hit<JsonData>> cursor;
     private final long totalDocs;
     
     /**
      * Take a file input and break the file into blocks for processing.
      * 
      * @param store
+     * @param query
      * @param index
-     * @param type
      * @param blockSize
      * @param limit
      * @param sample
@@ -30,32 +33,30 @@ public class ModelBlocker extends AbstractBlocker {
      */
     public ModelBlocker(ElasticStore store, ElasticStoreQuery query, String index, int blockSize, int limit, int sample) throws IOException, Exception {
         super(blockSize, limit, sample);
-        Index esIndex = store.getIndex(ExportModel.class, index);
+        Index esIndex = store.getIndex(JsonData.class, index);
         if (query != null) {
-            cursor = esIndex.findAll(query);
+            cursor = esIndex.findAllScrollHit(query);
         } else {
-            cursor = esIndex.findAll();
+            ElasticStoreQuery all = new ElasticStoreQuery();
+            all.setQuery(QueryUtil.getMatchAllQuery());
+            cursor = esIndex.findAllScrollHit(all);
         }
         totalDocs = limit <= 0 ? cursor.size() : limit;
     }
     
     @Override    
     public Integer call() throws Exception {
-        try {
-            for (ExportModel model: cursor) {
-                if (model != null) {
-                    if (!super.bufferNext(mapper.writeValueAsString(model))) {
-                        break;
-                    }
-                }
+        for (Hit<JsonData> hit: cursor) {
+            if (hit.source() == null) throw new IllegalStateException("Search hit has no document source");
+            ExportModel model = new ExportModel().setId(hit.id())
+                    .setJson(hit.source().toJson().toString());
+            if (!super.bufferNext(mapper.writeValueAsString(model))) {
+                break;
             }
-
-            super.bufferNext(null);
-            return super.totalCount;
-        } catch (Exception | Error ex) {
-            fail(ex);
-            throw ex;
         }
+
+        super.bufferNext(null);
+        return super.totalCount;
     }
 
     @Override
@@ -65,5 +66,6 @@ public class ModelBlocker extends AbstractBlocker {
     
     @Override
     public void shudown() throws IOException {
+        cursor.close();
     }
 }

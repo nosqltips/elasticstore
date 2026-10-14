@@ -9,8 +9,12 @@ import java.util.Collection;
  * @author cbrown
  * @param <E>
  */
-public abstract class Cursor<E> extends AbstractCollection<E> {
+public abstract class Cursor<E> extends AbstractCollection<E> implements AutoCloseable {
     protected Class<E> e;
+
+    /** Cursors without server resources need no cleanup. */
+    @Override
+    public void close() throws java.io.IOException { }
 
     @Override
     public abstract int size();

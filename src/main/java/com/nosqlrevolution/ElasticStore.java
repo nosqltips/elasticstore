@@ -23,7 +23,7 @@ import org.elasticsearch.client.RestClient;
  *
  * @author cbrown
  */
-public class ElasticStore {
+public class ElasticStore implements AutoCloseable {
     private static final int DEFAULT_PORT = 9243;
     private static final String DEFAULT_HOST = "127.0.0.1";
     private static final String DEFAULT_TIMEOUT = "10s";
@@ -268,13 +268,13 @@ public class ElasticStore {
     /**
      * Close ElasticStore
      */
+    @Override
     public void close() {
-        try {
-            if (client != null) {
-                client.shutdown();
+        if (client != null) {
+            try { client._transport().close(); }
+            catch (java.io.IOException ex) {
+                throw new java.io.UncheckedIOException("Cannot close Elasticsearch client", ex);
             }
-        } catch (Exception ex) {
-            Logger.getLogger(ElasticStore.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 

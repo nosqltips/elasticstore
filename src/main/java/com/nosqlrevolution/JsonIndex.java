@@ -97,7 +97,7 @@ public class JsonIndex<T> extends Index<String> {
             try {
                 return new ScrollCursor<>(JsonData.class, request, client);
             } catch (Exception e) {
-                LOGGER.log(Level.WARNING, "Failed to create new scroll.", e);
+                throw new IllegalStateException("Failed to create document cursor", e);
             }
         }
         return null;
@@ -110,7 +110,7 @@ public class JsonIndex<T> extends Index<String> {
             try {
                 return new ScrollCursor<>(JsonData.class, request, client);
             } catch (Exception e) {
-                LOGGER.log(Level.WARNING, "Failed to create new scroll.", e);
+                throw new IllegalStateException("Failed to create document cursor", e);
             }
         }
         return null;
@@ -123,7 +123,7 @@ public class JsonIndex<T> extends Index<String> {
             try {
                 return new HitScrollCursor(request, client);
             } catch (Exception e) {
-                LOGGER.log(Level.WARNING, "Failed to create new scroll.", e);
+                throw new IllegalStateException("Failed to create document cursor", e);
             }
         }
         return null;
@@ -136,7 +136,7 @@ public class JsonIndex<T> extends Index<String> {
             try {
                 return new ScrollCursor<>(JsonData.class, request, client);
             } catch (Exception e) {
-                LOGGER.log(Level.WARNING, "Failed to create new scroll.", e);
+                throw new IllegalStateException("Failed to create document cursor", e);
             }
         }
         return null;
@@ -149,7 +149,7 @@ public class JsonIndex<T> extends Index<String> {
             try {
                 return new ScrollCursor<>(JsonData.class, request, client);
             } catch (Exception e) {
-                LOGGER.log(Level.WARNING, "Failed to create new scroll.", e);
+                throw new IllegalStateException("Failed to create document cursor", e);
             }
         }
         return null;
@@ -221,30 +221,13 @@ public class JsonIndex<T> extends Index<String> {
 
     @Override
     public OperationStatus write(String... json) {
-        // TODO: need to gather operation results and return
-//        if (json != null && json.length == 1) {
-//            service.index(getIndex(), json[0], JsonUtil.getId(json[0], getIdField()));
-//        } else if (json != null && json.length > 1) {
-        if (json != null && json.length > 1) {
-            service.bulkIndex(getIndex(), json, getIdField());
-        }
-        
-        return new OperationStatus()
-                .setSucceeded(true);
+        service.bulkIndex(getIndex(), json, getIdField());
+        return new OperationStatus().setSucceeded(true);
     }
-    
+
     @Override
     public OperationStatus write(List<? extends String> json) {
-        // TODO: need to gather operation results and return
-//        if (json != null && json.size() == 1) {
-//            service.index(getIndex(), json.get(0), JsonUtil.getId(json.get(0), getIdField()));
-//        } else if (json != null && json.size() > 1) {
-        if (json != null && json.size() > 1) {
-            service.bulkIndex(getIndex(), json.toArray(new String[json.size()]), getIdField());
-        }
-
-        return new OperationStatus()
-                .setSucceeded(true);
+        return write(json == null ? null : json.toArray(new String[json.size()]));
     }
 
     @Override

@@ -12,15 +12,16 @@ import java.util.Iterator;
  * @param <E>
  */
 public class ScrollCursor<E> extends Cursor<E> {
-    private final SearchRequest pitRequest;
-    private final CursorIterator<E> iterator;
+    private final ScrollCursorIterator<E> iterator;
     
     public ScrollCursor(Class<E> e, SearchRequest pitRequest, ElasticsearchClient client) throws Exception {
         // TODO: may need to check for null here.
         this.e = e;
-        this.pitRequest = pitRequest;
-        this.iterator = new ScrollCursorIterator(e, pitRequest, client);
+        this.iterator = new ScrollCursorIterator<>(e, pitRequest, client);
     }
+
+    @Override
+    public void close() throws java.io.IOException { iterator.close(); }
 
     @Override
     public int size() {

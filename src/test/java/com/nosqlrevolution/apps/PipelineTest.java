@@ -82,7 +82,7 @@ public class PipelineTest {
             }
         };
         try { runner.execute(reader, 1); fail("Expected failure"); }
-        catch (ExecutionException ex) { assertEquals("write failed", ex.getCause().getMessage()); }
+        catch (IOException ex) { assertEquals("write failed", ex.getMessage()); }
         assertTrue(reader.closed);
     }
 
@@ -151,6 +151,44 @@ public class PipelineTest {
         catch (IllegalStateException ex) {
             assertEquals("read failed", ex.getCause().getMessage());
             assertSame(cleanup, ex.getSuppressed()[0]);
+        }
+    }
+
+    @Test(timeout = 5000)
+    public void samplingKeepsEveryNthDocumentAndLimitCountsKeptDocuments() throws Exception {
+        AbstractBlocker reader = new AbstractBlocker(2, 2, 3) {
+            public Integer call() throws Exception {
+                for (int i = 1; i <= 10; i++) {
+                    if (!bufferNext(String.valueOf(i))) break;
+                }
+                bufferNext(null);
+                return totalCount;
+            }
+            public long getTotalDocs() { return 10; }
+            public void shudown() { }
+        };
+        assertEquals(Integer.valueOf(2), reader.call());
+        assertEquals(Arrays.asList("3", "6"), reader.getNext());
+        assertNull(reader.getNext());
+    }
+
+    @Test(timeout = 5000)
+    public void fileBlockerReadsUtf8AndRejectsInvalidGzip() throws Exception {
+        java.nio.file.Path file = java.nio.file.Files.createTempFile("elasticstore", ".json");
+        java.nio.file.Path invalid = java.nio.file.Files.createTempFile("elasticstore", ".gz");
+        try {
+            java.nio.file.Files.write(file, "{\"name\":\"é\"}\n\n{}\n".getBytes(StandardCharsets.UTF_8));
+            try (FileBlocker reader = new FileBlocker(file.toString(), 2, 0, 0)) {
+                assertEquals(2, reader.getTotalDocs());
+                assertEquals(Integer.valueOf(2), reader.call());
+                assertEquals(Arrays.asList("{\"name\":\"é\"}", "{}"), reader.getNext());
+                assertNull(reader.getNext());
+            }
+            try { new FileBlocker(invalid.toString(), 2, 0, 0); fail("Expected invalid gzip failure"); }
+            catch (IOException expected) { }
+        } finally {
+            java.nio.file.Files.delete(file);
+            java.nio.file.Files.delete(invalid);
         }
     }
 

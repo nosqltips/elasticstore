@@ -48,31 +48,33 @@ public class Export extends AbstractPoolRunner {
         // Connect to ElasticSearch
         ElasticStore store = ElasticStoreUtil.createElasticStore(
                 options.getHostname(), options.getClustername(), options.getIndex(), options.isNode(), options.isElastic());
-        if (options.getElasticClusterId() != null) {
-            store.asElastic().withClusterId(options.getElasticClusterId()).withRegion(options.getElasticRegion()).withUsername(options.getShieldUsername()).withPassword(options.getShieldPassword());
-        }
-        store.execute();
-        
-        AbstractBlocker blocker;
-        if (! options.isModelMode()) {
-            blocker = new JsonBlocker(store, null, options.getIndex(), options.getBlockSize(), options.getLimit(), options.getSample());
-        } else {
-            blocker = new ModelBlocker(store, null, options.getIndex(), options.getBlockSize(), options.getLimit(), options.getSample());
-        }
+        try (ElasticStore sourceStore = store) {
+            if (options.getElasticClusterId() != null) {
+                store.asElastic().withClusterId(options.getElasticClusterId()).withRegion(options.getElasticRegion()).withUsername(options.getShieldUsername()).withPassword(options.getShieldPassword());
+            }
+            store.execute();
 
-        outFile.createNewFile();
-        try (FileOutputStream fileStream = new FileOutputStream(outFile)) {
-            java.io.OutputStream output = options.isGzip()
-                    ? new GZIPOutputStream(fileStream) : fileStream;
-            try (BufferedOutputStream buffered = new BufferedOutputStream(output)) {
-                oStream = buffered;
-                super.run(blocker, THREADS);
+            AbstractBlocker blocker;
+            if (! options.isModelMode()) {
+                blocker = new JsonBlocker(store, null, options.getIndex(), options.getBlockSize(), options.getLimit(), options.getSample());
+            } else {
+                blocker = new ModelBlocker(store, null, options.getIndex(), options.getBlockSize(), options.getLimit(), options.getSample());
+            }
+
+            try (AbstractBlocker source = blocker;
+                    FileOutputStream fileStream = new FileOutputStream(outFile)) {
+                java.io.OutputStream output = options.isGzip()
+                        ? new GZIPOutputStream(fileStream) : fileStream;
+                try (BufferedOutputStream buffered = new BufferedOutputStream(output)) {
+                    oStream = buffered;
+                    super.run(blocker, THREADS);
+                }
             }
         }
     }
 
     @Override
-    protected Callable getNextCallable(List<String> nextBlock) throws Exception {
+    protected Callable<CountsAndBytes> getNextCallable(List<String> nextBlock) throws Exception {
         return new JsonExporter(oStream, nextBlock);
     }
 }

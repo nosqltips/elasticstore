@@ -14,14 +14,15 @@ import java.util.Iterator;
  * @author cbrown
  */
 public class HitScrollCursor extends Cursor<Hit<JsonData>> {
-    private final SearchRequest pitRequest;
-    private final CursorIterator<Hit<JsonData>> iterator;
+    private final HitScrollCursorIterator iterator;
     
     public HitScrollCursor(SearchRequest pitRequest, ElasticsearchClient client) throws Exception {
         // TODO: may need to check for null here.
-        this.pitRequest = pitRequest;
         this.iterator = new HitScrollCursorIterator(pitRequest, client);
     }
+
+    @Override
+    public void close() throws java.io.IOException { iterator.close(); }
 
     @Override
     public int size() {

@@ -48,18 +48,20 @@ public class Import extends AbstractPoolRunner {
         // Connect to ElasticSearch
         store = ElasticStoreUtil.createElasticStore(
                 options.getHostname(), options.getClustername(), options.getIndex(), options.isNode(), options.isElastic());
-        if (options.getElasticClusterId() != null) {
-            store.asElastic().withClusterId(options.getElasticClusterId()).withRegion(options.getElasticRegion()).withUsername(options.getShieldUsername()).withPassword(options.getShieldPassword());
+        try (ElasticStore destination = store) {
+            if (options.getElasticClusterId() != null) {
+                store.asElastic().withClusterId(options.getElasticClusterId()).withRegion(options.getElasticRegion()).withUsername(options.getShieldUsername()).withPassword(options.getShieldPassword());
+            }
+            store.execute();
+
+            FileBlocker blocker = new FileBlocker(options.getInfilename(), options.getBlockSize(), options.getLimit(), options.getSample());
+
+            super.run(blocker, options.getThreads());
         }
-        store.execute();
-        
-        FileBlocker blocker = new FileBlocker(options.getInfilename(), options.getBlockSize(), options.getLimit(), options.getSample());
-        
-        super.run(blocker, options.getThreads());
     }
     
     @Override
-    protected Callable getNextCallable(List<String> nextBlock) throws Exception {
+    protected Callable<CountsAndBytes> getNextCallable(List<String> nextBlock) throws Exception {
         return new JsonImporter(store, options.getIndex(), nextBlock, options.getIdField());
     }
 }

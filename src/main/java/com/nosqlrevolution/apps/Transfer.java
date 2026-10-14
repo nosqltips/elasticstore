@@ -46,25 +46,29 @@ public class Transfer extends AbstractPoolRunner {
         // Connect to ElasticSearch
         destStore = ElasticStoreUtil.createElasticStore(
                 options.getDestHostname(), options.getDestClustername(), options.getDestIndex(), options.isDestNode(), options.isDestElastic());
-        if (options.getDestClusterId() != null) {
-            destStore.asElastic().withClusterId(options.getDestClusterId()).withRegion(options.getDestRegion()).withUsername(options.getDestUsername()).withPassword(options.getDestPassword());
-        }
-        destStore.execute();
-        
-        ElasticStore sourceStore = ElasticStoreUtil.createElasticStore(
-                options.getSourceHostname(), options.getSourceClustername(), options.getSourceIndex(), options.isSourceNode(), options.isSourceElastic());
-        if (options.getSourceClusterId() != null) {
-            sourceStore.asElastic().withClusterId(options.getSourceClusterId()).withRegion(options.getSourceRegion()).withUsername(options.getSourceUsername()).withPassword(options.getSourcePassword());
-        }
-        sourceStore.execute();
-        
-        JsonBlocker blocker = new JsonBlocker(sourceStore, null, options.getSourceIndex(), options.getBlockSize(), options.getLimit(), options.getSample());
+        try (ElasticStore destination = destStore) {
+            if (options.getDestClusterId() != null) {
+                destStore.asElastic().withClusterId(options.getDestClusterId()).withRegion(options.getDestRegion()).withUsername(options.getDestUsername()).withPassword(options.getDestPassword());
+            }
+            destStore.execute();
 
-        super.run(blocker, options.getThreads());
+            ElasticStore sourceStore = ElasticStoreUtil.createElasticStore(
+                    options.getSourceHostname(), options.getSourceClustername(), options.getSourceIndex(), options.isSourceNode(), options.isSourceElastic());
+            try (ElasticStore source = sourceStore) {
+                if (options.getSourceClusterId() != null) {
+                    sourceStore.asElastic().withClusterId(options.getSourceClusterId()).withRegion(options.getSourceRegion()).withUsername(options.getSourceUsername()).withPassword(options.getSourcePassword());
+                }
+                sourceStore.execute();
+
+                JsonBlocker blocker = new JsonBlocker(sourceStore, null, options.getSourceIndex(), options.getBlockSize(), options.getLimit(), options.getSample());
+
+                super.run(blocker, options.getThreads());
+            }
+        }
     }
     
     @Override
-    protected Callable getNextCallable(List<String> nextBlock) throws Exception {
+    protected Callable<CountsAndBytes> getNextCallable(List<String> nextBlock) throws Exception {
         return new JsonImporter(destStore, options.getDestIndex(), nextBlock, options.getIdField());
     }
 }

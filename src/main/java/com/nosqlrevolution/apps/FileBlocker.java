@@ -4,143 +4,60 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.util.zip.GZIPInputStream;
 
-/**
- * Take a file input and break the file into blocks for processing.
- * 
- * @author cbrown
- */
+/** Reads JSON lines from a plain or gzip file. Owns one reader and its underlying streams. */
 public class FileBlocker extends AbstractBlocker {
-    private final String filename;
-    private final File inFile;
-    private final FileInputStream fis;
-    private final GZIPInputStream gis;
-    private final Reader reader;
-    private final BufferedReader bufReader;
+    private final BufferedReader reader;
     private final long totalDocs;
-    
-    /**
-     * Take a file input and break the file into blocks for processing.
-     * 
-     * @param file
-     * @param blockSize
-     * @param limit
-     * @param sample
-     * @throws IOException 
-     */
-    public FileBlocker(String file, int blockSize, int limit, int sample) throws IOException {
+
+    public FileBlocker(String filename, int blockSize, int limit, int sample) throws IOException {
         super(blockSize, limit, sample);
-        this.filename = file;
-        inFile = new File(filename);
-
-        // Read the total number of documents first
-        totalDocs = limit <= 0 ? getDocCount(inFile) : limit;
-        
-        // Set up our file access now.
-        fis = new FileInputStream(inFile);
-        if (filename.endsWith(".gz") || filename.endsWith("gzip")) {
-            gis = new GZIPInputStream(fis);
-            reader = new InputStreamReader(gis);
-        } else {
-            gis = null;
-            reader = new InputStreamReader(fis);
-        }
-        bufReader = new BufferedReader(reader);
+        File file = new File(filename);
+        totalDocs = limit > 0 ? limit : countDocuments(file);
+        reader = openReader(file);
     }
-    
-    @Override    
-    public Integer call() throws Exception {
-        try {
-            String s;
-            while ((s = bufReader.readLine()) != null) {
-                if (s != null && ! s.isEmpty()) {
-                    // A false value means we're reached a limit.
-                    if (! super.bufferNext(s)) {
-                        break;
-                    }
-                }
-            }
 
-            super.bufferNext(null);
-            return super.totalCount;
-        } catch (Exception | Error ex) {
-            fail(ex);
+    private static BufferedReader openReader(File file) throws IOException {
+        InputStream input = new FileInputStream(file);
+        try {
+            if (file.getName().endsWith(".gz") || file.getName().endsWith("gzip")) {
+                input = new GZIPInputStream(input);
+            }
+            return new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8));
+        } catch (IOException ex) {
+            try { input.close(); } catch (IOException cleanup) { ex.addSuppressed(cleanup); }
             throw ex;
         }
     }
 
     @Override
-    public long getTotalDocs() {
-        return totalDocs;
+    public Integer call() throws Exception {
+        String line;
+        while ((line = reader.readLine()) != null) {
+            if (!line.isEmpty() && !bufferNext(line)) break;
+        }
+        bufferNext(null);
+        return totalCount;
     }
 
     @Override
-    public void shudown() throws IOException {
-        bufReader.close();
-        reader.close();
-        if (gis != null) {
-            gis.close();
-        }
-        fis.close();
-    }
-    
-    /**
-     * Open the file and read through all of the lines to get a total document count.
-     * It is assumed that there is one document per line.
-     * 
-     * @param file
-     * @return 
-     */
-    private long getDocCount(File file) {
-        System.out.println("Counting documents in file ...");
-        long startTime = System.currentTimeMillis();
-                
-        FileInputStream localFis = null;
-        GZIPInputStream localGis = null;
-        InputStreamReader localReader = null;
-        BufferedReader localBuffer = null;
-        long total = 0;
-        try {
-            localFis = new FileInputStream(file);
-            if (file.getName().endsWith(".gz") || file.getName().endsWith("gzip")) {
-                localGis = new GZIPInputStream(localFis);
-                localReader = new InputStreamReader(localGis);
-            } else {
-                localReader = new InputStreamReader(localFis);
-            }
+    public long getTotalDocs() { return totalDocs; }
 
-            localBuffer = new BufferedReader(localReader);
-            
-            String s;
-            while ((s = localBuffer.readLine()) != null) {
-                total ++;
-            }
-        } catch (IOException ie) {
-            ie.printStackTrace();
-        } finally {
-            try {
-                if (localBuffer != null) {
-                    localBuffer.close();
-                }
-                if (localReader != null) {
-                    localReader.close();
-                }
-                if (localGis != null) {
-                    localGis.close();
-                }
-                if (localFis != null) {
-                    localFis.close();
-                }
-            } catch (IOException ie) {
-                ie.printStackTrace();
+    @Override
+    public void shudown() throws IOException { reader.close(); }
+
+    private static long countDocuments(File file) throws IOException {
+        long count = 0;
+        try (BufferedReader input = openReader(file)) {
+            String line;
+            while ((line = input.readLine()) != null) {
+                if (!line.isEmpty()) count++;
             }
         }
-
-        System.out.println("Counted " + total + " docs in " + ((System.currentTimeMillis() - startTime) / 1000) + " seconds");
-
-        return total;
+        return count;
     }
 }

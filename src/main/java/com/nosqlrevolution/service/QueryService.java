@@ -203,9 +203,9 @@ public class QueryService {
                 builder.pit(p -> p.id(pitResponse.id()));
                 builder.sort(SortOptions.of(s-> s.field(FieldSort.of(f -> f.field("_shard_doc").order(SortOrder.Asc)))));
             } catch (IOException ex) {
-                Logger.getLogger(QueryService.class.getName()).log(Level.SEVERE, null, ex);
+                throw new IllegalStateException("Cannot open Elasticsearch point in time", ex);
             } catch (ElasticsearchException ex) {
-                Logger.getLogger(QueryService.class.getName()).log(Level.SEVERE, null, ex);
+                throw new IllegalStateException("Cannot open Elasticsearch point in time", ex);
             }
         }
 
@@ -386,13 +386,17 @@ public class QueryService {
             BulkRequest.Builder bulkRequest = new BulkRequest.Builder();
             
             for (String json: source) {
+                JsonData document;
+                try (jakarta.json.stream.JsonParser parser = client._jsonpMapper().jsonProvider()
+                        .createParser(new java.io.StringReader(JsonUtil.removeIdFromSource(json, idField)))) {
+                    document = JsonData.from(parser, client._jsonpMapper());
+                }
                 bulkRequest.operations(
                     op -> op
                     .index(idx -> idx
                         .index(index)
                         .id(JsonUtil.getId(json, idField))
-                        .document(JsonUtil.removeIdFromSource(json, idField)
-                        )
+                        .document(document)
                     )
                 );
              }
@@ -400,14 +404,13 @@ public class QueryService {
             try {
                 BulkResponse response = client.bulk(bulkRequest.build());
                 if (response.errors()) {
-                    System.out.println(response);
+                    throw new IllegalStateException("Elasticsearch bulk write failed: " + response.items());
                 }
             } catch (IOException ie) {
-                ie.printStackTrace();
+                throw new java.io.UncheckedIOException("Elasticsearch bulk write failed", ie);
             }
         }
         
-        // TODO: Need to return failures at some point
     }
     
     /**

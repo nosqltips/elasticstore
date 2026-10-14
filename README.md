@@ -89,4 +89,39 @@ public class Person {
 }
 ```
 
-## Stay Tuned for more ...
+## Import, export and transfer pipeline
+
+The reader puts complete blocks into a bounded queue. With one worker (including
+exports), the calling thread processes blocks while the reader fetches ahead. With
+multiple workers, completed tasks receive new blocks in completion order. The queue
+holds at most `max(2, workers)` blocks, plus the block the reader is building and the
+blocks being processed.
+
+Completion and failure signals do not wait for free queue space. The final partial
+block is processed, and a reader or worker failure cancels outstanding work. The
+runner closes its reader after stopping the executors; the CLI owns the HTTP clients
+and export stream. Callers using cursors directly should close them with
+try-with-resources to release their Elasticsearch point-in-time context.
+
+Document cursors return typed `_source` values. Hit cursors include Elasticsearch
+IDs and metadata. Normal JSON exports contain one UTF-8 document per line. Model
+exports contain an `id` and a `json` string holding the original source. Concurrent
+writers keep each document and its newline together. Bulk imports send JSON objects,
+including blocks containing a single document; malformed JSON and rejected bulk
+items fail the run instead of being reported as successful.
+
+`-s N` keeps every Nth document (starting with document N); `-l N` limits the number
+of selected documents. Elasticsearch paging uses one sequential `search_after`
+reader. Parallel sliced reads and throughput measurements against a live cluster
+remain separate work.
+
+Run the pipeline regression tests with Maven:
+
+```sh
+mvn -Dtest=PipelineTest,PagingFailureTest,CursorPayloadTest test
+```
+
+These tests cover cancellation, failure cleanup, partial blocks, sampling, concurrent
+JSON output, and real client serialization over a local HTTP fixture. They do not
+require Elasticsearch; `CursorPayloadTest` needs permission to bind to loopback.
+The older cluster-dependent tests need a separately configured Elasticsearch server.

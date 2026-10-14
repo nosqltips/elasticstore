@@ -13,7 +13,7 @@ import java.io.IOException;
  * @author cbrown
  */
 public class JsonBlocker extends AbstractBlocker {
-    private final Cursor<String> cursor;
+    private final Cursor<JsonData> cursor;
     private final long totalDocs;
     
     /**
@@ -46,22 +46,18 @@ public class JsonBlocker extends AbstractBlocker {
      */
     @Override    
     public Integer call() throws Exception {
-        try {
-            for (String s: cursor) {
-                if (s != null && ! s.isEmpty()) {
-                    // A false value means we've reached a limit.
-                    if (! super.bufferNext(s)) {
-                        break;
-                    }
+        for (JsonData document: cursor) {
+            if (document != null) {
+                String s = document.toJson().toString();
+                // A false value means we've reached a limit.
+                if (! super.bufferNext(s)) {
+                    break;
                 }
             }
-
-            super.bufferNext(null);
-            return super.totalCount;
-        } catch (Exception | Error ex) {
-            fail(ex);
-            throw ex;
         }
+
+        super.bufferNext(null);
+        return super.totalCount;
     }
 
     @Override
@@ -76,5 +72,6 @@ public class JsonBlocker extends AbstractBlocker {
      */
     @Override
     public void shudown() throws IOException {
+        cursor.close();
     }
 }

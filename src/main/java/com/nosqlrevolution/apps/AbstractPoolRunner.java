@@ -19,21 +19,10 @@ public abstract class AbstractPoolRunner {
     protected void run(AbstractBlocker blocker, int threads) throws IOException, Exception {
         if (threads <= 0) throw new IllegalArgumentException("Threads must be positive");
         blocker.setPrefetch(threads);
-        ExecutorService master = Executors.newSingleThreadExecutor();
-        ExecutorService pool = Executors.newFixedThreadPool(threads);
-        java.util.concurrent.CompletionService<CountsAndBytes> completed =
-                new java.util.concurrent.ExecutorCompletionService<>(pool);
-        Future<Integer> reader = null;
-        Throwable failure = null;
-        try {
-            reader = master.submit(() -> {
-                try {
-                    return blocker.call();
-                } catch (Exception | Error ex) {
-                    blocker.fail(ex);
-                    throw ex;
-                }
-            });
+        try (BufferedBlocker<String> source = blocker; ThreadPools executors = new ThreadPools(source, threads)) {
+            java.util.concurrent.CompletionService<CountsAndBytes> completed =
+                    threads == 1 ? null : new java.util.concurrent.ExecutorCompletionService<>(executors.workers);
+            Future<Integer> reader = executors.startReader();
             long totalDocs = blocker.getTotalDocs();
             int active = 0;
             boolean last = false;
@@ -42,62 +31,81 @@ public abstract class AbstractPoolRunner {
             long startTime = System.currentTimeMillis();
             long elapsedTimeStart = startTime;
             while (!last || active > 0) {
-                while (!last && active < threads) {
+                CountsAndBytes counts;
+                if (threads == 1) {
                     List<String> block = blocker.getNext();
-                    if (block == null) {
-                        last = true;
-                    } else {
-                        Callable<CountsAndBytes> worker = getNextCallable(block);
-                        completed.submit(() -> {
-                            try {
-                                return worker.call();
-                            } catch (Exception | Error ex) {
-                                blocker.fail(ex);
-                                throw ex;
-                            }
-                        });
-                        active++;
+                    if (block == null) break;
+                    counts = getNextCallable(block).call();
+                } else {
+                    while (!last && active < threads) {
+                        List<String> block = blocker.getNext();
+                        if (block == null) {
+                            last = true;
+                        } else {
+                            Callable<CountsAndBytes> worker = getNextCallable(block);
+                            completed.submit(() -> {
+                                try { return worker.call(); }
+                                catch (Exception | Error ex) { blocker.fail(ex); throw ex; }
+                            });
+                            active++;
+                        }
                     }
-                }
-                if (active > 0) {
-                    CountsAndBytes counts = completed.take().get();
+                    if (active == 0) break;
+                    counts = completed.take().get();
                     active--;
-                    totalCount += counts.getCounts();
-                    totalBytes += counts.getBytes();
-                    elapsedTimeStart = printStatus(totalCount, counts.getCounts(),
-                            elapsedTimeStart, startTime, counts.getBytes(), totalDocs);
                 }
+                totalCount += counts.getCounts();
+                totalBytes += counts.getBytes();
+                elapsedTimeStart = printStatus(totalCount, counts.getCounts(),
+                        elapsedTimeStart, startTime, counts.getBytes(), totalDocs);
             }
             reader.get();
             printTotals(totalCount, startTime, totalBytes);
-        } catch (Exception | Error ex) {
-            failure = ex;
-            throw ex;
-        } finally {
-            blocker.cancel();
+        }
+        System.out.println("Done");
+    }
+
+    /** Try-with-resources keeps cleanup failures from hiding the pipeline failure. */
+    private static final class ThreadPools implements AutoCloseable {
+        private final BufferedBlocker<String> source;
+        private final ExecutorService readerExecutor = Executors.newSingleThreadExecutor();
+        private final ExecutorService workers;
+        private Future<Integer> reader;
+
+        ThreadPools(BufferedBlocker<String> source, int threads) {
+            this.source = source;
+            workers = threads == 1 ? null : Executors.newFixedThreadPool(threads);
+        }
+
+        Future<Integer> startReader() {
+            reader = readerExecutor.submit(() -> {
+                try { return source.call(); }
+                catch (Exception | Error ex) { source.fail(ex); throw ex; }
+            });
+            return reader;
+        }
+
+        @Override
+        public void close() throws Exception {
+            source.cancel();
             if (reader != null) reader.cancel(true);
-            master.shutdownNow();
-            pool.shutdownNow();
+            readerExecutor.shutdownNow();
+            if (workers != null) workers.shutdownNow();
+            boolean interrupted = Thread.interrupted();
             try {
-                boolean readerStopped = master.awaitTermination(10, java.util.concurrent.TimeUnit.SECONDS);
-                boolean workersStopped = pool.awaitTermination(10, java.util.concurrent.TimeUnit.SECONDS);
+                boolean readerStopped = readerExecutor.awaitTermination(10, java.util.concurrent.TimeUnit.SECONDS);
+                boolean workersStopped = workers == null
+                        || workers.awaitTermination(10, java.util.concurrent.TimeUnit.SECONDS);
                 if (!readerStopped || !workersStopped) {
                     throw new IOException("Pipeline threads did not terminate within shutdown timeout");
                 }
-            } catch (Exception ex) {
-                if (ex instanceof InterruptedException) Thread.currentThread().interrupt();
-                if (failure != null) failure.addSuppressed(ex);
-                else { failure = ex; throw ex; }
+            } catch (InterruptedException ex) {
+                interrupted = true;
+                throw ex;
             } finally {
-                try {
-                    blocker.shudown();
-                } catch (IOException ex) {
-                    if (failure != null) failure.addSuppressed(ex);
-                    else throw ex;
-                }
+                if (interrupted) Thread.currentThread().interrupt();
             }
         }
-        System.out.println("Done");
     }
 
     private static long printStatus(int totalCount, int elapsedCount, long elapsedTimeStart, long startTime, long bytes, long totalDocs) {
