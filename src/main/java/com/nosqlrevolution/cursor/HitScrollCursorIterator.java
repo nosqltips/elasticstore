@@ -38,38 +38,19 @@ public class HitScrollCursorIterator extends CursorIterator<Hit<JsonData>> {
     
     @Override
     public boolean hasNext() {
-        if (! hasNext) {
-            return false;
-        } else {
-            return iterAll < totalSize;
-        }
+        if (iter < hits.size()) return true;
+        if (!hasNext) return false;
+        hits = getNextPage().hits();
+        iter = 0;
+        return !hits.isEmpty();
     }
 
     @Override
     public Hit<JsonData> next() {
-        try {
-        // Need to check if we need to get the next block of data.
-        if (iter >= hits.size()) {
-            hits = getNextPage().hits();
-            iter = 0;
-            
-            // TODO: What to do if we get a call for next and we don't have any results?
-            if (hits.isEmpty()) {
-                System.out.println("hits.isEmpty()");
-                return null;
-            }
-        }
-        
-        // Return the next object
-        Hit<JsonData> hit = hits.get(iter);
-       
-        iter ++;
-        iterAll ++;
+        if (!hasNext()) throw new java.util.NoSuchElementException();
+        Hit<JsonData> hit = hits.get(iter++);
+        iterAll++;
         return hit;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
     }
 
     private HitsMetadata<JsonData> getInitialPage() {
@@ -88,10 +69,9 @@ public class HitScrollCursorIterator extends CursorIterator<Hit<JsonData>> {
             // Return the next set of hits
             return response.hits();
         } catch (IOException ie) {
-            LOGGER.log(Level.SEVERE, null, ie);
+            throw new java.io.UncheckedIOException("Elasticsearch paging failed", ie);
         }
-        
-        return null;
+
     }
 
     private HitsMetadata<JsonData> getNextPage() {
@@ -121,14 +101,14 @@ public class HitScrollCursorIterator extends CursorIterator<Hit<JsonData>> {
             // Return the next set of hits
             return response.hits();
         } catch (IOException ie) {
-            LOGGER.log(Level.SEVERE, null, ie);
+            throw new java.io.UncheckedIOException("Elasticsearch paging failed", ie);
         }
-        
-        return null;
+
     }
         
     private List<String> getSearchAfter(SearchResponse response) {
         List<Hit<JsonData>> h = response.hits().hits();
+        if (h.isEmpty()) return null;
         Hit<JsonData> hit = h.get(h.size() -1);
         return hit.sort();
     }

@@ -1,6 +1,5 @@
 package com.nosqlrevolution.apps;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nosqlrevolution.ElasticStore;
 import com.nosqlrevolution.Index;
@@ -42,21 +41,21 @@ public class ModelBlocker extends AbstractBlocker {
     
     @Override    
     public Integer call() throws Exception {
-        for (ExportModel model: cursor) {
-            if (model != null) {
-                try {
-                    // A false value means we're reached a limit.
-                    if (! super.bufferNext(mapper.writeValueAsString(model))) {
+        try {
+            for (ExportModel model: cursor) {
+                if (model != null) {
+                    if (!super.bufferNext(mapper.writeValueAsString(model))) {
                         break;
                     }
-                } catch (JsonProcessingException jpe) {
-                    jpe.printStackTrace();
                 }
             }
+
+            super.bufferNext(null);
+            return super.totalCount;
+        } catch (Exception | Error ex) {
+            fail(ex);
+            throw ex;
         }
-        
-        super.bufferNext(null);
-        return super.totalCount;
     }
 
     @Override

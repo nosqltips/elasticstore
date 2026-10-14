@@ -50,18 +50,22 @@ public class SearchHitBlocker extends AbstractHitBlocker {
      */
     @Override    
     public Integer call() throws Exception {
-        System.out.println("something");
-        for (Hit<JsonData> hit: cursor) {
-            if (hit != null) {
-                // A false value means we've reached a limit.
-                if (! super.bufferNext(hit)) {
-                    break;
+        try {
+            for (Hit<JsonData> hit: cursor) {
+                if (hit != null) {
+                    // A false value means we've reached a limit.
+                    if (! super.bufferNext(hit)) {
+                        break;
+                    }
                 }
             }
+
+            super.bufferNext(null);
+            return super.totalCount;
+        } catch (Exception | Error ex) {
+            fail(ex);
+            throw ex;
         }
-        
-        super.bufferNext(null);
-        return super.totalCount;
     }
 
     @Override

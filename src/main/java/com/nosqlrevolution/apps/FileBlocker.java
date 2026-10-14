@@ -53,18 +53,23 @@ public class FileBlocker extends AbstractBlocker {
     
     @Override    
     public Integer call() throws Exception {
-        String s;
-        while ((s = bufReader.readLine()) != null) {
-            if (s != null && ! s.isEmpty()) {
-                // A false value means we're reached a limit.
-                if (! super.bufferNext(s)) {
-                    break;
+        try {
+            String s;
+            while ((s = bufReader.readLine()) != null) {
+                if (s != null && ! s.isEmpty()) {
+                    // A false value means we're reached a limit.
+                    if (! super.bufferNext(s)) {
+                        break;
+                    }
                 }
             }
+
+            super.bufferNext(null);
+            return super.totalCount;
+        } catch (Exception | Error ex) {
+            fail(ex);
+            throw ex;
         }
-        
-        super.bufferNext(null);
-        return super.totalCount;
     }
 
     @Override

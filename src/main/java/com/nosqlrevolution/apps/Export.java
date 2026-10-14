@@ -61,29 +61,12 @@ public class Export extends AbstractPoolRunner {
         }
 
         outFile.createNewFile();
-        FileOutputStream fStream = null;
-        GZIPOutputStream gStream = null;
-        try {
-            fStream = new FileOutputStream(outFile);
-            if (options.isGzip()) {
-                gStream = new GZIPOutputStream(fStream);
-                oStream = new BufferedOutputStream(gStream);
-            } else {
-                oStream = new BufferedOutputStream(fStream);
-            }
-            super.run(blocker, THREADS);
-        } catch (IOException ie) {
-            ie.printStackTrace();
-        } finally {
-            if (oStream != null) {
-                oStream.flush();
-                oStream.close();
-            }
-            if (gStream != null) {
-                gStream.close();
-            }
-            if (fStream != null) {
-                fStream.close();
+        try (FileOutputStream fileStream = new FileOutputStream(outFile)) {
+            java.io.OutputStream output = options.isGzip()
+                    ? new GZIPOutputStream(fileStream) : fileStream;
+            try (BufferedOutputStream buffered = new BufferedOutputStream(output)) {
+                oStream = buffered;
+                super.run(blocker, THREADS);
             }
         }
     }

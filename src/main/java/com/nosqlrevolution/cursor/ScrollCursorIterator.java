@@ -45,31 +45,18 @@ public class ScrollCursorIterator<E> extends CursorIterator<Hit<E>> {
     
     @Override
     public boolean hasNext() {
-        if (! hasNext) { 
-            return false;
-        } else {
-            return iterAll < totalSize;
-        }
+        if (iter < hits.size()) return true;
+        if (!hasNext) return false;
+        hits = getNextPage().hits();
+        iter = 0;
+        return !hits.isEmpty();
     }
 
     @Override
     public Hit<E> next() {
-        // Need to check if we need to get the next block of data.
-        if (iter >= hits.size()) {
-            hits = getNextPage().hits();
-            iter = 0;
-            
-            // TODO: What to do if we get a call for next and we don't have any results?
-            if (hits == null || hits.isEmpty()) {
-                return null;
-            }
-        }
-        
-        // Return the next object
-        Hit<E> hit = hits.get(iter);
-        
-        iter ++;
-        iterAll ++;
+        if (!hasNext()) throw new java.util.NoSuchElementException();
+        Hit<E> hit = hits.get(iter++);
+        iterAll++;
         return hit;
     }
 
@@ -91,10 +78,9 @@ public class ScrollCursorIterator<E> extends CursorIterator<Hit<E>> {
             // Return the next set of hits
             return response.hits();
         } catch (IOException ie) {
-            LOGGER.log(Level.SEVERE, null, ie);
+            throw new java.io.UncheckedIOException("Elasticsearch paging failed", ie);
         }
-        
-        return null;
+
     }
     
     private HitsMetadata<E> getNextPage() {
@@ -123,14 +109,14 @@ public class ScrollCursorIterator<E> extends CursorIterator<Hit<E>> {
             // Return the next set of hits
             return response.hits();
         } catch (IOException ie) {
-            LOGGER.log(Level.SEVERE, null, ie);
+            throw new java.io.UncheckedIOException("Elasticsearch paging failed", ie);
         }
-        
-        return null;
+
     }
 
         private List<String> getSearchAfter(SearchResponse response) {
         List<Hit<JsonData>> h = response.hits().hits();
+        if (h.isEmpty()) return null;
         Hit<JsonData> hit = h.get(h.size() -1);
         return hit.sort();
     }

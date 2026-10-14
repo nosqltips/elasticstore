@@ -46,17 +46,22 @@ public class JsonBlocker extends AbstractBlocker {
      */
     @Override    
     public Integer call() throws Exception {
-        for (String s: cursor) {
-            if (s != null && ! s.isEmpty()) {
-                // A false value means we've reached a limit.
-                if (! super.bufferNext(s)) {
-                    break;
+        try {
+            for (String s: cursor) {
+                if (s != null && ! s.isEmpty()) {
+                    // A false value means we've reached a limit.
+                    if (! super.bufferNext(s)) {
+                        break;
+                    }
                 }
             }
+
+            super.bufferNext(null);
+            return super.totalCount;
+        } catch (Exception | Error ex) {
+            fail(ex);
+            throw ex;
         }
-        
-        super.bufferNext(null);
-        return super.totalCount;
     }
 
     @Override
