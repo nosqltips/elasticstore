@@ -9,6 +9,29 @@
   startup with a version message. Elasticsearch 9.x is not yet validated.
 - CI runs the default and full Elasticsearch-backed suites on Java 11, 17 and 21.
 
+### Earlier Java client dependencies
+
+The default dependency remains `elasticsearch-java:8.19.23`. Applications can use
+older 8.x Java client dependencies; the compatibility matrix covers 8.2.2, 8.14.3
+and 8.15.5 against the same Elasticsearch 8.19.23 server. CI runs the full suite and
+packaged CLI with each older dependency while keeping production classes compiled
+against 8.19.23, to catch runtime linkage errors. Versions outside that matrix,
+including 8.0 and 8.1, are not validated.
+
+To build a CLI with an older client:
+
+```sh
+mvn clean verify -Delasticsearch.version=8.2.2
+```
+
+Library consumers should explicitly select their `co.elastic.clients:elasticsearch-java`
+dependency in Maven so dependency resolution uses the intended version. Keep its
+matching transitive REST client and JSON-P provider dependencies together. This
+supports older **Java clients**; it does not lower the **server** minimum. The
+8.19 client can require response fields absent from earlier servers. Elastic's
+[compatibility policy](https://www.elastic.co/guide/en/elasticsearch/client/java-api-client/8.19/introduction.html)
+guarantees older clients against equal or newer server minor versions.
+
 Jackson 2 components are aligned through BOM 2.22.3. The alternative Jackson 3
 mapper dependencies are excluded to preserve the Java 11 runtime baseline; this
 library explicitly uses Jackson 2. Unused Guava, OpenCSV and SLF4J implementation

@@ -2,8 +2,9 @@ package com.nosqlrevolution.service;
 
 import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
-import co.elastic.clients.elasticsearch._types.query_dsl.RangeQuery;
-import co.elastic.clients.json.JsonData;
+import com.nosqlrevolution.util.QueryUtil;
+import java.util.Collections;
+import java.util.Locale;
 import com.nosqlrevolution.query.Condition.CompletedCondition;
 import com.nosqlrevolution.query.ElasticStoreQuery;
 import com.nosqlrevolution.query.Field;
@@ -63,16 +64,8 @@ public class QueryResolverService {
                 return operator == Operator.NOT_IN ? negate(terms) : terms;
             case GT: case GTE: case LT: case LTE:
                 if (values[0] instanceof Boolean) throw new IllegalArgumentException("Range bounds cannot be boolean");
-                co.elastic.clients.elasticsearch._types.query_dsl.UntypedRangeQuery.Builder range = new co.elastic.clients.elasticsearch._types.query_dsl.UntypedRangeQuery.Builder().field(field);
-                JsonData bound = JsonData.of(values[0]);
-                switch (operator) {
-                    case GT: range.gt(bound); break;
-                    case GTE: range.gte(bound); break;
-                    case LT: range.lt(bound); break;
-                    case LTE: range.lte(bound); break;
-                    default: throw new AssertionError(operator);
-                }
-                return RangeQuery.of(r -> r.untyped(range.build()))._toQuery();
+                return QueryUtil.getRangeQuery(field,
+                        Collections.singletonMap(operator.name().toLowerCase(Locale.ROOT), values[0]));
             case EXISTS: return Query.of(q -> q.exists(e -> e.field(field)));
             case MATCH: return text(field, values[0], false);
             case MATCH_PHRASE: return Query.of(q -> q.matchPhrase(m -> m.field(field).query((String) values[0])));
@@ -93,7 +86,7 @@ public class QueryResolverService {
 
     private static FieldValue value(Object value) {
         if (value instanceof String) return FieldValue.of((String) value);
-        if (value instanceof Boolean) return FieldValue.of((Boolean) value);
+        if (value instanceof Boolean) return FieldValue.of(((Boolean) value).booleanValue());
         if (value instanceof Float || value instanceof Double) return FieldValue.of(((Number) value).doubleValue());
         return FieldValue.of(((Number) value).longValue());
     }

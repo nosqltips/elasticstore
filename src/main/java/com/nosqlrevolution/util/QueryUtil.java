@@ -11,7 +11,10 @@ import co.elastic.clients.elasticsearch._types.query_dsl.MatchPhraseQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.MatchAllQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.MatchQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.PrefixQuery;
-import co.elastic.clients.elasticsearch._types.query_dsl.RangeQuery;
+import java.io.StringReader;
+import java.util.Collections;
+import java.util.Map;
+import java.util.LinkedHashMap;
 import co.elastic.clients.elasticsearch._types.query_dsl.TermQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.TermsQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.WildcardQuery;
@@ -81,9 +84,7 @@ public class QueryUtil {
     }    
         
     public static Query getGtRangeQuery(String field, String value) {
-        return RangeQuery.of(r -> r.untyped(b -> b.field(field)
-                .gt(JsonData.of(value, mapper))
-            ))._toQuery();
+        return getRangeQuery(field, Collections.singletonMap("gt", value));
     }
 
     public static Query getMatchQuery(String field, String term) {
@@ -216,24 +217,17 @@ public class QueryUtil {
             return null;
         }
         
-        // Range <
-        if (from == null) {
-            return RangeQuery.of(r -> r.untyped(b -> b.field(field)
-                .lt(JsonData.of(to, mapper))
-              ))._toQuery();
-        }
-        
-        // Range >
-        if (to == null) {
-            return RangeQuery.of(r -> r.untyped(b -> b.field(field)
-                .gt(JsonData.of(from, mapper))
-            ))._toQuery();
-        }
-        
-        // Range inclusive
-        return RangeQuery.of(r -> r.untyped(b -> b.field(field)
-            .gte(JsonData.of(from, mapper))
-            .lte(JsonData.of(to, mapper))
-        ))._toQuery();
+        Map<String, Object> bounds = new LinkedHashMap<>();
+        if (from == null) bounds.put("lt", to);
+        else if (to == null) bounds.put("gt", from);
+        else { bounds.put("gte", from); bounds.put("lte", to); }
+        return getRangeQuery(field, bounds);
+    }
+
+    /** The range wire format is stable across the pre/post-8.15 builder APIs. */
+    public static Query getRangeQuery(String field, Map<String, ?> bounds) {
+        String json = JsonData.of(Collections.singletonMap("range", Collections.singletonMap(field, bounds)), mapper)
+                .toJson(mapper).toString();
+        return new Query.Builder().withJson(new StringReader(json)).build();
     }
 }

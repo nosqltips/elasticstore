@@ -67,3 +67,34 @@ jobs:
             target/failsafe-reports/
             target/elasticsearch-integration.log
           retention-days: 7
+
+  client-compatibility:
+    name: Older client ${{ matrix.client }} (Java 11, Elasticsearch 8.19.23)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        client: ['8.2.2', '8.14.3', '8.15.5']
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
+        with:
+          distribution: temurin
+          java-version: '11'
+          cache: maven
+      # Keep production bytecode compiled against the default client. Only swap
+      # runtime dependencies, so this catches linkage errors in library consumers.
+      - run: mvn --batch-mode -DskipTests package
+      - run: ./scripts/verify-docker.sh -Delasticsearch.version=${{ matrix.client }} -Dmaven.main.skip=true
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: always()
+        with:
+          name: client-compatibility-${{ matrix.client }}
+          path: |
+            target/surefire-reports/
+            target/failsafe-reports/
+            target/elasticsearch-integration.log
+          retention-days: 7

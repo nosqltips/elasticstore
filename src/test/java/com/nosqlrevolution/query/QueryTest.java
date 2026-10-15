@@ -41,6 +41,11 @@ public class QueryTest {
         assertEquals(18, leaf(field("age").lt(18)).at("/range/age/lt").asInt());
         assertEquals(18, leaf(field("age").lte(18)).at("/range/age/lte").asInt());
         assertTrue(leaf(field("age").gt(18)).at("/range/age/gte").isMissingNode());
+        assertTrue(leaf(field("age").gt(18)).at("/range/age/gt").isIntegralNumber());
+        assertTrue(leaf(field("age").gt("18")).at("/range/age/gt").isTextual());
+        assertEquals(Long.MAX_VALUE, leaf(field("revision").gte(Long.MAX_VALUE)).at("/range/revision/gte").asLong());
+        assertEquals("2026-01-01", leaf(field("date\"field").gte("2026-01-01"))
+                .get("range").get("date\"field").get("gte").asText());
     }
 
     @Test public void membershipRetainsEveryValueAndType() throws Exception {
@@ -133,10 +138,11 @@ public class QueryTest {
         assertEquals(2, new ESQueryImpl().pageSize(2).getSize());
     }
 
-    @Test public void legacyRangeHelpersUseTheFieldAndProperBounds() {
-        assertEquals("age", QueryUtil.getGtRangeQuery("age", "18").range().untyped().field());
-        assertNotNull(QueryUtil.getGtRangeQuery("age", "18").range().untyped().gt());
-        assertNotNull(QueryUtil.getRangeQueryBuilder("age", null, "21").range().untyped().lt());
+    @Test public void legacyRangeHelpersUseTheFieldAndProperBounds() throws Exception {
+        assertEquals("18", json(QueryUtil.getGtRangeQuery("age", "18")).at("/range/age/gt").asText());
+        assertEquals("21", json(QueryUtil.getRangeQueryBuilder("age", null, "21")).at("/range/age/lt").asText());
+        assertEquals("18", json(QueryUtil.getRangeQueryBuilder("age", "18", "21")).at("/range/age/gte").asText());
+        assertEquals("21", json(QueryUtil.getRangeQueryBuilder("age", "18", "21")).at("/range/age/lte").asText());
     }
 
     @Test(expected = IllegalArgumentException.class) public void emptyMembershipIsRejected() { field("age").in(); }

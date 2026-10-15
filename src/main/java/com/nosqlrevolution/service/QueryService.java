@@ -317,7 +317,8 @@ public class QueryService {
             return new OperationStatus(java.util.Collections.singletonList(new OperationStatus.Item(
                     response.index(), response.id(), response.result().jsonValue(),
                     response.result() == Result.Created ? 201 : 200, response.version(),
-                    response.seqNo(), response.primaryTerm(), null, null)));
+                    com.nosqlrevolution.util.ClientCompatibility.sequenceNumber(response),
+                    com.nosqlrevolution.util.ClientCompatibility.primaryTerm(response), null, null)));
         }
         catch (ElasticsearchException ex) {
             if (ex.status() == 409) throw conflict(index, id, ex);
