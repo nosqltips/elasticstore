@@ -35,6 +35,8 @@ import com.nosqlrevolution.DocumentOptions;
 import com.nosqlrevolution.OperationException;
 import com.nosqlrevolution.util.JsonUtil;
 import com.nosqlrevolution.util.QueryUtil;
+import com.nosqlrevolution.util.ReadIntegrity;
+import com.nosqlrevolution.util.ClientCompatibility;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -77,6 +79,7 @@ public class QueryService {
         try {
             SearchResponse response = client.search(request, JsonData.class);
 
+            ReadIntegrity.search(response);
             List<Hit<JsonData>> hits = response.hits().hits();
             for (Hit<JsonData> hit: hits) {
                 if (hit.source() == null) throw new IllegalStateException("Document source is unavailable");
@@ -137,6 +140,7 @@ public class QueryService {
         int size = single ? 1 : options.getSize();
         if (!single && options.getLimit() > 0) size = (int) Math.min(size, options.getLimit());
         SearchRequest.Builder builder = new SearchRequest.Builder()
+                .allowPartialSearchResults(false)
                 .query(options.toQuery()).size(size).from(scroll ? 0 : options.getFrom())
                 .trackTotalHits(TrackHits.of(t -> t.enabled(true)))
                 .storedFields("_routing").source(source -> source.fetch(true));
@@ -159,6 +163,14 @@ public class QueryService {
             if (!shardSort) builder.sort(sort -> sort.field(f -> f.field("_shard_doc").order(SortOrder.Asc)));
             try {
                 OpenPointInTimeResponse response = client.openPointInTime(r -> r.index(index).keepAlive(t -> t.time("6000s")));
+                try {
+                    co.elastic.clients.elasticsearch._types.ShardStatistics shards = ClientCompatibility.pitShards(response);
+                    if (shards != null) ReadIntegrity.shards(shards, "point in time");
+                } catch (RuntimeException failure) {
+                    try { client.closePointInTime(r -> r.id(response.id())); }
+                    catch (Exception cleanup) { failure.addSuppressed(cleanup); }
+                    throw failure;
+                }
                 builder.pit(p -> p.id(response.id()).keepAlive(t -> t.time("6000s")));
             } catch (IOException ex) {
                 throw new java.io.UncheckedIOException("Cannot open Elasticsearch point in time", ex);
@@ -264,6 +276,7 @@ public class QueryService {
 
         try {
             CountResponse response = client.count(builder.build());
+            ReadIntegrity.shards(response.shards(), "count");
             return response.count();
         } catch (IOException e) {
             throw new java.io.UncheckedIOException("Elasticsearch count failed", e);
@@ -290,6 +303,7 @@ public class QueryService {
 
         try {
             CountResponse response = client.count(builder.build());
+            ReadIntegrity.shards(response.shards(), "count");
             return response.count();
         } catch (IOException e) {
             throw new java.io.UncheckedIOException("Elasticsearch count failed", e);
@@ -497,20 +511,27 @@ public class QueryService {
     }
 
     /**
-     * Execute a SearchRequestBuilder and get a SearchResponse.
-     *
-     * @param request
-     * @return
+     * Executes a native search without hiding response metadata or incomplete results.
+     * Callers supplying a PIT own its lifecycle and must use the latest returned PIT ID.
      */
-    public HitsMetadata<Hit> executeBuilder(SearchRequest request) {
+    public <T> SearchResponse<T> executeSearch(SearchRequest request, Class<T> documentType) {
+        java.util.Objects.requireNonNull(request, "Search request");
+        java.util.Objects.requireNonNull(documentType, "Document type");
         try {
-            SearchResponse<Hit> response = client.search(request, Hit.class);
-            if (response != null) {
-                return response.hits();
-            }
-        } catch (Exception e) {}
-
-        return null;
+            SearchResponse<T> response = client.search(request, documentType);
+            ReadIntegrity.search(response);
+            return response;
+        } catch (IOException ex) {
+            throw new java.io.UncheckedIOException("Elasticsearch search failed", ex);
+        }
     }
 
+    /**
+     * Legacy signature interprets each source as a Hit rather than a document.
+     * @deprecated Use executeSearch(request, documentType), or JsonData.class for raw JSON.
+     */
+    @Deprecated
+    public HitsMetadata<Hit> executeBuilder(SearchRequest request) {
+        return executeSearch(request, Hit.class).hits();
+    }
 }

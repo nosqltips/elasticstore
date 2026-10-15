@@ -511,6 +511,37 @@ and discarding earlier pages. `count(query)` returns the full matching count,
 independent of pagination. Non-cursor searches use `from`/`size` and remain subject
 to Elasticsearch's result-window limit.
 
+Library-built searches set `allow_partial_search_results=false`. Single-document
+searches and cursors also reject responses reporting `timed_out`, early termination
+or shard failures, even when HTTP succeeds. Counts reject shard failures rather
+than returning an incomplete count. A failed cursor closes its latest PIT and
+keeps throwing the original failure on later iteration calls; it does not silently
+become exhausted or retry the page. Cleanup errors are attached as suppressed
+exceptions. Cursor pages retain the original request timeout.
+
+PIT creation uses Elasticsearch's strict default. When the Java client exposes PIT
+shard statistics, those are checked before any search; a failed PIT is closed.
+Older Java clients discard that metadata, so this initial check is unavailable,
+but strict server-side PIT creation and per-page response checks still apply.
+These checks cover reported search/shard failures; they do not override a remote
+cluster's configured availability/skip policy.
+
+An export or transfer that encounters an incomplete page fails the run. Earlier
+blocks may already have been written; there is no rollback. A failed export can
+leave a partial output file that must be inspected or removed before retrying.
+
+For a native request, `QueryService.executeSearch(request, Person.class)` returns
+`SearchResponse<Person>` with typed sources, hit IDs, totals and response metadata.
+Use `JsonData.class` for raw JSON. It applies the same incomplete-response checks
+and propagates transport, server and deserialization errors. If the request uses a
+PIT, the caller owns it and must keep the latest response PIT ID. An
+`IncompleteSearchException` retains the rejected response in `getResponse()`, so
+callers can inspect diagnostics and close the latest PIT even after a partial
+response. This low-level helper does not manage PIT cleanup.
+Use a cursor for automatic failure cleanup. The legacy `executeBuilder(request)`
+signature is deprecated: its source type is `Hit`, not the document model, and
+failures now propagate instead of returning `null`.
+
 `blockSize()`/`setSize()` alias page size, and `setFrom()` aliases skip.
 `ESQuery` and `ESQueryImpl` remain deprecated facades for existing fluent calls;
 subclasses that accessed their old protected state must migrate to the accessors.

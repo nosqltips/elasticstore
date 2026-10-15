@@ -35,6 +35,7 @@ public class CursorPayloadTest {
     private final List<JsonNode> searches = new ArrayList<>();
     private String closedPit;
     private boolean failSearch;
+    private boolean partialLaterPage;
     private boolean failBulk;
     private final List<JsonNode> bulkSources = new ArrayList<>();
 
@@ -75,7 +76,7 @@ public class CursorPayloadTest {
                 } else {
                     int after = body.has("search_after") ? body.get("search_after").get(0).asInt() : 0;
                     String hits = after == 0 ? hit(1) + "," + hit(2) : after == 2 ? hit(3) : "";
-                    response = "{\"took\":1,\"timed_out\":false,\"_shards\":{\"total\":1,\"successful\":1,\"failed\":0},"
+                    response = "{\"took\":1,\"timed_out\":" + (partialLaterPage && after == 2) + ",\"_shards\":{\"total\":1,\"successful\":1,\"failed\":0},"
                             + "\"pit_id\":\"pit-" + (after == 0 ? 1 : after == 2 ? 2 : 3) + "\","
                             + "\"hits\":{\"total\":{\"value\":3,\"relation\":\"eq\"},\"hits\":[" + hits + "]}}";
                 }
@@ -148,6 +149,17 @@ public class CursorPayloadTest {
     }
 
     @Test(timeout = 5000)
+    public void nativeSearchDeserializesActualDocumentSourcesAndRetainsMetadata() {
+        co.elastic.clients.elasticsearch.core.SearchResponse<Document> response =
+                new com.nosqlrevolution.service.QueryService(client).executeSearch(request(), Document.class);
+        assertEquals("doc1", response.hits().hits().get(0).source().name);
+        assertEquals("1", response.hits().hits().get(0).id());
+        assertEquals("pit-1", response.pitId());
+        assertEquals(3, response.hits().total().value());
+        assertNull("Native search leaves PIT ownership with caller", closedPit);
+    }
+
+    @Test(timeout = 5000)
     public void modelExportPreservesMetadataIdAndOriginalJson() throws Exception {
         try (ModelBlocker blocker = new ModelBlocker(store(), null, "test", 2, 1, 0)) {
             assertEquals(Integer.valueOf(1), blocker.call());
@@ -177,6 +189,26 @@ public class CursorPayloadTest {
         java.util.Collections.sort(names);
         assertEquals(java.util.Arrays.asList("doc1", "doc2", "doc3"), names);
         assertEquals("pit-3", closedPit);
+    }
+
+    @Test(timeout = 5000)
+    public void successfulHttpResponseWithPartialLaterPageFailsExportPipeline() throws Exception {
+        partialLaterPage = true;
+        JsonBlocker blocker = new JsonBlocker(store(), null, "test", 2, 0, 0);
+        java.io.BufferedOutputStream output = new java.io.BufferedOutputStream(new java.io.ByteArrayOutputStream());
+        AbstractPoolRunner runner = new AbstractPoolRunner() {
+            public void run(String[] args) throws Exception { run(blocker, 2); }
+            protected java.util.concurrent.Callable<CountsAndBytes> getNextCallable(List<String> block) {
+                return new com.nosqlrevolution.apps.JsonExporter(output, block);
+            }
+        };
+        try { runner.run(new String[0]); fail("Expected incomplete export failure"); }
+        catch (Exception error) {
+            Throwable cause = error;
+            while (cause.getCause() != null) cause = cause.getCause();
+            assertTrue(cause.getMessage(), cause.getMessage().contains("timed out"));
+        } finally { output.close(); }
+        assertEquals("pit-2", closedPit);
     }
 
     @Test(timeout = 5000)

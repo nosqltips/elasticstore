@@ -6,6 +6,7 @@ import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import java.io.IOException;
+import com.nosqlrevolution.util.ReadIntegrity;
 import java.io.UncheckedIOException;
 import java.util.NoSuchElementException;
 
@@ -17,6 +18,7 @@ class PitIterator<T> extends CursorIterator<Hit<T>> implements AutoCloseable {
     private String pitId;
     private boolean exhausted;
     private boolean closed;
+    private RuntimeException failure;
     private long skip;
     private final long limit;
     private long returned;
@@ -49,17 +51,28 @@ class PitIterator<T> extends CursorIterator<Hit<T>> implements AutoCloseable {
         try {
             SearchResponse<T> response = client.search(request, documentType);
             if (response.pitId() != null) pitId = response.pitId();
+            ReadIntegrity.search(response);
             hits = response.hits().hits();
             iter = 0;
             exhausted = hits.isEmpty();
             return response;
         } catch (IOException ex) {
-            throw new UncheckedIOException("Elasticsearch paging failed", ex);
+            throw fail(new UncheckedIOException("Elasticsearch paging failed", ex));
+        } catch (RuntimeException ex) {
+            throw fail(ex);
         }
+    }
+
+    private RuntimeException fail(RuntimeException cause) {
+        failure = cause;
+        try { close(); }
+        catch (Exception cleanup) { if (cleanup != cause) cause.addSuppressed(cleanup); }
+        return cause;
     }
 
     @Override
     public boolean hasNext() {
+        if (failure != null) throw failure;
         if (closed || limit > 0 && returned >= limit) return false;
         while (skip > 0 && available()) {
             int skipped = (int) Math.min(skip, hits.size() - iter);
@@ -74,6 +87,8 @@ class PitIterator<T> extends CursorIterator<Hit<T>> implements AutoCloseable {
         if (iter < hits.size()) return true;
         if (exhausted) return false;
         SearchRequest.Builder next = new SearchRequest.Builder()
+                .allowPartialSearchResults(false)
+                .timeout(initialRequest.timeout())
                 .size(initialRequest.size())
                 .query(initialRequest.query())
                 .source(initialRequest.source())
