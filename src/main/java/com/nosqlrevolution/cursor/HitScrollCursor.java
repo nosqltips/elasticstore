@@ -17,8 +17,11 @@ public class HitScrollCursor extends Cursor<Hit<JsonData>> {
     private final HitScrollCursorIterator iterator;
     
     public HitScrollCursor(SearchRequest pitRequest, ElasticsearchClient client) throws Exception {
-        // TODO: may need to check for null here.
-        this.iterator = new HitScrollCursorIterator(pitRequest, client);
+        this(pitRequest, client, 0, 0);
+    }
+
+    public HitScrollCursor(SearchRequest pitRequest, ElasticsearchClient client, long skip, long limit) throws Exception {
+        this.iterator = new HitScrollCursorIterator(pitRequest, client, skip, limit);
     }
 
     @Override

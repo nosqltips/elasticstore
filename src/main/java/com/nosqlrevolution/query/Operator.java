@@ -18,5 +18,8 @@ public enum Operator {
     GT,
     GTE,
     LT,
-    LTE
+    LTE,
+    MATCH,
+    MATCH_PHRASE,
+    EXISTS
 }

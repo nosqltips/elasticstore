@@ -46,100 +46,71 @@ import java.util.logging.Logger;
  */
 public class QueryService {
     private final ElasticsearchClient client;
-    
+
     public QueryService(ElasticsearchClient client) {
         this.client = client;
     }
-    
+
     /**
      * Return the first document from this index
-     * 
+     *
      * @param index
-     * @return 
+     * @return
      */
     public String getSingle(String index) {
         return getSingle(null, index);
     }
-    
+
     /**
      * Return the first document from this index
-     * 
+     *
      * @param query
      * @param index
-     * @return 
+     * @return
      */
     public String getSingle(com.nosqlrevolution.query.ElasticStoreQuery query, String index) {
-        SearchRequest.Builder builder = new SearchRequest.Builder()
-                .index(index)
-                .from(0)
-                .size(1);
+        SearchRequest request = searchRequest(query, index, false, true);
 
-        com.nosqlrevolution.query.ElasticStoreQuery q = QueryResolverService.resolve(query);
-        if (q != null) {
-            builder.query(q.getQuery());
-            if (q.getFields() != null) {
-                List<String> includes = Arrays.asList(q.getFields());
-                builder.source(s -> s.filter(SourceFilter.of(i -> i.includes(includes))));
-            }
-
-            if (query.getHighlights() != null) {
-                Map<String, HighlightField> highlights = new HashMap<>();
-                for (String s: query.getHighlights()) {
-                    highlights.put(s, 
-                            HighlightField.of(h -> h
-                                    .type(HighlighterType.Plain)
-                            )
-                    );
-                }
-                
-                builder.highlight(h -> h
-                    .fields(highlights)
-                );
-            }
-        } else {
-            builder.query(QueryUtil.getMatchAllQuery());
-        }
-        
         try {
-            SearchResponse response = client.search(builder.build(), JsonData.class);
+            SearchResponse response = client.search(request, JsonData.class);
 
             List<Hit<JsonData>> hits = response.hits().hits();
             for (Hit<JsonData> hit: hits) {
                 return hit.source().toJson().toString();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (IOException ex) {
+            throw new java.io.UncheckedIOException("Elasticsearch search failed", ex);
         }
-        
+
         return null;
     }
-    
+
     /**
      * Return the all of the documents from this index
-     * 
+     *
      * @param index
-     * @return 
+     * @return
      */
     public SearchRequest findAllScroll(String index) {
         return findAll(null, index, true);
     }
-    
+
     /**
      * Return the all of the documents from this index
-     * 
+     *
      * @param query
      * @param index
-     * @return 
+     * @return
      */
     public SearchRequest findAllScroll(com.nosqlrevolution.query.ElasticStoreQuery query, String index) {
         return findAll(query, index, true);
     }
-    
+
     /**
      * Return the all of the documents from this index
-     * 
+     *
      * @param index
-     * @return 
+     * @return
      */
     public SearchRequest findAll(String index) {
         return findAll(null, index, false);
@@ -147,102 +118,80 @@ public class QueryService {
 
     /**
      * Return the all of the documents from this index
-     * 
+     *
      * @param query
      * @param index
      * @param scroll
-     * @return 
+     * @return
      */
     public SearchRequest findAll(com.nosqlrevolution.query.ElasticStoreQuery query, String index, boolean scroll) {
-        SearchRequest.Builder builder = new SearchRequest.Builder()
-                .from(0)
-                .size(1000)
-                .trackTotalHits(TrackHits.of(t -> t.enabled(true)));
-        
-        ElasticStoreQuery q = QueryResolverService.resolve(query);
-        if (q != null) {
-            builder.query(q.getQuery());
-            if (q.getFields() != null) {
-                List<String> includes = Arrays.asList(q.getFields());
-                builder.source(s -> s.filter(SourceFilter.of(i -> i.includes(includes))));
-            }
-            if (query.getHighlights() != null) {
+        return searchRequest(query, index, scroll, false);
+    }
 
-                Map<String, HighlightField> highlights = new HashMap<>();
-                for (String s: query.getHighlights()) {
-                    highlights.put(s, 
-                            HighlightField.of(h -> h
-                                    .type(HighlighterType.Plain)
-                            )
-                    );
-                }
-                
-                builder.highlight(h -> h
-                    .fields(highlights)
-                );
-            }
-            if (query.getSort() != null && query.getSort().length > 0) {
-                builder.sort(s -> s
-                        .field(f -> f
-                                .field(query.getSort()[0]))
-                );
+    private SearchRequest searchRequest(ElasticStoreQuery query, String index, boolean scroll, boolean single) {
+        ElasticStoreQuery options = query == null ? new ElasticStoreQuery() : query.copy();
+        int size = single ? 1 : options.getSize();
+        if (!single && options.getLimit() > 0) size = (int) Math.min(size, options.getLimit());
+        SearchRequest.Builder builder = new SearchRequest.Builder()
+                .query(options.toQuery()).size(size).from(scroll ? 0 : options.getFrom())
+                .trackTotalHits(TrackHits.of(t -> t.enabled(true)));
+        if (options.getFields() != null) {
+            builder.source(source -> source.filter(filter -> filter.includes(Arrays.asList(options.getFields()))));
+        }
+        if (options.getHighlights() != null && options.getHighlights().length > 0) {
+            Map<String, HighlightField> highlights = new HashMap<>();
+            for (String field : options.getHighlights()) highlights.put(field, HighlightField.of(h -> h.type(HighlighterType.Plain)));
+            builder.highlight(h -> h.fields(highlights));
+        }
+        boolean shardSort = false;
+        for (String spec : options.getSort()) {
+            boolean descending = spec.startsWith("-");
+            String field = spec.startsWith("+") || descending ? spec.substring(1) : spec;
+            shardSort |= field.equals("_shard_doc");
+            builder.sort(sort -> sort.field(f -> f.field(field).order(descending ? SortOrder.Desc : SortOrder.Asc)));
+        }
+        if (scroll) {
+            if (!shardSort) builder.sort(sort -> sort.field(f -> f.field("_shard_doc").order(SortOrder.Asc)));
+            try {
+                OpenPointInTimeResponse response = client.openPointInTime(r -> r.index(index).keepAlive(t -> t.time("6000s")));
+                builder.pit(p -> p.id(response.id()).keepAlive(t -> t.time("6000s")));
+            } catch (IOException ex) {
+                throw new java.io.UncheckedIOException("Cannot open Elasticsearch point in time", ex);
             }
         } else {
-            builder.query(QueryUtil.getMatchAllQuery());
+            builder.index(index);
         }
-
-        if (scroll) {
-            try {
-                OpenPointInTimeRequest openPit = OpenPointInTimeRequest.of(o -> o
-                        .index(index)
-                        .keepAlive(Time.of(t -> t.time("6000S")))
-                    );
-                
-                OpenPointInTimeResponse pitResponse = client.openPointInTime(openPit);
-                            
-                builder.pit(p -> p.id(pitResponse.id()));
-                builder.sort(SortOptions.of(s-> s.field(FieldSort.of(f -> f.field("_shard_doc").order(SortOrder.Asc)))));
-            } catch (IOException ex) {
-                throw new IllegalStateException("Cannot open Elasticsearch point in time", ex);
-            } catch (ElasticsearchException ex) {
-                throw new IllegalStateException("Cannot open Elasticsearch point in time", ex);
-            }
-        }
-
-        SearchRequest request = builder.build();
-        System.out.println("builder=" + request);
-        
-        return request;
+        return builder.build();
     }
-    
+
     /**
      * Return a single document using the rest time get api
-     * 
+     *
      * @param index
      * @param id
-     * @return 
+     * @return
      */
     public String realTimeGet(String index, String id) {
         GetRequest.Builder getRequest = new GetRequest.Builder()
                 .index(index)
                 .id(id)
-                .realtime(Boolean.TRUE);        
+                .realtime(Boolean.TRUE);
         try {
             GetResponse<Hit> response = client.get(getRequest.build(), Hit.class);
             return response.source().toString();
         } catch (IOException ex) {
             ex.printStackTrace();
         }
-        
+
         return null;
     }
 
     /**
      * Return a list of documents using the real time get api
-     * 
+     *
      * @param index
      * @param ids
-     * @return 
+     * @return
      */
     public String[] realTimeMultiGet(String index, String[] ids) {
 //        MultiGetRequest multiRequest = null;
@@ -257,14 +206,14 @@ public class QueryService {
 //        try {
 //            MultiGetResponse response = client.multiGet(multiRequest, RequestOptions.DEFAULT);
 //            MultiGetItemResponse[] responses = response.getResponses();
-//            
+//
 //            String[] out = new String[responses.length];
 //            for (int i=0; i<responses.length; i++) {
 //                if (responses[i].getResponse() != null) {
 //                    out[i] = responses[i].getResponse().getSourceAsString();
 //                }
 //            }
-//            
+//
 //            return out;
 //        } catch (IOException ie) {
 //            ie.printStackTrace();
@@ -272,12 +221,12 @@ public class QueryService {
 
         return null;
     }
-    
+
     /**
      * Return a count of all documents from many indexes
-     * 
+     *
      * @param indexes
-     * @return 
+     * @return
      */
     public long count(String[] indexes) {
         return count(null, indexes);
@@ -285,20 +234,20 @@ public class QueryService {
 
     /**
      * Return a count of all documents from this index
-     * 
+     *
      * @param index
-     * @return 
+     * @return
      */
     public long count(String index) {
         return count(null, index);
     }
-    
+
     /**
      * Return a count of all documents from many indexes
-     * 
+     *
      * @param query
      * @param indexes
-     * @return 
+     * @return
      */
     public long count(com.nosqlrevolution.query.ElasticStoreQuery query, String[] indexes) {
         CountRequest.Builder builder = new CountRequest.Builder()
@@ -315,44 +264,42 @@ public class QueryService {
             CountResponse response = client.count(builder.build());
             return response.count();
         } catch (IOException e) {
+            throw new java.io.UncheckedIOException("Elasticsearch count failed", e);
         }
-        
-        return 0;
     }
 
     /**
      * Return a count of all documents from this index
-     * 
+     *
      * @param query
      * @param index
-     * @return 
+     * @return
      */
     public long count(com.nosqlrevolution.query.ElasticStoreQuery query, String index) {
         CountRequest.Builder builder = new CountRequest.Builder()
-                .index(Arrays.asList(index));    
-        
+                .index(Arrays.asList(index));
+
         ElasticStoreQuery q = QueryResolverService.resolve(query);
         if (q != null) {
             builder.query(q.getQuery());
         } else {
             builder.query(QueryUtil.getMatchAllQuery());
         }
-        
+
         try {
             CountResponse response = client.count(builder.build());
             return response.count();
         } catch (IOException e) {
+            throw new java.io.UncheckedIOException("Elasticsearch count failed", e);
         }
-        
-        return 0;
     }
-    
+
     /**
      * Index a single document using the standard indexing api
-     * 
+     *
      * @param index
      * @param source
-     * @param id 
+     * @param id
      */
     public void index(String index, String source, String id) {
         if (source != null && ! source.isEmpty()) {
@@ -376,15 +323,15 @@ public class QueryService {
     }
     /**
      * Index a number of documents using the bulk indexing api
-     * 
+     *
      * @param index
-     * @param source 
-     * @param idField 
+     * @param source
+     * @param idField
      */
     public void bulkIndex(String index, String[] source, String idField) {
         if (source != null && source.length > 0) {
             BulkRequest.Builder bulkRequest = new BulkRequest.Builder();
-            
+
             for (String json: source) {
                 JsonData document;
                 try (jakarta.json.stream.JsonParser parser = client._jsonpMapper().jsonProvider()
@@ -410,15 +357,15 @@ public class QueryService {
                 throw new java.io.UncheckedIOException("Elasticsearch bulk write failed", ie);
             }
         }
-        
+
     }
-    
+
     /**
      * Delete a single document
      *
      * @param index
      * @param id
-     * @return 
+     * @return
      */
     public boolean delete(String index, String id) {
         DeleteRequest.Builder request = new DeleteRequest.Builder()
@@ -430,52 +377,52 @@ public class QueryService {
         } catch (IOException ie) {
             ie.printStackTrace();
         }
-        
+
         return false;
     }
-    
+
     // Need to implement as a bulk operation.
-    
+
 //    /**
 //     * Delete all documents as DeleteByQuery
 //     * Passes in a default WriteOperation
-//     * 
+//     *
 //     * @param index
 //     * @param ids
-//     * @return 
+//     * @return
 //     */
 //    public boolean deleteAll(String index, String[] ids) {
 //        return deleteAll(DEFAULT_WRITE, index, ids);
 //    }
 //    /**
 //     * Delete all documents as DeleteByQuery
-//     * 
+//     *
 //     * @param write
 //     * @param index
 //     * @param id
-//     * @return 
+//     * @return
 //     */
 //    public boolean deleteAll(WriteOperation write, String index String[] id) {
 //        DeleteByQueryRequestBuilder builder = client.prepareDeleteByQuery()
 //                .setIndices(index)
 //                .setQuery(QueryUtil.getIdQuery(id))
-//                
+//
 //                // Operations from WriteOperation
 //                .setConsistencyLevel(write.getConsistencyLevel());
-//        
+//
 //                // TODO: test no refresh for delete by query
 //                //.setRefresh(write.getRefresh());
-//        
+//
 //        DeleteByQueryResponse response = builder.execute().actionGet();
-//        
+//
 //        // TODO: Need to iterate through and return a response
 //        return true;
 //    }
-    
+
 //    /**
 //     * Refresh the given index.
-//     * 
-//     * @param index 
+//     *
+//     * @param index
 //     */
 //    public void refresh(String index) {
 //        client.admin().indices().refresh(new RefreshRequest(index)).actionGet();
@@ -483,9 +430,9 @@ public class QueryService {
 
     /**
      * Execute a SearchRequestBuilder and get a SearchResponse.
-     * 
+     *
      * @param request
-     * @return 
+     * @return
      */
     public HitsMetadata<Hit> executeBuilder(SearchRequest request) {
         try {
@@ -497,12 +444,12 @@ public class QueryService {
 
         return null;
     }
-    
+
 //    /**
 //     * Execute a SearchRequestBuilder and get a SearchResponse.
-//     * 
+//     *
 //     * @param builder
-//     * @return 
+//     * @return
 //     */
 //    public SearchScrollRequestBuilder executeScroll(SearchRequestBuilder builder) {
 //        try {
@@ -516,13 +463,13 @@ public class QueryService {
 //
 //        return null;
 //    }
-    
+
 //    /**
 //     * Check to see if indeces or types exists in the ElasticSearch cluster.
-//     * 
+//     *
 //     * @param index
 //     * @param type
-//     * @return 
+//     * @return
 //     */
 //    public boolean exists(String index, String type) {
 //        if (type == null) {

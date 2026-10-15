@@ -17,15 +17,28 @@ class PitIterator<T> extends CursorIterator<Hit<T>> implements AutoCloseable {
     private String pitId;
     private boolean exhausted;
     private boolean closed;
+    private long skip;
+    private final long limit;
+    private long returned;
 
     PitIterator(Class<T> documentType, SearchRequest request, ElasticsearchClient client) {
+        this(documentType, request, client, 0, 0);
+    }
+
+    PitIterator(Class<T> documentType, SearchRequest request, ElasticsearchClient client, long skip, long limit) {
+        if (skip < 0 || limit < 0) throw new IllegalArgumentException("Skip and limit must not be negative");
+        this.skip = skip;
+        this.limit = limit;
         this.documentType = documentType;
         this.initialRequest = request;
         this.client = client;
         pitId = request.pit() == null ? null : request.pit().id();
         try {
             SearchResponse<T> response = fetch(request);
-            totalSize = response.hits().total() == null ? 0 : (int) response.hits().total().value();
+            long count = response.hits().total() == null ? 0 : response.hits().total().value();
+            count = Math.max(0, count - skip);
+            if (limit > 0) count = Math.min(count, limit);
+            totalSize = (int) Math.min(count, Integer.MAX_VALUE);
         } catch (RuntimeException ex) {
             try { close(); } catch (Exception cleanup) { ex.addSuppressed(cleanup); }
             throw ex;
@@ -47,6 +60,16 @@ class PitIterator<T> extends CursorIterator<Hit<T>> implements AutoCloseable {
 
     @Override
     public boolean hasNext() {
+        if (closed || limit > 0 && returned >= limit) return false;
+        while (skip > 0 && available()) {
+            int skipped = (int) Math.min(skip, hits.size() - iter);
+            iter += skipped;
+            skip -= skipped;
+        }
+        return available();
+    }
+
+    private boolean available() {
         if (closed) return false;
         if (iter < hits.size()) return true;
         if (exhausted) return false;
@@ -72,6 +95,7 @@ class PitIterator<T> extends CursorIterator<Hit<T>> implements AutoCloseable {
     public Hit<T> next() {
         if (!hasNext()) throw new NoSuchElementException();
         iterAll++;
+        returned++;
         return hits.get(iter++);
     }
 

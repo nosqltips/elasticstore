@@ -9,7 +9,11 @@ public class ScrollCursorIterator<E> extends CursorIterator<E> implements AutoCl
     private final PitIterator<E> hitsIterator;
 
     protected ScrollCursorIterator(Class<E> documentType, SearchRequest request, ElasticsearchClient client) {
-        hitsIterator = new PitIterator<>(documentType, request, client);
+        this(documentType, request, client, 0, 0);
+    }
+
+    protected ScrollCursorIterator(Class<E> documentType, SearchRequest request, ElasticsearchClient client, long skip, long limit) {
+        hitsIterator = new PitIterator<>(documentType, request, client, skip, limit);
         totalSize = hitsIterator.totalSize;
     }
 

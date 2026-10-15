@@ -108,7 +108,7 @@ public class JsonIndex<T> extends Index<String> {
         SearchRequest request = service.findAllScroll(query, getIndex());
         if (request != null) {
             try {
-                return new ScrollCursor<>(JsonData.class, request, client);
+                return new ScrollCursor<>(JsonData.class, request, client, query == null ? 0 : query.getSkip(), query == null ? 0 : query.getLimit());
             } catch (Exception e) {
                 throw new IllegalStateException("Failed to create document cursor", e);
             }
@@ -121,7 +121,7 @@ public class JsonIndex<T> extends Index<String> {
         SearchRequest request = service.findAllScroll(query, getIndex());
         if (request != null) {
             try {
-                return new HitScrollCursor(request, client);
+                return new HitScrollCursor(request, client, query == null ? 0 : query.getSkip(), query == null ? 0 : query.getLimit());
             } catch (Exception e) {
                 throw new IllegalStateException("Failed to create document cursor", e);
             }
@@ -134,7 +134,7 @@ public class JsonIndex<T> extends Index<String> {
         SearchRequest request = service.findAllScroll(query, getIndex());
         if (request != null) {
             try {
-                return new ScrollCursor<>(JsonData.class, request, client);
+                return new ScrollCursor<>(JsonData.class, request, client, query == null ? 0 : query.getSkip(), query == null ? 0 : query.getLimit());
             } catch (Exception e) {
                 throw new IllegalStateException("Failed to create document cursor", e);
             }
@@ -143,11 +143,11 @@ public class JsonIndex<T> extends Index<String> {
     }
 
     @Override
-    public Cursor<JsonData> findAll(ElasticStoreQuery query, Class clazz) {
+    public <E> Cursor<E> findAll(ElasticStoreQuery query, Class<E> clazz) {
         SearchRequest request = service.findAllScroll(query, getIndex());
         if (request != null) {
             try {
-                return new ScrollCursor<>(JsonData.class, request, client);
+                return new ScrollCursor<>(clazz, request, client, query == null ? 0 : query.getSkip(), query == null ? 0 : query.getLimit());
             } catch (Exception e) {
                 throw new IllegalStateException("Failed to create document cursor", e);
             }

@@ -109,7 +109,7 @@ public class TypedIndex<T> extends Index<T> {
         SearchRequest request = service.findAllScroll(query, getIndex());
         if (request != null) {
             try {
-                return new ScrollCursor<>(t, request, client);
+                return new ScrollCursor<>(t, request, client, query == null ? 0 : query.getSkip(), query == null ? 0 : query.getLimit());
             } catch (Exception e) {
                 throw new IllegalStateException("Failed to create document cursor", e);
             }
@@ -119,11 +119,11 @@ public class TypedIndex<T> extends Index<T> {
     }
 
     @Override
-    public Cursor<T> findAll(ElasticStoreQuery query, Class clazz) {
+    public <E> Cursor<E> findAll(ElasticStoreQuery query, Class<E> clazz) {
         SearchRequest request = service.findAllScroll(query, getIndex());
         if (request != null) {
             try {
-                return new ScrollCursor<>(t, request, client);
+                return new ScrollCursor<>(clazz, request, client, query == null ? 0 : query.getSkip(), query == null ? 0 : query.getLimit());
             } catch (Exception e) {
                 throw new IllegalStateException("Failed to create document cursor", e);
             }

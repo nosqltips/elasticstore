@@ -146,3 +146,72 @@ through import, export/reimport and transfer, including multiple search pages an
 one-document final block, and checks failure cleanup after a real mapping rejection.
 It injects an HTTP client into the store for the isolated Docker test; the CLI's
 existing HTTPS connection and credential setup are unchanged.
+
+## Fluent queries
+
+```java
+import static com.nosqlrevolution.query.Condition.*;
+import static com.nosqlrevolution.query.ElasticStoreQuery.select;
+
+ElasticStoreQuery query = select("id", "name", "age")
+    .where(
+        field("active").equal(true),
+        field("age").gte(18),
+        or(field("country").equal("US"), field("country").equal("CA"))
+    .sort("-age", "id")
+    .skip(10)
+    .limit(100)
+    .pageSize(25);
+
+try (Cursor<Person> people = index.findAll(query, Person.class)) {
+    for (Person person : people) {
+        // Process each matching document.
+    }
+}
+```
+
+`where(a, b)` and `and(a, b)` require both conditions. `or(a, b)` requires at
+least one, and `not(a, b)` negates their conjunction: `NOT (a AND b)`. Conditions
+are immutable and can be reused. Query configuration remains fluent and mutable;
+compilation takes a snapshot rather than caching a query that could become stale.
+
+Equality and membership use exact terms, preserving strings, booleans and primitive
+numeric wrapper types. Use keyword fields for exact text comparisons; the DSL does
+not automatically append `.keyword`. `gt`, `gte`, `lt` and `lte` use range queries;
+dates can be supplied as date strings. `exists()` tests field presence. Exclusions
+follow Elasticsearch semantics, so `notEqual`/`notIn` also match missing fields;
+combine them with `exists()` when missing fields should be excluded.
+
+`match()` uses analyzed text, and `matchPhrase()` requires an analyzed phrase.
+The older `mustContain` requires all supplied text queries, with all words in each;
+`shouldContain` requires any supplied text query; `mustNotContain` excludes any
+matching supplied text query. Fluent `where()` conditions run in filter context.
+For custom scoring, use `setQuery()` with a native Elasticsearch `Query`; calling
+`where()` afterward replaces that raw query, and vice versa. `toQuery()` exposes
+the compiled Elasticsearch query without changing the builder.
+
+`field(Field.ID)` queries Elasticsearch metadata IDs. `Field.ALL` is rejected
+because Elasticsearch 8 has no `_all` field. Empty groups, empty membership lists,
+null values and invalid pagination settings are rejected rather than becoming an
+unfiltered search. A selection without conditions intentionally matches all.
+
+Sorting accepts multiple field names; a leading `-` means descending and `+` (or
+no prefix) means ascending. `sort(field, SortOrder)` appends an explicit sort.
+PIT searches add `_shard_doc` as a tie-breaker. `skip()` discards matching documents
+across cursor pages, `limit()` caps the total returned documents (zero means
+unlimited), and `pageSize()` controls fetch size. Deep skips still require reading
+and discarding earlier pages. `count(query)` returns the full matching count,
+independent of pagination. Non-cursor searches use `from`/`size` and remain subject
+to Elasticsearch's result-window limit.
+
+`blockSize()`/`setSize()` alias page size, and `setFrom()` aliases skip.
+`ESQuery` and `ESQueryImpl` remain deprecated facades for existing fluent calls;
+subclasses that accessed their old protected state must migrate to the accessors.
+Completed conditions now use immutable snapshots instead of an enclosing mutable
+field builder.
+
+DSL tests without a server: `mvn -Dtest=QueryTest test`. With the Docker instance
+from the earlier instructions, include `LiveQueryTest` alongside `LivePipelineTest`
+and pass `-Delasticstore.test.url=http://127.0.0.1:19200`. Live tests verify expected
+document IDs for boolean, range, membership, ID and text queries, plus paging and
+projection through JSON and typed cursors.

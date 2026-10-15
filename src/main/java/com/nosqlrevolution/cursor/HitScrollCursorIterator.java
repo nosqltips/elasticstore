@@ -9,7 +9,11 @@ import java.io.UncheckedIOException;
 /** Pages full hits, including document IDs and search metadata. */
 public class HitScrollCursorIterator extends PitIterator<JsonData> {
     protected HitScrollCursorIterator(SearchRequest request, ElasticsearchClient client) {
-        super(JsonData.class, request, client);
+        this(request, client, 0, 0);
+    }
+
+    protected HitScrollCursorIterator(SearchRequest request, ElasticsearchClient client, long skip, long limit) {
+        super(JsonData.class, request, client, skip, limit);
     }
 
     public void clearScrollContext() {

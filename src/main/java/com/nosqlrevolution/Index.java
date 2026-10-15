@@ -142,7 +142,7 @@ public abstract class Index<T> {
      * @param clazz
      * @return 
      */
-    public Cursor findAll(ElasticStoreQuery query, Class clazz) {
+    public <E> Cursor<E> findAll(ElasticStoreQuery query, Class<E> clazz) {
         throw new UnsupportedOperationException();
     }
 

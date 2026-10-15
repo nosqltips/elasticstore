@@ -82,8 +82,8 @@ public class QueryUtil {
         
     public static Query getGtRangeQuery(String field, String value) {
         return RangeQuery.of(b -> b
-                .field(value)
-                .gte(JsonData.of(value, mapper))
+                .field(field)
+                .gt(JsonData.of(value, mapper))
             )._toQuery();
     }
 
@@ -221,7 +221,7 @@ public class QueryUtil {
         if (from == null) {
             return RangeQuery.of(b -> b
                 .field(field)
-                .gte(JsonData.of(to, mapper))
+                .lt(JsonData.of(to, mapper))
               )._toQuery();
         }
         

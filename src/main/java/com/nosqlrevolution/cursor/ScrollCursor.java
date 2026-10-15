@@ -15,9 +15,12 @@ public class ScrollCursor<E> extends Cursor<E> {
     private final ScrollCursorIterator<E> iterator;
     
     public ScrollCursor(Class<E> e, SearchRequest pitRequest, ElasticsearchClient client) throws Exception {
-        // TODO: may need to check for null here.
+        this(e, pitRequest, client, 0, 0);
+    }
+
+    public ScrollCursor(Class<E> e, SearchRequest pitRequest, ElasticsearchClient client, long skip, long limit) throws Exception {
         this.e = e;
-        this.iterator = new ScrollCursorIterator<>(e, pitRequest, client);
+        this.iterator = new ScrollCursorIterator<>(e, pitRequest, client, skip, limit);
     }
 
     @Override
