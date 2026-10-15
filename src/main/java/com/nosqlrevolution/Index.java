@@ -309,6 +309,11 @@ public abstract class Index<T> {
      * 
      * @param mapping
      */
+    public void applyMapping(Class<?> model) {
+        try { applyMapping(com.nosqlrevolution.service.SchemaService.generateSchema(model)); }
+        catch (java.io.IOException ex) { throw new java.io.UncheckedIOException("Cannot generate mapping", ex); }
+    }
+
     public void applyMapping(String mapping) {
         store.applyMapping(mapping, index);
     }

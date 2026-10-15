@@ -5,6 +5,7 @@ package com.nosqlrevolution.enums;
  * @author cbrown
  */
 public class Schema {
+    public enum STRING_TYPE { TEXT, KEYWORD }
     /**
      * Default is NO
      */

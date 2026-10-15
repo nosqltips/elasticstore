@@ -24,6 +24,7 @@ public @interface DateType {
     /**
      * The name of the field that will be stored in the index. Defaults to the <B>property/field name</B>.
      */
+    @Deprecated
     String index_name() default "";
     
     /**
@@ -45,11 +46,13 @@ public @interface DateType {
     /**
      * The precision step (number of terms generated for each number value). Defaults to 4.
      */
+    @Deprecated
     int precision_step() default 4;
     
     /**
      * The boost value. Defaults to <B>1.0</B>.
      */
+    @Deprecated
     float boost() default 1.0f;
     
     /**
@@ -60,5 +63,6 @@ public @interface DateType {
     /**
      * Should the field be included in the <B>_all</B> field (if enabled). Defaults to <B>true</B> or to the parent object type setting.
      */
+    @Deprecated
     INCLUDE_IN_ALL include_in_all() default INCLUDE_IN_ALL.DEFAULT;
 }

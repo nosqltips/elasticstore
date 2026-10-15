@@ -275,20 +275,79 @@ before retrying. JSON identity is taken only from a top-level ID field; child ID
 never supply the parent document's identity. Null/missing IDs allow server-generated
 IDs, while invalid or blank IDs are rejected.
 
-`applyMapping(...)` now throws an explicit unsupported-operation error rather than
-silently doing nothing. Use `store.getClient().indices()` for index configuration
-until the schema plan is complete. The annotation-only `getIndex(Document.class)`
-overload still requires legacy `@Index` and `@IndexType`; the explicit name overload
-avoids that requirement.
+`createIndex(Document.class, name)` creates an index with a generated mapping.
+`applyMapping(String)` and `applyMapping(Class<?>)` update an existing index.
+The annotation-only `getIndex(Document.class)` overload requires `@Index`;
+`@IndexType` is deprecated and no longer required.
 
-Schema generation and migration of the old embedded-cluster tests remain planned work. The default
+Migration of the old embedded-cluster tests remains planned work. The default
 legacy test suite is not yet a supported green build. To run the current focused
 regression and live suites together:
 
 ```sh
-mvn test -Dtest=ModelImportTest,DocumentOptionsTest,OperationStatusTest,ConnectionTest,QueryTest,PipelineTest,PagingFailureTest,CursorPayloadTest,MappingUtilTest,JsonUtilTest,DocumentIdTest,LiveCrudTest,LiveQueryTest,LivePipelineTest,LiveMetadataTransferTest,LiveApiContractTest \
+mvn test -Dtest=SchemaServiceTest,LiveSchemaTest,ModelImportTest,DocumentOptionsTest,OperationStatusTest,ConnectionTest,QueryTest,PipelineTest,PagingFailureTest,CursorPayloadTest,MappingUtilTest,JsonUtilTest,DocumentIdTest,LiveCrudTest,LiveQueryTest,LivePipelineTest,LiveMetadataTransferTest,LiveApiContractTest \
   -Delasticstore.test.url=http://127.0.0.1:19200
 ```
+
+## Typeless mappings
+
+`SchemaService.generateSchema(Document.class)` returns a mapping body beginning
+with `properties`, without a mapping-type wrapper. The deprecated two-argument
+overload ignores its old type-name argument and returns the same typeless body.
+Generation uses Jackson's serializable properties, including inherited fields,
+public getters, `@JsonProperty` names and `@JsonIgnore` exclusions. Schema annotations
+belong on the underlying fields.
+
+```java
+@com.nosqlrevolution.annotation.index.Index("articles")
+public static class Article {
+    @DocumentId public String id;
+    @StringType @MultiFieldType public String title;
+    @StringType(type = STRING_TYPE.KEYWORD) public String category;
+}
+
+Index<Article> articles = store.createIndex(Article.class, "articles");
+articles.applyMapping("{\"properties\":{\"summary\":{\"type\":\"text\"}}}");
+```
+
+Schema annotations are in `com.nosqlrevolution.annotation.schema`; `STRING_TYPE`
+is in `com.nosqlrevolution.enums.Schema`. Index creation is explicit and fails if
+the index already exists. Mapping updates require an existing index, accept additive
+changes, and report server rejections such as incompatible field-type changes.
+Raw mapping bodies must be typeless; omit both type-name and `mappings` wrappers.
+Unknown options unsupported by the pinned ES8 client fail instead of being dropped.
+For settings, aliases, custom analyzers or advanced configuration, use
+`store.getClient().indices()` directly.
+
+| Java type or annotation | Generated mapping |
+| --- | --- |
+| String/char, `@StringType` | `text`; `@DocumentId` strings default to `keyword` |
+| `@StringType(type=KEYWORD)` or legacy `index=NOT_ANALYZED` | `keyword` |
+| `@MultiFieldType` on text | Adds `fields.keyword` (configurable name and `ignore_above`) |
+| Primitive/wrapper numbers, boolean | Corresponding ES numeric or boolean type |
+| Enum, UUID | `keyword` |
+| Date/Calendar or `@DateType` | `date`; legacy `dateOptionalTime` becomes `strict_date_optional_time\|\|epoch_millis` |
+| Object bean, array, typed collection | Object properties, or the collection's element mapping |
+| `@NestedType` | `nested` with object-element properties |
+| Map or `@ObjectType` | `object`; `dynamic` and `enabled` settings supported |
+| `byte[]`/`@BinaryType`, `@IPType`, `@GeoPointType` | `binary`, `ip`, `geo_point` |
+| `@IgnoreType` | Retains source while disabling indexing; objects use `enabled:false` |
+
+Unannotated serializable properties are inferred by default. Class-level
+`@IgnoreType` disables indexing of unannotated properties; field `@DefaultType` or an
+explicit type annotation opts a property back in. `@RootObject` controls root
+`dynamic`/`enabled`. Raw collections and recursive object graphs fail clearly;
+use typed collections or disable parsing of recursive properties explicitly.
+BigDecimal/BigInteger need an explicit numeric annotation, with application-chosen
+range/precision. Java-time serialization is not configured automatically.
+
+Legacy settings with useful equivalents are translated: `store`/`index` become
+booleans, `omit_norms` becomes `norms`, and `index_analyzer` aliases `analyzer`.
+Non-default removed settings (`index_name`, mapping-time `boost`, `precision_step`,
+`include_in_all`, object `path`, and old geo hash/lat-lon options) fail with migration
+messages. Attachment mappings require an ingest attachment pipeline. Existing
+`com.nosqlrevolution.schema.*TypeUtil` fragment helpers are deprecated pre-ES8 APIs;
+use `SchemaService` for modern mappings.
 
 ## Fluent queries
 

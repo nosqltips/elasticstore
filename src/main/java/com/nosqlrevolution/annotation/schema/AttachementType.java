@@ -15,5 +15,6 @@ import java.lang.annotation.*;
 @Target({ElementType.FIELD})
 @Inherited
 // TODO: Add more docs, posible object examples with all properties.
+@Deprecated
 public @interface AttachementType {    
 }

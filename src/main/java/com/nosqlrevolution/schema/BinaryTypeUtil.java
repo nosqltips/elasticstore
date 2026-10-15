@@ -11,6 +11,8 @@ import java.util.Map;
  * 
  * @author cbrown
  */
+/** @deprecated Legacy pre-ES8 field fragments; use SchemaService.generateSchema(Class). */
+@Deprecated
 public class BinaryTypeUtil {
     public static Map<String, Object> generateSchema(BinaryType anno) {
         // Make sure annotation is valid

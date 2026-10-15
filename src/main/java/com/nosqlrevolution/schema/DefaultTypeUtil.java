@@ -13,6 +13,8 @@ import java.util.logging.Logger;
  * 
  * @author cbrown
  */
+/** @deprecated Legacy pre-ES8 field fragments; use SchemaService.generateSchema(Class). */
+@Deprecated
 public class DefaultTypeUtil {
     public static Map<String, Object> generateSchema(Field f) {
         // Make sure field is valid

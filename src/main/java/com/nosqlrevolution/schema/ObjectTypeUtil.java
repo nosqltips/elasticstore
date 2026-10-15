@@ -14,6 +14,8 @@ import java.util.Map;
  * 
  * @author cbrown
  */
+/** @deprecated Legacy pre-ES8 field fragments; use SchemaService.generateSchema(Class). */
+@Deprecated
 public class ObjectTypeUtil {
     public static Map<String, Object> generateSchema(ObjectType anno) {
         // Make sure annotation is valid

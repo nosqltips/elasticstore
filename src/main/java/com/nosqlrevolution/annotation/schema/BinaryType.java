@@ -14,5 +14,6 @@ public @interface BinaryType {
     /**
      * The name of the field that will be stored in the index. Defaults to the <B>property/field name</B>.
      */
+    @Deprecated
     String index_name() default "";
 }

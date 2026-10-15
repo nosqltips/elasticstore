@@ -224,15 +224,33 @@ public class ElasticStore implements AutoCloseable {
         ownsClient = false;
     }
 
-    /**
-     * Create strongly typed access to an index and type.
-     * 
-     * @param clazz
-     * @param index
-     * @return
-     * @throws Exception 
-     */
-    // TODO: Need to type the exception more strongly
+    private static final co.elastic.clients.json.JsonpMapper MAPPING_MAPPER = new JacksonJsonpMapper() {
+        @Override public boolean ignoreUnknownFields() { return false; }
+    };
+
+    /** Creates a new index with the model's generated typeless mapping. */
+    public <T> Index<T> createIndex(Class<T> model, String index) throws Exception {
+        String mapping = com.nosqlrevolution.service.SchemaService.generateSchema(model);
+        createIndex(index, mapping);
+        return getIndex(model, index);
+    }
+
+    public void createIndex(String index, String mapping) {
+        if (client == null) throw new IllegalStateException("ElasticStore is not executed");
+        if (index == null || index.trim().isEmpty()) throw new IllegalArgumentException("Index name is required");
+        String json = com.nosqlrevolution.service.SchemaService.validateMapping(mapping);
+        co.elastic.clients.elasticsearch._types.mapping.TypeMapping definition;
+        try (jakarta.json.stream.JsonParser parser = MAPPING_MAPPER.jsonProvider().createParser(new java.io.StringReader(json))) {
+            definition = new co.elastic.clients.elasticsearch._types.mapping.TypeMapping.Builder().withJson(parser, MAPPING_MAPPER).build();
+        }
+        try {
+            if (!client.indices().create(r -> r.index(index).mappings(definition)).acknowledged()) {
+                throw new IllegalStateException("Index creation was not acknowledged");
+            }
+        } catch (IOException ex) { throw new UncheckedIOException("Elasticsearch index creation failed", ex); }
+    }
+
+    /** Opens an index handle; does not create the index or change its mapping. */
     @SuppressWarnings("unchecked")
     public <T> Index<T> getIndex(Class<T> clazz, String index) throws Exception {
         java.util.Objects.requireNonNull(clazz, "Document type");
@@ -252,7 +270,7 @@ public class ElasticStore implements AutoCloseable {
 
     /**
      * Create strongly typed access to an index and type.
-     * @Index and @IndexType must both be defined on the object to define the index and type.
+     * @Index supplies the index name; legacy @IndexType is no longer required.
      * 
      * @param clazz
      * @return
@@ -265,10 +283,7 @@ public class ElasticStore implements AutoCloseable {
         }
 
         String index = AnnotationHelper.getIndexValue(clazz);
-        String type = AnnotationHelper.getIndexTypeValue(clazz);
-        if (index == null || type == null) {
-            throw new IllegalArgumentException("Both @Index and @IndexType must be defined for object based mapping.");
-        }
+        if (index == null) throw new IllegalArgumentException("@Index must define the index name");
 
         // TODO: need to catch and throw an exception here
         return new TypedIndex<>(clazz, this, index, client);
@@ -322,6 +337,17 @@ public class ElasticStore implements AutoCloseable {
      * @param indexes
      */
     protected void applyMapping(String mapping, String... indexes) {
-        throw new UnsupportedOperationException("Mapping application is not implemented yet; use the Elasticsearch client indices API");
+        if (client == null) throw new IllegalStateException("ElasticStore is not executed");
+        if (indexes == null || indexes.length == 0) throw new IllegalArgumentException("At least one index is required");
+        for (String index : indexes) if (index == null || index.trim().isEmpty()) throw new IllegalArgumentException("Index name is required");
+        String json = com.nosqlrevolution.service.SchemaService.validateMapping(mapping);
+        co.elastic.clients.elasticsearch.indices.PutMappingRequest request;
+        try (jakarta.json.stream.JsonParser parser = MAPPING_MAPPER.jsonProvider().createParser(new java.io.StringReader(json))) {
+            request = new co.elastic.clients.elasticsearch.indices.PutMappingRequest.Builder()
+                    .withJson(parser, MAPPING_MAPPER).index(java.util.Arrays.asList(indexes)).build();
+        }
+        try {
+            if (!client.indices().putMapping(request).acknowledged()) throw new IllegalStateException("Mapping update was not acknowledged");
+        } catch (IOException ex) { throw new UncheckedIOException("Elasticsearch mapping update failed", ex); }
     }
 }

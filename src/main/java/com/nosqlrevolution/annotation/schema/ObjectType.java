@@ -30,10 +30,12 @@ public @interface ObjectType {
     /**
      * In the core_types section, a field can have a index_name associated with it in order to control the name of the field that will be stored within the index. When that field exists within an object(s) that are not the root object, the name of the field of the index can either include the full “path” to the field with its index_name, or just the index_name.
      */
+    @Deprecated
     String path() default "";
     
     /**
      * Should the field be included in the <B>_all</B> field (if enabled). Defaults to <B>true</B> or to the parent object type setting.
      */
+    @Deprecated
     INCLUDE_IN_ALL include_in_all() default INCLUDE_IN_ALL.DEFAULT;
 }

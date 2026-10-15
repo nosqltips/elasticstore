@@ -62,15 +62,18 @@ public @interface GeoPointType {
     /**
      * Set to true to also index the .lat and .lon as fields. Defaults to <B>false</B>.
      */
+    @Deprecated
     LATLON lat_lon() default LATLON.DEFAULT;
 
     /**
      * Set to true to also index the .geohash as a field. Defaults to <B>false</B>.
      */
+    @Deprecated
     GEOHASH geohash() default GEOHASH.DEFAULT;
 
     /**
      * Sets the geohash precision, defaults to <B>12</B>.
      */
+    @Deprecated
     int geohash_precision() default 12;
 }

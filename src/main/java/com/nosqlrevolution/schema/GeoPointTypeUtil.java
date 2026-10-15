@@ -13,6 +13,8 @@ import java.util.Map;
  * 
  * @author cbrown
  */
+/** @deprecated Legacy pre-ES8 field fragments; use SchemaService.generateSchema(Class). */
+@Deprecated
 public class GeoPointTypeUtil {
     public static Map<String, Object> generateSchema(GeoPointType anno) {
         // Make sure annotation is valid

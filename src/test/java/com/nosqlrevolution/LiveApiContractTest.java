@@ -33,8 +33,7 @@ public class LiveApiContractTest {
     }
     @Test(timeout=30000) public void typedReadOverloadsAndScrollsSupportProjectionTypes() throws Exception {
         Index<Document> index = store.getIndex(Document.class, name);
-        try { index.applyMapping("{}"); fail("Expected unsupported mapping API"); }
-        catch (UnsupportedOperationException expected) { }
+        index.applyMapping("{}");
         index.write(new Document("a", "first"), new Document("b", "second"), new Document("c", "third"));
         index.refresh();
         assertNotNull(index.find());

@@ -27,10 +27,12 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD})
 @Inherited
-public @interface StringType {   
+public @interface StringType {
+    com.nosqlrevolution.enums.Schema.STRING_TYPE type() default com.nosqlrevolution.enums.Schema.STRING_TYPE.TEXT;
     /**
      * The name of the field that will be stored in the index. Defaults to the <B>property/field name</B>.
      */
+    @Deprecated
     String index_name() default "";
     
     /**
@@ -51,6 +53,7 @@ public @interface StringType {
     /**
      * The boost value. Defaults to <B>1.0</B>.
      */
+    @Deprecated
     float boost() default 1.0f;
     
     /**
@@ -76,6 +79,7 @@ public @interface StringType {
     /**
      * The analyzer used to analyze the text contents when analyzed during indexing.
      */
+    @Deprecated
     String index_analyzer() default "";
     
     /**
@@ -86,5 +90,6 @@ public @interface StringType {
     /**
      * Should the field be included in the <B>_all</B> field (if enabled). Defaults to <B>true</B> or to the parent object type setting.
      */
+    @Deprecated
     INCLUDE_IN_ALL include_in_all() default INCLUDE_IN_ALL.DEFAULT;
 }
