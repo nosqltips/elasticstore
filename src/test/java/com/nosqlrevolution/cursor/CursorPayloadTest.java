@@ -33,8 +33,11 @@ public class CursorPayloadTest {
     private RestClientTransport transport;
     private ElasticsearchClient client;
     private final List<JsonNode> searches = new ArrayList<>();
+    private final List<String> searchParameters = new ArrayList<>();
     private String closedPit;
     private boolean failSearch;
+    private boolean failClose;
+    private boolean missingSource;
     private boolean partialLaterPage;
     private boolean failBulk;
     private final List<JsonNode> bulkSources = new ArrayList<>();
@@ -70,6 +73,7 @@ public class CursorPayloadTest {
                         + String.join(",", results) + "]}";
             } else if (path.endsWith("/_search")) {
                 searches.add(body);
+                searchParameters.add(exchange.getRequestURI().getRawQuery());
                 if (failSearch) {
                     status = 500;
                     response = "{\"error\":{\"type\":\"test_failure\",\"reason\":\"page failed\"},\"status\":500}";
@@ -82,7 +86,7 @@ public class CursorPayloadTest {
                 }
             } else if (exchange.getRequestMethod().equals("DELETE")) {
                 closedPit = body.get("id").asText();
-                response = "{\"succeeded\":true,\"num_freed\":1}";
+                response = "{\"succeeded\":" + !failClose + ",\"num_freed\":1}";
             } else {
                 response = "{\"id\":\"pit-0\",\"_shards\":{\"total\":1,\"successful\":1,\"failed\":0}}";
             }
@@ -100,8 +104,8 @@ public class CursorPayloadTest {
     }
 
     private String hit(int id) {
-        return "{\"_index\":\"test\",\"_id\":\"" + id + "\",\"_source\":{\"name\":\"doc" + id
-                + "\"},\"sort\":[" + id + "]}";
+        return "{\"_index\":\"test\",\"_id\":\"" + id + "\"," + (missingSource ? "" : "\"_source\":{\"name\":\"doc" + id
+                + "\"},") + "\"sort\":[" + id + "]}";
     }
 
     @After
@@ -257,5 +261,44 @@ public class CursorPayloadTest {
             fail("Expected search failure");
         } catch (RuntimeException expected) { }
         assertEquals("pit-0", closedPit);
+    }
+    @Test(timeout = 5000)
+    public void nativeOptionsSurviveEveryPage() throws Exception {
+        SearchRequest nativeRequest = new SearchRequest.Builder().withJson(new java.io.StringReader(
+                "{\"size\":2,\"pit\":{\"id\":\"pit-0\"},\"post_filter\":{\"term\":{\"name\":\"doc1\"}},"
+                + "\"min_score\":0.5,\"runtime_mappings\":{\"derived\":{\"type\":\"keyword\"}},\"track_scores\":true}"))
+                .q("name:doc*").requestCache(false).build();
+        try (Cursor<Document> cursor = new ScrollCursor<>(Document.class, nativeRequest, client)) {
+            int count = 0;
+            for (Document ignored : cursor) count++;
+            assertEquals(3, count);
+        }
+        for (int i = 1; i < searches.size(); i++) {
+            for (String field : new String[] {"post_filter", "min_score", "runtime_mappings", "track_scores"}) {
+                assertEquals(field, searches.get(0).get(field), searches.get(i).get(field));
+            }
+            assertTrue(searchParameters.get(i).contains("q=name%3Adoc*"));
+            assertTrue(searchParameters.get(i).contains("request_cache=false"));
+            assertEquals(1, searches.get(i).get("search_after").size());
+        }
+    }
+    @Test public void rejectedPitCleanupIsReported() throws Exception {
+        Cursor<Document> cursor = new ScrollCursor<>(Document.class, request(), client);
+        failClose = true;
+        try { cursor.close(); fail("Ignored PIT cleanup failure"); }
+        catch (IOException expected) { assertTrue(expected.getMessage().contains("point in time")); }
+    }
+
+    @Test public void missingSourcesCloseThePitAndDoNotPermitContinuation() throws Exception {
+        missingSource = true;
+        try (Cursor<Document> cursor = new ScrollCursor<>(Document.class, request(), client)) {
+            java.util.Iterator<Document> iterator = cursor.iterator();
+            IllegalStateException original;
+            try { iterator.next(); throw new AssertionError("Accepted missing source"); }
+            catch (IllegalStateException expected) { original = expected; }
+            assertEquals("pit-1", closedPit);
+            try { iterator.hasNext(); fail("Continued after invalid document"); }
+            catch (IllegalStateException expected) { assertSame(original, expected); }
+        }
     }
 }

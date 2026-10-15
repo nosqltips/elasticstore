@@ -63,7 +63,7 @@ class PitIterator<T> extends CursorIterator<Hit<T>> implements AutoCloseable {
         }
     }
 
-    private RuntimeException fail(RuntimeException cause) {
+    RuntimeException fail(RuntimeException cause) {
         failure = cause;
         try { close(); }
         catch (Exception cleanup) { if (cleanup != cause) cause.addSuppressed(cleanup); }
@@ -86,16 +86,9 @@ class PitIterator<T> extends CursorIterator<Hit<T>> implements AutoCloseable {
         if (closed) return false;
         if (iter < hits.size()) return true;
         if (exhausted) return false;
-        SearchRequest.Builder next = new SearchRequest.Builder()
-                .allowPartialSearchResults(false)
-                .timeout(initialRequest.timeout())
-                .size(initialRequest.size())
-                .query(initialRequest.query())
-                .source(initialRequest.source())
-                .storedFields(initialRequest.storedFields())
-                .highlight(initialRequest.highlight())
-                .sort(initialRequest.sort())
-                .searchAfter(hits.get(hits.size() - 1).sort());
+        SearchRequest.Builder next;
+        try { next = continuation(); }
+        catch (RuntimeException ex) { throw fail(ex); }
         if (pitId != null) {
             Time keepAlive = initialRequest.pit() == null || initialRequest.pit().keepAlive() == null
                     ? Time.of(t -> t.time("6000s")) : initialRequest.pit().keepAlive();
@@ -103,8 +96,43 @@ class PitIterator<T> extends CursorIterator<Hit<T>> implements AutoCloseable {
         } else {
             next.index(initialRequest.index());
         }
-        fetch(next.build());
+        try {
+            SearchRequest request = next.build();
+            // Refuse unsupported future query parameters rather than silently changing the search.
+            java.util.Map<String, String> original = new java.util.HashMap<>(SearchRequest._ENDPOINT.queryParameters(initialRequest));
+            java.util.Map<String, String> copied = new java.util.HashMap<>(SearchRequest._ENDPOINT.queryParameters(request));
+            original.remove("allow_partial_search_results");
+            copied.remove("allow_partial_search_results");
+            if (!original.equals(copied)) throw new IllegalArgumentException("Cursor cannot preserve all native search query parameters");
+            fetch(request);
+        } catch (RuntimeException ex) { throw fail(ex); }
         return !exhausted;
+    }
+
+    /** Copy the wire body so native options survive API shape changes between clients. */
+    private SearchRequest.Builder continuation() {
+        co.elastic.clients.json.JsonpMapper mapper = client._transport().jsonpMapper();
+        java.io.StringWriter json = new java.io.StringWriter();
+        try (jakarta.json.stream.JsonGenerator generator = mapper.jsonProvider().createGenerator(json)) {
+            initialRequest.serialize(generator, mapper);
+        }
+        com.fasterxml.jackson.databind.node.ObjectNode body = com.nosqlrevolution.util.JsonUtil.parseObject(json.toString());
+        body.remove(java.util.Arrays.asList("pit", "search_after", "from"));
+        SearchRequest.Builder next = new SearchRequest.Builder();
+        try (jakarta.json.stream.JsonParser parser = mapper.jsonProvider().createParser(new java.io.StringReader(body.toString()))) {
+            next.withJson(parser, mapper);
+        }
+        next.allowPartialSearchResults(false)
+                .allowNoIndices(initialRequest.allowNoIndices()).analyzeWildcard(initialRequest.analyzeWildcard())
+                .analyzer(initialRequest.analyzer()).batchedReduceSize(initialRequest.batchedReduceSize())
+                .ccsMinimizeRoundtrips(initialRequest.ccsMinimizeRoundtrips()).defaultOperator(initialRequest.defaultOperator())
+                .df(initialRequest.df()).expandWildcards(initialRequest.expandWildcards())
+                .ignoreThrottled(initialRequest.ignoreThrottled()).ignoreUnavailable(initialRequest.ignoreUnavailable())
+                .lenient(initialRequest.lenient()).maxConcurrentShardRequests(initialRequest.maxConcurrentShardRequests())
+                .minCompatibleShardNode(initialRequest.minCompatibleShardNode()).preFilterShardSize(initialRequest.preFilterShardSize())
+                .preference(initialRequest.preference()).q(initialRequest.q()).requestCache(initialRequest.requestCache())
+                .routing(initialRequest.routing()).scroll(initialRequest.scroll()).searchType(initialRequest.searchType());
+        return next.searchAfter(hits.get(hits.size() - 1).sort());
     }
 
     @Override
@@ -121,7 +149,9 @@ class PitIterator<T> extends CursorIterator<Hit<T>> implements AutoCloseable {
     public void close() throws IOException {
         if (!closed) {
             closed = true;
-            if (pitId != null) client.closePointInTime(r -> r.id(pitId));
+            if (pitId != null && !client.closePointInTime(r -> r.id(pitId)).succeeded()) {
+                throw new IOException("Elasticsearch did not close the point in time");
+            }
         }
     }
 }

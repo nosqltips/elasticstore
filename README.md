@@ -155,7 +155,10 @@ zero replicas, a 512 MiB heap and a 2 GiB container limit. Production baseline:
 
 The isolated preparation benchmark calls the real importer and bulk builder, but
 replaces HTTP/server work with a sink that serializes each document source and
-returns an empty successful bulk response. It excludes NDJSON action serialization,
+returned an empty successful bulk response for these historical measurements.
+The current harness returns a cached result for every requested document to satisfy
+response-integrity checks; the historical figures below have not been remeasured
+with that change. The benchmark excludes NDJSON action serialization,
 network and Elasticsearch work. With three warmups and five measured samples of
 100,000 documents, median throughput rose from **263,061 to 710,312 docs/sec
 (2.70×)**. Current-thread allocation fell from **13,946 to 5,780 bytes/document
@@ -581,3 +584,23 @@ from the earlier instructions, include `LiveQueryTest` alongside `LivePipelineTe
 and pass `-Delasticstore.test.url=http://127.0.0.1:19200`. Live tests verify expected
 document IDs for boolean, range, membership, ID and text queries, plus paging and
 projection through JSON and typed cursors.
+
+### Failure reporting
+
+Bulk writes require one response item per requested document and check both item
+errors and the response error flag. Multi-get also checks response count and ID
+order, preserving `null` only for genuine missing documents. Single and bulk
+writes, deletes and refresh reject reported shard failures. A failed write may
+already have completed on the primary shard: inspect `OperationException` item
+results before deciding which operations to retry. Buffered documents remain in
+memory when flushing fails; a retry resends the retained batch.
+
+File imports require valid UTF-8, including compressed inputs. Malformed coordinate
+strings now fail rather than leaving a default or previous location unchanged.
+Legacy wildcard queries retain embedded and escaped wildcard patterns instead of
+incorrectly reducing them to prefix searches.
+
+Native cursor requests retain their search body and query parameters across pages,
+including post-filters and runtime fields. Unsupported query parameters fail
+explicitly rather than changing the search. Cursor source-conversion failures
+close the PIT, and unsuccessful PIT cleanup is reported to the caller.

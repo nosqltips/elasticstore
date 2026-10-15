@@ -1,6 +1,6 @@
 package com.nosqlrevolution;
 
-/** A completed bulk request with failed items; successful items may already be stored. */
+/** A write or bulk request with failed results; primary writes may already be stored. */
 public class OperationException extends IllegalStateException {
     private final OperationStatus status;
     public OperationException(String message, OperationStatus status) {

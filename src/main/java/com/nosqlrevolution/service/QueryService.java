@@ -167,7 +167,11 @@ public class QueryService {
                     co.elastic.clients.elasticsearch._types.ShardStatistics shards = ClientCompatibility.pitShards(response);
                     if (shards != null) ReadIntegrity.shards(shards, "point in time");
                 } catch (RuntimeException failure) {
-                    try { client.closePointInTime(r -> r.id(response.id())); }
+                    try {
+                        if (!client.closePointInTime(r -> r.id(response.id())).succeeded()) {
+                            throw new IOException("Elasticsearch did not close the point in time");
+                        }
+                    }
                     catch (Exception cleanup) { failure.addSuppressed(cleanup); }
                     throw failure;
                 }
@@ -221,10 +225,12 @@ public class QueryService {
         try {
             co.elastic.clients.elasticsearch.core.MgetResponse<JsonData> response = client.mget(
                     r -> r.index(index).routing(routing).ids(Arrays.asList(ids)), JsonData.class);
-            String[] result = new String[response.docs().size()];
+            if (response.docs().size() != ids.length) throw new IllegalStateException("Elasticsearch multi-get response count does not match the request");
+            String[] result = new String[ids.length];
             for (int i = 0; i < result.length; i++) {
                 co.elastic.clients.elasticsearch.core.mget.MultiGetResponseItem<JsonData> item = response.docs().get(i);
                 if (item.isFailure()) throw new IllegalStateException("Elasticsearch multi-get item failed: " + item.failure().error());
+                if (!ids[i].equals(item.result().id())) throw new IllegalStateException("Elasticsearch multi-get response order does not match the request");
                 if (item.result().found()) {
                     if (item.result().source() == null) throw new IllegalStateException("Document source is unavailable");
                     result[i] = item.result().source().toJson().toString();
@@ -329,11 +335,15 @@ public class QueryService {
                     .routing(options.getRouting()).ifSeqNo(options.getSequenceNumber()).ifPrimaryTerm(options.getPrimaryTerm())
                     .version(options.getExternalVersion()).versionType(options.getExternalVersion() == null ? null
                             : co.elastic.clients.elasticsearch._types.VersionType.External));
-            return new OperationStatus(java.util.Collections.singletonList(new OperationStatus.Item(
+            String shardFailure = shardFailure(response.shards());
+            OperationStatus status = new OperationStatus(java.util.Collections.singletonList(new OperationStatus.Item(
                     response.index(), response.id(), response.result().jsonValue(),
                     response.result() == Result.Created ? 201 : 200, response.version(),
                     com.nosqlrevolution.util.ClientCompatibility.sequenceNumber(response),
-                    com.nosqlrevolution.util.ClientCompatibility.primaryTerm(response), null, null)));
+                    com.nosqlrevolution.util.ClientCompatibility.primaryTerm(response),
+                    shardFailure == null ? null : "shard_failure", shardFailure)));
+            if (!status.succeeded()) throw new OperationException("Elasticsearch write had shard failures; the primary write may have completed", status);
+            return status;
         }
         catch (ElasticsearchException ex) {
             if (ex.status() == 409) throw conflict(index, id, ex);
@@ -412,22 +422,38 @@ public class QueryService {
         }
         try {
             BulkResponse response = client.bulk(request.build());
-            return bulkStatus(response, false);
+            return bulkStatus(response, false, source.length);
         } catch (IOException ex) { throw new java.io.UncheckedIOException("Elasticsearch bulk write failed", ex); }
     }
 
-    private OperationStatus bulkStatus(BulkResponse response, boolean deleting) {
+    private static String shardFailure(co.elastic.clients.elasticsearch._types.ShardStatistics shards) {
+        if (shards != null && (shards.failed().longValue() > 0 || !shards.failures().isEmpty())) {
+            return "Elasticsearch reported shard failures; the primary operation may have completed";
+        }
+        return null;
+    }
+
+    private OperationStatus bulkStatus(BulkResponse response, boolean deleting, int expectedItems) {
+        if (response.items().size() != expectedItems) {
+            throw new IllegalStateException("Elasticsearch bulk response count does not match the request; write outcomes are uncertain");
+        }
         java.util.List<OperationStatus.Item> items = new java.util.ArrayList<>();
         for (co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem item : response.items()) {
-            boolean missing = deleting && item.status() == 404 && "not_found".equals(item.result());
+            String shardFailure = shardFailure(item.shards());
+            String errorType = item.error() == null ? null : item.error().type();
+            String errorReason = item.error() == null ? null : item.error().reason();
+            if (item.error() != null && errorType == null) errorType = "unknown_elasticsearch_error";
+            if (errorType == null && shardFailure != null) { errorType = "shard_failure"; errorReason = shardFailure; }
+            if (!deleting && item.status() == 404 && "not_found".equals(item.result()) && errorType == null) {
+                errorType = "unexpected_write_result";
+            }
             items.add(new OperationStatus.Item(item.index(), item.id(), item.result(), item.status(),
-                    item.version(), item.seqNo(), item.primaryTerm(),
-                    missing || item.error() == null ? null : item.error().type(),
-                    missing || item.error() == null ? null : item.error().reason()));
+                    item.version(), item.seqNo(), item.primaryTerm(), errorType, errorReason));
         }
         OperationStatus status = new OperationStatus(items);
         if (!status.succeeded()) throw new OperationException(
                 "Elasticsearch bulk " + (deleting ? "delete" : "write") + " failed", status);
+        if (response.errors()) throw new IllegalStateException("Elasticsearch bulk response reports errors without failed items; write outcomes are uncertain");
         return status;
     }
 
@@ -437,7 +463,7 @@ public class QueryService {
     }
 
     public void refresh(String index) {
-        try { client.indices().refresh(r -> r.index(index)); }
+        try { ReadIntegrity.shards(client.indices().refresh(r -> r.index(index)).shards(), "refresh"); }
         catch (IOException ex) { throw new java.io.UncheckedIOException("Elasticsearch refresh failed", ex); }
     }
 
@@ -464,7 +490,7 @@ public class QueryService {
         }
         try {
             BulkResponse response = client.bulk(request.build());
-            return bulkStatus(response, true);
+            return bulkStatus(response, true, ids.length);
         } catch (IOException ex) { throw new java.io.UncheckedIOException("Elasticsearch bulk delete failed", ex); }
     }
 
@@ -504,6 +530,8 @@ public class QueryService {
                 .id(id);
         try {
             DeleteResponse response = client.delete(request.build());
+            String failure = shardFailure(response.shards());
+            if (failure != null) throw new IllegalStateException(failure);
             return response.result().equals(Result.Deleted);
         } catch (IOException ie) {
             throw new java.io.UncheckedIOException("Elasticsearch delete failed", ie);

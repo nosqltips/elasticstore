@@ -217,4 +217,35 @@ public class PipelineTest {
             for (String line : lines) assertEquals(record, line);
         } finally { executor.shutdownNow(); stream.close(); }
     }
+    @Test public void invalidWorkerCountsStillCloseTheReader() throws Exception {
+        Runner runner = new Runner() {
+            protected Callable<CountsAndBytes> getNextCallable(List<String> block) {
+                throw new AssertionError("Invalid runner started work");
+            }
+        };
+        for (int threads : new int[] {0, -1}) {
+            Reader reader = new Reader(0);
+            try { runner.execute(reader, threads); fail("Accepted invalid worker count"); }
+            catch (IllegalArgumentException expected) { }
+            assertTrue(reader.closed);
+        }
+    }
+
+    @Test public void malformedUtf8FailsInBothCountingAndReadingPlainOrGzipFiles() throws Exception {
+        byte[] invalid = new byte[] {'{', '"', 'x', '"', ':', '"', (byte) 0xc3, '"', '}', '\n'};
+        for (String extension : new String[] {".json", ".gz"}) {
+            java.nio.file.Path file = java.nio.file.Files.createTempFile("invalid-utf8", extension);
+            try {
+                if (extension.equals(".gz")) {
+                    try (java.util.zip.GZIPOutputStream out = new java.util.zip.GZIPOutputStream(java.nio.file.Files.newOutputStream(file))) { out.write(invalid); }
+                } else java.nio.file.Files.write(file, invalid);
+                try { new FileBlocker(file.toString(), 2, 0, 0); fail("Count accepted invalid UTF-8"); }
+                catch (java.nio.charset.CharacterCodingException expected) { }
+                try (FileBlocker reader = new FileBlocker(file.toString(), 2, 1, 0)) {
+                    try { reader.call(); fail("Read accepted invalid UTF-8"); }
+                    catch (java.nio.charset.CharacterCodingException expected) { }
+                }
+            } finally { java.nio.file.Files.delete(file); }
+        }
+    }
 }

@@ -21,6 +21,7 @@ public class PagingFailureTest {
         ElasticsearchTransport transport = (ElasticsearchTransport) Proxy.newProxyInstance(
                 ElasticsearchTransport.class.getClassLoader(),
                 new Class<?>[] { ElasticsearchTransport.class }, (proxy, method, args) -> {
+                    if (method.getName().equals("jsonpMapper")) return new co.elastic.clients.json.jackson.JacksonJsonpMapper();
                     if (method.getName().equals("performRequest")) {
                         if (initialFailure || requests.getAndIncrement() > 0) {
                             throw new IOException("page unavailable");

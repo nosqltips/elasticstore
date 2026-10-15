@@ -49,6 +49,6 @@ public class OperationStatus {
         public Long getPrimaryTerm() { return primaryTerm; }
         public String getErrorType() { return errorType; }
         public String getErrorReason() { return errorReason; }
-        public boolean succeeded() { return errorType == null && ((status >= 200 && status < 300) || (status == 404 && "not_found".equals(result))); }
+        public boolean succeeded() { return errorType == null && errorReason == null && ((status >= 200 && status < 300) || (status == 404 && "not_found".equals(result))); }
     }
 }

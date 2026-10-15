@@ -27,7 +27,9 @@ public class FileBlocker extends AbstractBlocker {
             if (file.getName().endsWith(".gz") || file.getName().endsWith("gzip")) {
                 input = new GZIPInputStream(input);
             }
-            return new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8));
+            return new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8.newDecoder()
+                    .onMalformedInput(java.nio.charset.CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(java.nio.charset.CodingErrorAction.REPORT)));
         } catch (IOException ex) {
             try { input.close(); } catch (IOException cleanup) { ex.addSuppressed(cleanup); }
             throw ex;

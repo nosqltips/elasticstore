@@ -27,9 +27,11 @@ public class ScrollCursorIterator<E> extends CursorIterator<E> implements AutoCl
     @Override
     public E next() {
         Object source = hitsIterator.next().source();
-        if (source == null) throw new IllegalStateException("Search hit has no document source");
-        return documentType.cast(documentType == String.class
-                ? ((co.elastic.clients.json.JsonData) source).toJson().toString() : source);
+        try {
+            if (source == null) throw new IllegalStateException("Search hit has no document source");
+            return documentType.cast(documentType == String.class
+                    ? ((co.elastic.clients.json.JsonData) source).toJson().toString() : source);
+        } catch (RuntimeException failure) { throw hitsIterator.fail(failure); }
     }
 
     public String getPitId() { return hitsIterator.getPitId(); }

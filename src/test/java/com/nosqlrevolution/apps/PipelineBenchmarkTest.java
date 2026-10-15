@@ -111,13 +111,23 @@ public class PipelineBenchmarkTest {
         org.elasticsearch.client.RestClient http = org.elasticsearch.client.RestClient.builder(new org.apache.http.HttpHost("127.0.0.1", 1)).build();
         co.elastic.clients.elasticsearch.ElasticsearchClient sink = new co.elastic.clients.elasticsearch.ElasticsearchClient(
                 new co.elastic.clients.transport.rest_client.RestClientTransport(http, mapper)) {
+            private final java.util.Map<Integer, co.elastic.clients.elasticsearch.core.BulkResponse> responses = new java.util.HashMap<>();
             @Override public co.elastic.clients.elasticsearch.core.BulkResponse bulk(co.elastic.clients.elasticsearch.core.BulkRequest request) {
                 for (co.elastic.clients.elasticsearch.core.bulk.BulkOperation operation : request.operations()) {
                     try (jakarta.json.stream.JsonGenerator generator = mapper.jsonProvider().createGenerator(Writer.nullWriter())) {
                         ((co.elastic.clients.json.JsonData) operation.index().document()).serialize(generator, mapper);
                     }
                 }
-                return co.elastic.clients.elasticsearch.core.BulkResponse.of(r -> r.took(0).errors(false).items(Collections.emptyList()));
+                return responses.computeIfAbsent(request.operations().size(), size -> {
+                    java.util.List<co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem> items = new ArrayList<>();
+                    for (int i = 0; i < size; i++) {
+                        final String id = "doc-" + i;
+                        items.add(co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem.of(b -> b
+                                .operationType(co.elastic.clients.elasticsearch.core.bulk.OperationType.Index)
+                                .index("unused").id(id).status(201).result("created")));
+                    }
+                    return co.elastic.clients.elasticsearch.core.BulkResponse.of(r -> r.took(0).errors(false).items(items));
+                });
             }
         };
         Path output = Paths.get(System.getProperty("elasticstore.benchmark.cpu.output", "target/benchmarks/preparation.csv"));

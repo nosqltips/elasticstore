@@ -17,50 +17,52 @@ public abstract class AbstractPoolRunner {
     protected abstract Callable<CountsAndBytes> getNextCallable(List<String> nextBlock) throws Exception;
     
     protected void run(AbstractBlocker blocker, int threads) throws IOException, Exception {
-        if (threads <= 0) throw new IllegalArgumentException("Threads must be positive");
-        blocker.setPrefetch(threads);
-        try (BufferedBlocker<String> source = blocker; ThreadPools executors = new ThreadPools(source, threads)) {
-            java.util.concurrent.CompletionService<CountsAndBytes> completed =
-                    threads == 1 ? null : new java.util.concurrent.ExecutorCompletionService<>(executors.workers);
-            Future<Integer> reader = executors.startReader();
-            long totalDocs = blocker.getTotalDocs();
-            int active = 0;
-            boolean last = false;
-            int totalCount = 0;
-            long totalBytes = 0;
-            long startTime = System.currentTimeMillis();
-            long elapsedTimeStart = startTime;
-            while (!last || active > 0) {
-                CountsAndBytes counts;
-                if (threads == 1) {
-                    List<String> block = blocker.getNext();
-                    if (block == null) break;
-                    counts = getNextCallable(block).call();
-                } else {
-                    while (!last && active < threads) {
+        try (BufferedBlocker<String> source = blocker) {
+            if (threads <= 0) throw new IllegalArgumentException("Threads must be positive");
+            blocker.setPrefetch(threads);
+            try (ThreadPools executors = new ThreadPools(source, threads)) {
+                java.util.concurrent.CompletionService<CountsAndBytes> completed =
+                        threads == 1 ? null : new java.util.concurrent.ExecutorCompletionService<>(executors.workers);
+                Future<Integer> reader = executors.startReader();
+                long totalDocs = blocker.getTotalDocs();
+                int active = 0;
+                boolean last = false;
+                int totalCount = 0;
+                long totalBytes = 0;
+                long startTime = System.currentTimeMillis();
+                long elapsedTimeStart = startTime;
+                while (!last || active > 0) {
+                    CountsAndBytes counts;
+                    if (threads == 1) {
                         List<String> block = blocker.getNext();
-                        if (block == null) {
-                            last = true;
-                        } else {
-                            Callable<CountsAndBytes> worker = getNextCallable(block);
-                            completed.submit(() -> {
-                                try { return worker.call(); }
-                                catch (Exception | Error ex) { blocker.fail(ex); throw ex; }
-                            });
-                            active++;
+                        if (block == null) break;
+                        counts = getNextCallable(block).call();
+                    } else {
+                        while (!last && active < threads) {
+                            List<String> block = blocker.getNext();
+                            if (block == null) {
+                                last = true;
+                            } else {
+                                Callable<CountsAndBytes> worker = getNextCallable(block);
+                                completed.submit(() -> {
+                                    try { return worker.call(); }
+                                    catch (Exception | Error ex) { blocker.fail(ex); throw ex; }
+                                });
+                                active++;
+                            }
                         }
+                        if (active == 0) break;
+                        counts = completed.take().get();
+                        active--;
                     }
-                    if (active == 0) break;
-                    counts = completed.take().get();
-                    active--;
+                    totalCount += counts.getCounts();
+                    totalBytes += counts.getBytes();
+                    elapsedTimeStart = printStatus(totalCount, counts.getCounts(),
+                            elapsedTimeStart, startTime, counts.getBytes(), totalDocs);
                 }
-                totalCount += counts.getCounts();
-                totalBytes += counts.getBytes();
-                elapsedTimeStart = printStatus(totalCount, counts.getCounts(),
-                        elapsedTimeStart, startTime, counts.getBytes(), totalDocs);
+                reader.get();
+                printTotals(totalCount, startTime, totalBytes);
             }
-            reader.get();
-            printTotals(totalCount, startTime, totalBytes);
         }
         System.out.println("Done");
     }

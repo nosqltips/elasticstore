@@ -5,8 +5,6 @@ import com.nosqlrevolution.enums.Schema;
 import java.lang.reflect.Field;
 import java.util.Date;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * This is a meta util that will determine the field type, then call the actual type util for generation.
@@ -74,12 +72,9 @@ public class DefaultTypeUtil {
                 ObjectType anno = field.getAnnotation(ObjectType.class);
                 return ObjectTypeUtil.generateSchema(anno);
             }
-        } catch (NoSuchFieldException ex) {
-            Logger.getLogger(DefaultTypeUtil.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (SecurityException ex) {
-            Logger.getLogger(DefaultTypeUtil.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (NoSuchFieldException | SecurityException ex) {
+            throw new IllegalStateException("Cannot generate legacy schema for " + f.getDeclaringClass().getName() + "#" + f.getName(), ex);
         }
-        return null;
     }
 
     private final class DefaultStringType {

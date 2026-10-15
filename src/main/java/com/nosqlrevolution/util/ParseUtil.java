@@ -22,7 +22,7 @@ public class ParseUtil {
         
         return term
                 .trim()
-                .toLowerCase()
+                .toLowerCase(java.util.Locale.ROOT)
                 .replace(",", "")
                 .replace("\\\"", "")
                 .replace("'", "")
@@ -36,17 +36,14 @@ public class ParseUtil {
      * @return 
      */
     public static Wildcard isWildcard(String term) {
-        if (term.contains("?") || term.contains("*")) {
-            if (term.endsWith("*")) {
-                return Wildcard.PREFIX;
-            } else {
-                return Wildcard.FULL;
-            }
-        } else {
-            return Wildcard.NONE;
-        }       
+        java.util.Objects.requireNonNull(term, "Search term");
+        int star = term.indexOf('*');
+        if (star < 0 && term.indexOf('?') < 0) return Wildcard.NONE;
+        if (term.indexOf('\\') < 0 && term.indexOf('?') < 0 && star == term.length() - 1) return Wildcard.PREFIX;
+        return Wildcard.FULL;
     }
-    
+
+
     public static String combineArrayValues(List values, String combinator) {
         if (values == null) {
             return null;

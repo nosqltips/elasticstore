@@ -41,11 +41,15 @@ public class GeoLocationString {
     
     @JsonProperty("location")
     public void fromString(String latlon) {
-        // TODO: possibly thro exception here
-        String[] values = latlon.split(",");
-        if (values.length == 2) {
-            lat = Double.parseDouble(values[0]);
-            lon = Double.parseDouble(values[1]);
-        }        
+        if (latlon == null) throw new IllegalArgumentException("Location must contain latitude,longitude");
+        String[] values = latlon.split(",", -1);
+        if (values.length != 2) throw new IllegalArgumentException("Location must contain latitude,longitude");
+        double parsedLat = Double.parseDouble(values[0].trim());
+        double parsedLon = Double.parseDouble(values[1].trim());
+        if (!Double.isFinite(parsedLat) || !Double.isFinite(parsedLon)) {
+            throw new IllegalArgumentException("Location coordinates must be finite");
+        }
+        lat = parsedLat;
+        lon = parsedLon;
     }
 }
