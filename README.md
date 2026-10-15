@@ -158,11 +158,15 @@ For repeatable live validation, run:
 ./scripts/verify-docker.sh
 ```
 
-This requires Docker, curl, and Maven on `PATH`. It starts Elasticsearch 8.2.2 on
+This requires Docker, curl, and Maven 3.6.3+ on `PATH`. It starts Elasticsearch 8.2.2 on
 an automatically allocated loopback port, waits for cluster readiness, runs the
 entire Maven test suite, and removes its container on success or failure. The
 Elasticsearch log is retained at `target/elasticsearch-integration.log` and Maven
 reports at `target/surefire-reports/`.
+
+The verifier disables JVM container auto-detection inside this old Elasticsearch
+image to avoid its cgroup startup bug on modern hosts. Docker still limits the
+container to 2 GiB and the JVM heap is explicitly set to 512 MiB.
 
 Use `MVN=/path/to/mvn` if Maven is elsewhere. `ES_IMAGE` selects another image and
 `ES_STARTUP_TIMEOUT` changes the 120-second startup deadline. Extra arguments are
