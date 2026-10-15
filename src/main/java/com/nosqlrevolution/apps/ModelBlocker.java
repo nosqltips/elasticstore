@@ -39,6 +39,7 @@ public class ModelBlocker extends AbstractBlocker {
         } else {
             ElasticStoreQuery all = new ElasticStoreQuery();
             all.setQuery(QueryUtil.getMatchAllQuery());
+            all.pageSize(blockSize);
             cursor = esIndex.findAllScrollHit(all);
         }
         totalDocs = limit <= 0 ? cursor.size() : limit;
@@ -49,7 +50,7 @@ public class ModelBlocker extends AbstractBlocker {
         for (Hit<JsonData> hit: cursor) {
             if (hit.source() == null) throw new IllegalStateException("Search hit has no document source");
             ExportModel model = new ExportModel().setId(hit.id())
-                    .setJson(hit.source().toJson().toString());
+                    .setRouting(hit.routing()).setJson(hit.source().toJson().toString());
             if (!super.bufferNext(mapper.writeValueAsString(model))) {
                 break;
             }

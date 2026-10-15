@@ -23,6 +23,9 @@ public class Import extends AbstractPoolRunner {
         CmdLineParser parser = new CmdLineParser(options);
         try {
             parser.parseArgument(args);
+            if (options.isModelMode() && options.getIdField() != null) {
+                throw new CmdLineException("Model imports use envelope IDs; -id cannot be combined with -m.");
+            }
             if (options.getIndex() == null) {
                 throw new CmdLineException("Index must be specified.");
             }
@@ -58,6 +61,6 @@ public class Import extends AbstractPoolRunner {
     
     @Override
     protected Callable<CountsAndBytes> getNextCallable(List<String> nextBlock) throws Exception {
-        return new JsonImporter(store, options.getIndex(), nextBlock, options.getIdField());
+        return new JsonImporter(store, options.getIndex(), nextBlock, options.getIdField(), options.isModelMode());
     }
 }

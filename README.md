@@ -105,10 +105,34 @@ try-with-resources to release their Elasticsearch point-in-time context.
 
 Document cursors return typed `_source` values. Hit cursors include Elasticsearch
 IDs and metadata. Normal JSON exports contain one UTF-8 document per line. Model
-exports contain an `id` and a `json` string holding the original source. Concurrent
+exports contain an `id`, a `json` string holding the original source, and an optional
+`routing` value. Concurrent
 writers keep each document and its newline together. Bulk imports send JSON objects,
 including blocks containing a single document; malformed JSON and rejected bulk
 items fail the run instead of being reported as successful.
+
+Use `export -m` and `import -m` for a metadata-preserving round trip. Pass these
+arguments to `com.nosqlrevolution.App` using your configured Java launch classpath:
+
+```text
+export -h http://localhost:9200 -i source -f documents.json.gz -m -g
+import -h http://localhost:9200 -i restored -f documents.json.gz -m
+transfer -sh http://localhost:9200 -dh http://localhost:9200 -si source -di copied
+```
+
+Transfers now preserve Elasticsearch IDs and routing automatically, including IDs
+absent from `_source` or different from a source `id` field. Model imports use the
+envelope ID and routing and restore only the inner JSON as `_source`. Old envelopes
+without routing still work. Normal imports treat envelope-shaped JSON as ordinary
+documents unless `-m` is supplied. `import -m` rejects `-id`, and transfer rejects
+`-id`; use raw export/import with `-id` when intentionally changing identity.
+
+Re-running a model import or transfer updates the same IDs. Existing destination
+documents with the same ID/routing are overwritten. Create destination mappings
+and settings separately when needed; these operations copy documents, not index
+configuration, source versions, or sequence numbers. A malformed record fails its
+whole work block before submission, but earlier blocks and successful items in a
+rejected bulk request may already have been written.
 
 `-s N` keeps every Nth document (starting with document N); `-l N` limits the number
 of selected documents. Elasticsearch paging uses one sequential `search_after`
@@ -224,13 +248,12 @@ values. JSON writes use explicit options for routing/version constraints.
 when a model supplies an external version. Typed document deletion reads its
 routing metadata; version constraints on deletion must be passed explicitly.
 
-Schema generation,
-and migration of the old embedded-cluster tests remain planned work. The default
+Schema generation and migration of the old embedded-cluster tests remain planned work. The default
 legacy test suite is not yet a supported green build. To run the current focused
 regression and live suites together:
 
 ```sh
-mvn test -Dtest=ConnectionTest,QueryTest,PipelineTest,PagingFailureTest,CursorPayloadTest,MappingUtilTest,JsonUtilTest,DocumentIdTest,LiveCrudTest,LiveQueryTest,LivePipelineTest \
+mvn test -Dtest=ModelImportTest,DocumentOptionsTest,OperationStatusTest,ConnectionTest,QueryTest,PipelineTest,PagingFailureTest,CursorPayloadTest,MappingUtilTest,JsonUtilTest,DocumentIdTest,LiveCrudTest,LiveQueryTest,LivePipelineTest,LiveMetadataTransferTest \
   -Delasticstore.test.url=http://127.0.0.1:19200
 ```
 

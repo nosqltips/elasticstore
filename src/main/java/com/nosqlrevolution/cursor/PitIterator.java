@@ -77,6 +77,7 @@ class PitIterator<T> extends CursorIterator<Hit<T>> implements AutoCloseable {
                 .size(initialRequest.size())
                 .query(initialRequest.query())
                 .source(initialRequest.source())
+                .storedFields(initialRequest.storedFields())
                 .highlight(initialRequest.highlight())
                 .sort(initialRequest.sort())
                 .searchAfter(hits.get(hits.size() - 1).sort());

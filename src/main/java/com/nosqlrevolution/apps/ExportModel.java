@@ -9,13 +9,17 @@ import com.nosqlrevolution.annotation.DocumentId;
 public class ExportModel {
     private String id;
     private String json;
+    private String routing;
+
+    @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+    public String getRouting() { return routing; }
+    public ExportModel setRouting(String routing) { this.routing = routing; return this; }
 
     @DocumentId
     public String getId() {
         return id;
     }
 
-    @DocumentId
     public ExportModel setId(String id) {
         this.id = id;
         return this;

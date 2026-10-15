@@ -137,7 +137,8 @@ public class QueryService {
         if (!single && options.getLimit() > 0) size = (int) Math.min(size, options.getLimit());
         SearchRequest.Builder builder = new SearchRequest.Builder()
                 .query(options.toQuery()).size(size).from(scroll ? 0 : options.getFrom())
-                .trackTotalHits(TrackHits.of(t -> t.enabled(true)));
+                .trackTotalHits(TrackHits.of(t -> t.enabled(true)))
+                .storedFields("_routing").source(source -> source.fetch(true));
         if (options.getFields() != null) {
             builder.source(source -> source.filter(filter -> filter.includes(Arrays.asList(options.getFields()))));
         }

@@ -22,6 +22,9 @@ public class Transfer extends AbstractPoolRunner {
         CmdLineParser parser = new CmdLineParser(options);
         try {
             parser.parseArgument(args);
+            if (options.getIdField() != null) {
+                throw new CmdLineException("Transfer preserves Elasticsearch IDs; use raw export/import -id to remap IDs.");
+            }
             if (options.getSourceIndex() == null) {
                 throw new CmdLineException("Source index must be specified.");
             }
@@ -50,7 +53,7 @@ public class Transfer extends AbstractPoolRunner {
                         options.getSourceApiKey(), options.getSourceCaCertificate(), options.getSourceClusterId(), options.getSourceRegion());
                 sourceStore.execute();
 
-                JsonBlocker blocker = new JsonBlocker(sourceStore, null, options.getSourceIndex(), options.getBlockSize(), options.getLimit(), options.getSample());
+                ModelBlocker blocker = new ModelBlocker(sourceStore, null, options.getSourceIndex(), options.getBlockSize(), options.getLimit(), options.getSample());
 
                 super.run(blocker, options.getThreads());
             }
@@ -59,6 +62,6 @@ public class Transfer extends AbstractPoolRunner {
     
     @Override
     protected Callable<CountsAndBytes> getNextCallable(List<String> nextBlock) throws Exception {
-        return new JsonImporter(destStore, options.getDestIndex(), nextBlock, options.getIdField());
+        return new JsonImporter(destStore, options.getDestIndex(), nextBlock, null, true);
     }
 }

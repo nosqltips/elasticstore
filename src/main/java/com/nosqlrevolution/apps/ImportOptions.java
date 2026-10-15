@@ -7,6 +7,10 @@ import org.kohsuke.args4j.Option;
  * @author cbrown
  */
 public class ImportOptions {
+    @Option(name="-m", usage="restore ExportModel envelopes, preserving IDs and routing")
+    private boolean modelMode;
+    public boolean isModelMode() { return modelMode; }
+
     @Option(name="-h",usage="hostname of Elasticsearch server")
     private String hostname = "localhost";
     
