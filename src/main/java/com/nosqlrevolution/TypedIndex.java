@@ -215,8 +215,8 @@ public class TypedIndex<T> extends Index<T> {
                 sources[i] = mapping.get(document);
             }
             all[i] = options;
-            String routing = document instanceof JsonData ? null : AnnotationHelper.getRoutingValue(document, null);
-            String version = document instanceof JsonData ? null : AnnotationHelper.getVersionValue(document, null);
+            String routing = document instanceof JsonData || options.getRouting() != null ? null : AnnotationHelper.getRoutingValue(document, null);
+            String version = document instanceof JsonData || options.getExternalVersion() != null ? null : AnnotationHelper.getVersionValue(document, null);
             if (options.getRouting() == null && routing != null) all[i] = all[i].routing(routing);
             if (options.getExternalVersion() == null && version != null) {
                 all[i] = all[i].externalVersion(Long.parseLong(version));

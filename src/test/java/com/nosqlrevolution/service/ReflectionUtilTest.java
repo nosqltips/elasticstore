@@ -41,7 +41,7 @@ public class ReflectionUtilTest {
          assertNotNull(s2);
          assertEquals(s2, "5678");
 
-         Method m = TestClass.class.getMethod("getId", null);
+         Method m = TestClass.class.getMethod("getId");
          assertNotNull(m);
          
          String s3 = ReflectionUtil.getMethodValue(m, t);

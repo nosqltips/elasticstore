@@ -347,6 +347,34 @@ values. JSON writes use explicit options for routing/version constraints.
 when a model supplies an external version. Typed document deletion reads its
 routing metadata; version constraints on deletion must be passed explicitly.
 
+### Reflected metadata contracts
+
+Document IDs, routing and external versions can come from annotated fields or
+zero-argument getters, including inherited members. Supported declared types are
+`String`, `int`, `long`, `Integer`, `Long`, and the existing `Object` compatibility
+form (converted with `toString()`). A genuine `null` remains absent metadata.
+Unsupported declared types, blank conversions, getters with parameters or no
+return value, inaccessible members and getter/conversion exceptions now fail
+explicitly instead of becoming missing metadata. Errors identify the declaring
+class/member and retain the original cause. Fatal getter errors propagate.
+
+`@UUIDProvider` requires a mutable instance `String` field. Non-String, static or
+final targets are rejected even if populated; older releases silently skipped
+invalid targets. Provider target types/modifiers are checked before generation.
+A null valid field receives a UUID before serialization, while an existing value
+is kept. Deletes read identity without generating a UUID. Replace invalid legacy
+provider annotations or use an ordinary explicit ID field.
+
+Explicit routing and external-version options skip reflected metadata lookup for
+the values they override. Ordinary JSON serialization can still invoke getters
+that are exposed as JSON properties. Deleting a typed document reads identity and
+routing, not write-only
+version metadata. A metadata validation failure in any document prevents the
+whole single/bulk request from being sent. Buffered writes retain their documents
+on failure. Earlier completed calls are not rolled back; UUIDs may already have
+been assigned to valid objects before a later document fails, and retries reuse
+those IDs.
+
 ### Supported index APIs
 
 `getIndex(Document.class, name)` returns an `Index<Document>`;

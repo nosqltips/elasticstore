@@ -177,13 +177,13 @@ public class DocumentIdTest {
          assertNotNull(AnnotationHelper.getDocumentId(t, null));
      }
 
-     @Test
+     @Test(expected = IllegalArgumentException.class)
      public void withUUIDFieldLong() {
          TestUUIDFieldLong t = new TestUUIDFieldLong();
          assertNull(AnnotationHelper.getDocumentId(t, null));
      }
 
-     @Test
+     @Test(expected = IllegalArgumentException.class)
      public void withUUIDFieldInteger() {
          TestUUIDFieldInteger t = new TestUUIDFieldInteger();
          assertNull(AnnotationHelper.getDocumentId(t, null));
@@ -237,7 +237,7 @@ public class DocumentIdTest {
          assertEquals("1234", AnnotationHelper.getDocumentId(t, null));
      }
      
-     @Test
+     @Test(expected = IllegalArgumentException.class)
      public void withAnnotationMethodVoid() {
          TestIdAnnotationMethodVoid t = new TestIdAnnotationMethodVoid();
          assertNull(AnnotationHelper.getDocumentId(t, null));
@@ -277,7 +277,7 @@ public class DocumentIdTest {
          assertNotNull(AnnotationHelper.getDocumentId(t, null));
      }
      
-     @Test
+     @Test(expected = IllegalArgumentException.class)
      public void withUUIDMethodLong() {
          TestUUIDMethodLong t = new TestUUIDMethodLong();
          assertNull(AnnotationHelper.getDocumentId(t, null));

@@ -29,6 +29,10 @@ public class AnnotationHelper {
     public static String getDocumentId(Object o, String namedField) {
         Class<?> clazz = o.getClass();
         Field[] fields = fields(clazz);
+        // Validate every generation target before changing any field.
+        for (Field field : fields) {
+            if (field.isAnnotationPresent(UUIDProvider.class)) ReflectionUtil.validateStringTarget(field);
+        }
         // Inject a UUID if annotation is present
         for (Field f : fields) {
             UUIDProvider provider = f.getAnnotation(UUIDProvider.class);
@@ -166,7 +170,7 @@ public class AnnotationHelper {
             // Check for a field of id or _id
             for (Field f : fields) {
                 String name = f.getName();
-                if (name.toLowerCase().equals(standardField) || name.toLowerCase().equals(withUnderbar)) {
+                if (name.equalsIgnoreCase(standardField) || name.equalsIgnoreCase(withUnderbar)) {
                     return ReflectionUtil.getFieldValue(f, o);
                 }
             }

@@ -5,8 +5,8 @@ import java.lang.annotation.*;
 /**
  * Used to product a UUIDProvider, usually for an ID field.
  * Can be used with @DocumentId to retrieve the UUID automatically to set the document id.
- * Uses org.elasticsearch.common.UUIDProvider.
- * Can only be used with String fields. All of other types are skipped.
+ * Uses java.util.UUID to fill a null field before serialization.
+ * Requires a mutable instance String field; invalid targets are rejected.
  * 
  * @author cbrown
  */
