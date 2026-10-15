@@ -28,6 +28,15 @@ public class LiveCrudTest {
         Document(String key, String value) { this.key = key; this.value = value; }
     }
 
+    public static class RoutedDocument extends Document {
+        @com.nosqlrevolution.annotation.Routing public String tenant;
+        @com.nosqlrevolution.annotation.Version public Long revision;
+        public RoutedDocument() { }
+        RoutedDocument(String id, String tenant, long revision) {
+            super(id, "routed"); this.tenant = tenant; this.revision = revision;
+        }
+    }
+
     @Before public void setup() throws Exception {
         endpoint = System.getProperty("elasticstore.test.url");
         Assume.assumeNotNull(endpoint);
@@ -35,10 +44,11 @@ public class LiveCrudTest {
         client = store.getClient();
         indexName = create();
     }
-    private String create() throws Exception {
+    private String create() throws Exception { return create(false); }
+    private String create(boolean routingRequired) throws Exception {
         String name = "elasticstore-crud-" + UUID.randomUUID();
         client.indices().create(r -> r.index(name).settings(s -> s.numberOfShards("1").numberOfReplicas("0"))
-                .mappings(m -> m.properties("key", p -> p.keyword(k -> k))));
+                .mappings(m -> m.routing(route -> route.required(routingRequired)).properties("key", p -> p.keyword(k -> k))));
         cleanup.add(name);
         return name;
     }
@@ -119,6 +129,62 @@ public class LiveCrudTest {
         Document missingId = new Document(null, "missing");
         try { index.remove(missingId); fail("Expected missing identity failure"); }
         catch (IllegalArgumentException expected) { assertNull(missingId.key); }
+    }
+
+    @Test(timeout=30000) public void annotationsRouteSingleAndBulkWritesAndEnforceExternalVersions() throws Exception {
+        indexName = create(true);
+        Index<RoutedDocument> index = store.getIndex(RoutedDocument.class, indexName);
+        RoutedDocument first = new RoutedDocument(null, "one", 10);
+        OperationStatus written = index.write(first);
+        assertNotNull(first.key);
+        assertEquals(Long.valueOf(10), written.getItems().get(0).getVersion());
+        assertNotNull(index.findByIdWithRouting(first.key, "one"));
+        try { index.write(first); fail("Expected stale external version"); }
+        catch (OperationException expected) { assertEquals(409, expected.getStatus().getItems().get(0).getStatus()); }
+        first.revision = 11L;
+        index.write(first);
+        RoutedDocument second = new RoutedDocument("second", "two", 20);
+        try { index.write(Arrays.asList(first, second)); fail("Expected partial external-version conflict"); }
+        catch (OperationException expected) {
+            assertEquals(1, expected.getStatus().getSuccessCount());
+            assertEquals(409, expected.getStatus().getItems().get(0).getStatus());
+            assertEquals("second", expected.getStatus().getItems().get(1).getId());
+        }
+        assertNotNull(index.findByIdWithRouting("second", "two"));
+        assertTrue(index.remove(first, second).succeeded());
+        assertNull(index.findByIdWithRouting("second", "two"));
+    }
+
+    @Test(timeout=30000) public void explicitRoutingAndSequenceConstraintsProtectWritesAndDeletes() throws Exception {
+        indexName = create(true);
+        Index<Document> index = store.getIndex(Document.class, indexName);
+        DocumentOptions routed = DocumentOptions.DEFAULT.routing("tenant");
+        Document doc = new Document("conditional", "initial");
+        OperationStatus.Item created = index.write(routed, doc).getItems().get(0);
+        DocumentOptions original = routed.ifUnchanged(created.getSequenceNumber(), created.getPrimaryTerm());
+        doc.value = "changed";
+        OperationStatus.Item updated = index.write(original, doc).getItems().get(0);
+        doc.value = "stale";
+        try { index.write(original, doc); fail("Expected stale sequence number"); }
+        catch (OperationException expected) { assertEquals(409, expected.getStatus().getItems().get(0).getStatus()); }
+        assertEquals("changed", index.findByIdWithRouting(doc.key, "tenant").value);
+        try (Cursor<Document> found = index.findAllByIdWithRouting(Document.class, "tenant", doc.key, "missing")) {
+            Iterator<Document> iterator = found.iterator();
+            assertEquals("changed", iterator.next().value);
+            assertNull(iterator.next());
+        }
+        try { index.removeById(original, doc.key); fail("Expected stale delete"); }
+        catch (OperationException expected) { assertEquals(409, expected.getStatus().getItems().get(0).getStatus()); }
+        assertTrue(index.removeById(routed.ifUnchanged(updated.getSequenceNumber(), updated.getPrimaryTerm()), doc.key).succeeded());
+        assertNull(index.findByIdWithRouting(doc.key, "tenant"));
+        Index<String> json = store.getIndex(String.class, indexName);
+        OperationStatus.Item saved = json.write(routed, "{\"id\":\"json\",\"value\":\"initial\"}").getItems().get(0);
+        DocumentOptions condition = routed.ifUnchanged(saved.getSequenceNumber(), saved.getPrimaryTerm());
+        json.write(condition, "{\"id\":\"json\",\"value\":\"changed\"}");
+        try { json.write(condition, "{\"id\":\"json\",\"value\":\"stale\"}"); fail("Expected stale JSON write"); }
+        catch (OperationException expected) { assertEquals(409, expected.getStatus().getItems().get(0).getStatus()); }
+        assertTrue(json.findByIdWithRouting("json", "tenant").contains("changed"));
+        assertTrue(json.removeById(routed, "json").succeeded());
     }
 
     @Test(timeout=30000) public void jsonWritesExposeServerGeneratedIds() throws Exception {

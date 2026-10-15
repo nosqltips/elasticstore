@@ -134,6 +134,11 @@ public class TypedIndex<T> extends Index<T> {
     }
 
     @Override
+    public T findByIdWithRouting(String id, String routing) {
+        return mapping.get(service.realTimeGet(getIndex(), id, routing), t);
+    }
+
+    @Override
     public T findById(String id) {
         String s = service.realTimeGet(getIndex(), id);
         if (s != null) {
@@ -203,16 +208,33 @@ public class TypedIndex<T> extends Index<T> {
 
     @Override
     public OperationStatus write(List<? extends T> documents) {
+        return write(documents, DocumentOptions.DEFAULT);
+    }
+
+    @Override
+    public OperationStatus write(List<? extends T> documents, DocumentOptions options) {
+        java.util.Objects.requireNonNull(options, "Document options");
+        if (options.getSequenceNumber() != null && documents.size() != 1) {
+            throw new IllegalArgumentException("Conditional write requires exactly one document");
+        }
         java.util.Objects.requireNonNull(documents, "Documents");
         String[] sources = new String[documents.size()];
         String[] ids = new String[documents.size()];
+        DocumentOptions[] all = new DocumentOptions[documents.size()];
         for (int i = 0; i < documents.size(); i++) {
             T document = java.util.Objects.requireNonNull(documents.get(i), "Document");
             ids[i] = AnnotationHelper.getDocumentId(document, getIdField());
+            all[i] = options;
+            String routing = AnnotationHelper.getRoutingValue(document, null);
+            String version = AnnotationHelper.getVersionValue(document, null);
+            if (options.getRouting() == null && routing != null) all[i] = all[i].routing(routing);
+            if (options.getExternalVersion() == null && version != null) {
+                all[i] = all[i].externalVersion(Long.parseLong(version));
+            }
             sources[i] = mapping.get(document);
         }
-        return sources.length == 1 ? service.index(getIndex(), sources[0], ids[0])
-                : service.bulkIndexWithIds(getIndex(), sources, ids);
+        return sources.length == 1 ? service.index(getIndex(), sources[0], ids[0], all[0])
+                : service.bulkIndexWithIds(getIndex(), sources, ids, all);
     }
 
     @Override

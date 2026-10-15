@@ -157,6 +157,27 @@ public class JsonIndex<T> extends Index<String> {
     }
 
     @Override
+    public String findByIdWithRouting(String id, String routing) {
+        return service.realTimeGet(getIndex(), id, routing);
+    }
+
+    @Override
+    public OperationStatus write(List<? extends String> json, DocumentOptions options) {
+        java.util.Objects.requireNonNull(options, "Document options");
+        if (options.getSequenceNumber() != null && json.size() != 1) {
+            throw new IllegalArgumentException("Conditional write requires exactly one document");
+        }
+        String[] sources = json.toArray(new String[0]);
+        String[] ids = new String[sources.length];
+        DocumentOptions[] all = new DocumentOptions[sources.length];
+        for (int i = 0; i < sources.length; i++) {
+            ids[i] = com.nosqlrevolution.util.JsonUtil.getId(sources[i], getIdField());
+            all[i] = options;
+        }
+        return service.bulkIndexWithIds(getIndex(), sources, ids, all);
+    }
+
+    @Override
     public String findById(String id) {
         return service.realTimeGet(getIndex(), id);
     }

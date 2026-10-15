@@ -190,9 +190,41 @@ HTTP status, version, sequence number, primary term, and error type/reason when
 available. Bulk item failures throw `OperationException`; `getStatus()` on that
 exception includes both successful and failed items. Inspect those results before
 retrying a partially successful request. Transport errors and rejected single
-requests retain their original exception behavior and have no completed item list.
+requests retain their original exception behavior and have no completed item list,
+except HTTP 409 write conflicts, which expose an `OperationException` item.
 
-Schema generation, routing/concurrency request options,
+### Routing and conditional writes
+
+`DocumentOptions` is immutable and applies to one call, so constraints do not leak
+into later operations:
+
+```java
+DocumentOptions routed = DocumentOptions.DEFAULT.routing("tenant-42");
+OperationStatus.Item saved = index.write(routed, document).getItems().get(0);
+DocumentOptions unchanged = routed.ifUnchanged(
+    saved.getSequenceNumber(), saved.getPrimaryTerm());
+index.write(unchanged, document);
+// Reusing unchanged after a successful modification raises a conflict.
+Document current = index.findByIdWithRouting(saved.getId(), "tenant-42");
+```
+
+Conditional writes and deletes require exactly one document/ID. Pass options to
+`removeById(options, id)` for conditional or routed deletion. Routed multi-get is
+available as `findAllByIdWithRouting(Document.class, routing, ids...)`. Use the same
+routing key for the document throughout its lifetime. Searches still visit all
+shards; routing here is for document operations.
+
+Typed writes read routing and external versions from `@Routing` and `@Version`
+fields/getters (including inherited members), or conventional `routing`/`_routing`
+and `version`/`_version` fields. External versions must be positive and strictly
+increase. They are supplied by the application and are not incremented by the
+library. Explicit `routing(...)` and `externalVersion(...)` options override model
+values. JSON writes use explicit options for routing/version constraints.
+`externalVersion(...)` and `ifUnchanged(...)` are mutually exclusive, including
+when a model supplies an external version. Typed document deletion reads its
+routing metadata; version constraints on deletion must be passed explicitly.
+
+Schema generation,
 and migration of the old embedded-cluster tests remain planned work. The default
 legacy test suite is not yet a supported green build. To run the current focused
 regression and live suites together:

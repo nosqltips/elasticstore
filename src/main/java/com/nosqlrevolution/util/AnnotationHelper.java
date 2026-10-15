@@ -28,7 +28,7 @@ public class AnnotationHelper {
      */
     public static String getDocumentId(Object o, String namedField) {
         Class<?> clazz = o.getClass();
-        Field[] fields = clazz.getDeclaredFields();
+        Field[] fields = fields(clazz);
         // Inject a UUID if annotation is present
         for (Field f : fields) {
             UUIDProvider provider = f.getAnnotation(UUIDProvider.class);
@@ -122,10 +122,26 @@ public class AnnotationHelper {
      * @param standardField
      * @return
      */
+    private static Field[] fields(Class<?> type) {
+        java.util.List<Field> fields = new java.util.ArrayList<>();
+        for (Class<?> c = type; c != null && c != Object.class; c = c.getSuperclass()) {
+            java.util.Collections.addAll(fields, c.getDeclaredFields());
+        }
+        return fields.toArray(new Field[0]);
+    }
+
+    private static Method[] methods(Class<?> type) {
+        java.util.List<Method> methods = new java.util.ArrayList<>();
+        for (Class<?> c = type; c != null && c != Object.class; c = c.getSuperclass()) {
+            java.util.Collections.addAll(methods, c.getDeclaredMethods());
+        }
+        return methods.toArray(new Method[0]);
+    }
+
     private static String getAnnotationValue(Object o, Class<? extends Annotation> annotation, String namedField, String standardField) {
         Class<?> clazz = o.getClass();
 
-        Field[] fields = clazz.getDeclaredFields();
+        Field[] fields = fields(clazz);
         // Check to see if there is an annotation on a field
         for (Field f : fields) {
             if (f.isAnnotationPresent(annotation)) {
@@ -134,27 +150,15 @@ public class AnnotationHelper {
         }
 
         // Check to see if there is an annotation on a method
-        Method[] methods = clazz.getDeclaredMethods();
+        Method[] methods = methods(clazz);
         for (Method m : methods) {
             if (m.isAnnotationPresent(annotation)) {
                 return ReflectionUtil.getMethodValue(m, o);
             }
         }
 
-        // Check to see if there is a value for the specified id field
         if (namedField != null) {
-            try {
-                Field f = clazz.getDeclaredField(namedField);
-                return ReflectionUtil.getFieldValue(f, o);
-            } catch (NoSuchFieldException ex) {
-//                if (logger.isLoggable(Level.WARNING)) {
-//                    logger.log(Level.SEVERE, null, ex);
-//                }
-            } catch (SecurityException ex) {
-//                if (logger.isLoggable(Level.WARNING)) {
-//                    logger.log(Level.SEVERE, null, ex);
-//                }
-            }
+            for (Field f : fields) if (f.getName().equals(namedField)) return ReflectionUtil.getFieldValue(f, o);
         }
 
         if (standardField != null) {

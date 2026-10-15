@@ -146,6 +146,40 @@ public abstract class Index<T> {
         throw new UnsupportedOperationException();
     }
 
+    /** Fetch a document using the same routing key used to write it. */
+    public T findByIdWithRouting(String id, String routing) {
+        throw new UnsupportedOperationException();
+    }
+
+    public <E> E findByIdWithRouting(String id, String routing, Class<E> type) {
+        String source = new com.nosqlrevolution.service.QueryService(store.getClient()).realTimeGet(index, id, routing);
+        return new com.nosqlrevolution.util.MappingUtil<E>().get(source, type);
+    }
+
+    public <E> Cursor<E> findAllByIdWithRouting(Class<E> type, String routing, String... ids) {
+        String[] sources = new com.nosqlrevolution.service.QueryService(store.getClient()).realTimeMultiGet(index, ids, routing);
+        return new com.nosqlrevolution.cursor.MultiGetCursor<>(type, sources);
+    }
+
+    /** Explicit request constraints; conditional writes require exactly one document. */
+    public OperationStatus write(DocumentOptions options, T... documents) {
+        return write(java.util.Arrays.asList(documents), options);
+    }
+
+    public OperationStatus write(List<? extends T> documents, DocumentOptions options) {
+        throw new UnsupportedOperationException();
+    }
+
+    public OperationStatus removeById(DocumentOptions options, String... ids) {
+        java.util.Objects.requireNonNull(options, "Document options");
+        if (options.getSequenceNumber() != null && ids.length != 1) {
+            throw new IllegalArgumentException("Conditional delete requires exactly one ID");
+        }
+        DocumentOptions[] all = new DocumentOptions[ids.length];
+        java.util.Arrays.fill(all, options);
+        return new com.nosqlrevolution.service.QueryService(store.getClient()).deleteAll(index, ids, all);
+    }
+
     /**
      * Return a single document this index as specified by id.
      * The documents will be returned as specified by Type.
@@ -221,12 +255,19 @@ public abstract class Index<T> {
      */
     public OperationStatus remove(T... documents) {
         String[] ids = new String[documents.length];
+        DocumentOptions[] options = new DocumentOptions[documents.length];
         for (int i = 0; i < documents.length; i++) {
             Object document = java.util.Objects.requireNonNull(documents[i], "Document");
             ids[i] = document instanceof String ? com.nosqlrevolution.util.JsonUtil.getId((String) document, idField)
                     : com.nosqlrevolution.util.AnnotationHelper.findDocumentId(document, idField);
+            options[i] = DocumentOptions.DEFAULT;
+            if (!(document instanceof String)) {
+                String routing = com.nosqlrevolution.util.AnnotationHelper.getRoutingValue(document, null);
+                if (routing != null) options[i] = options[i].routing(routing);
+            }
         }
-        return removeById(ids);
+        // @Version is a write-only external version; deletes require an explicit constraint.
+        return new com.nosqlrevolution.service.QueryService(store.getClient()).deleteAll(index, ids, options);
     }
     
     /**

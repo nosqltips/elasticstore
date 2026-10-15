@@ -30,6 +30,7 @@ import co.elastic.clients.elasticsearch.core.search.TrackHits;
 import co.elastic.clients.json.JsonData;
 import com.nosqlrevolution.query.ElasticStoreQuery;
 import com.nosqlrevolution.OperationStatus;
+import com.nosqlrevolution.DocumentOptions;
 import com.nosqlrevolution.OperationException;
 import com.nosqlrevolution.util.JsonUtil;
 import com.nosqlrevolution.util.QueryUtil;
@@ -174,8 +175,12 @@ public class QueryService {
      * @return
      */
     public String realTimeGet(String index, String id) {
+        return realTimeGet(index, id, null);
+    }
+
+    public String realTimeGet(String index, String id, String routing) {
         try {
-            GetResponse<JsonData> response = client.get(r -> r.index(index).id(id).realtime(true), JsonData.class);
+            GetResponse<JsonData> response = client.get(r -> r.index(index).id(id).routing(routing).realtime(true), JsonData.class);
             if (!response.found()) return null;
             if (response.source() == null) throw new IllegalStateException("Document source is unavailable");
             return response.source().toJson().toString();
@@ -192,12 +197,16 @@ public class QueryService {
      * @return
      */
     public String[] realTimeMultiGet(String index, String[] ids) {
+        return realTimeMultiGet(index, ids, null);
+    }
+
+    public String[] realTimeMultiGet(String index, String[] ids, String routing) {
         java.util.Objects.requireNonNull(ids, "Document IDs");
         if (ids.length == 0) return new String[0];
         for (String id : ids) requireId(id);
         try {
             co.elastic.clients.elasticsearch.core.MgetResponse<JsonData> response = client.mget(
-                    r -> r.index(index).ids(Arrays.asList(ids)), JsonData.class);
+                    r -> r.index(index).routing(routing).ids(Arrays.asList(ids)), JsonData.class);
             String[] result = new String[response.docs().size()];
             for (int i = 0; i < result.length; i++) {
                 co.elastic.clients.elasticsearch.core.mget.MultiGetResponseItem<JsonData> item = response.docs().get(i);
@@ -293,15 +302,42 @@ public class QueryService {
      * @param id
      */
     public OperationStatus index(String index, String source, String id) {
+        return index(index, source, id, DocumentOptions.DEFAULT);
+    }
+
+    public OperationStatus index(String index, String source, String id, DocumentOptions options) {
+        validateOptions(id, options);
         JsonData document = document(source);
         try {
-            IndexResponse response = client.index(r -> r.index(index).id(id).document(document));
+            IndexResponse response = client.index(r -> r.index(index).id(id).document(document)
+                    .routing(options.getRouting()).ifSeqNo(options.getSequenceNumber()).ifPrimaryTerm(options.getPrimaryTerm())
+                    .version(options.getExternalVersion()).versionType(options.getExternalVersion() == null ? null
+                            : co.elastic.clients.elasticsearch._types.VersionType.External));
             return new OperationStatus(java.util.Collections.singletonList(new OperationStatus.Item(
                     response.index(), response.id(), response.result().jsonValue(),
                     response.result() == Result.Created ? 201 : 200, response.version(),
                     response.seqNo(), response.primaryTerm(), null, null)));
         }
-        catch (IOException ex) { throw new java.io.UncheckedIOException("Elasticsearch index failed", ex); }
+        catch (ElasticsearchException ex) {
+            if (ex.status() == 409) throw conflict(index, id, ex);
+            throw ex;
+        } catch (IOException ex) {
+            // The 8.2 transport reports some index conflicts as low-level response errors.
+            if (ex instanceof org.elasticsearch.client.ResponseException
+                    && ((org.elasticsearch.client.ResponseException) ex).getResponse().getStatusLine().getStatusCode() == 409) {
+                throw conflict(index, id, ex);
+            }
+            throw new java.io.UncheckedIOException("Elasticsearch index failed", ex);
+        }
+    }
+
+    private OperationException conflict(String index, String id, Throwable cause) {
+        OperationStatus status = new OperationStatus(java.util.Collections.singletonList(new OperationStatus.Item(
+                index, id, null, 409, null, null, null, "version_conflict_engine_exception",
+                "Document changed or the supplied external version is stale")));
+        OperationException failure = new OperationException("Elasticsearch write conflict", status);
+        failure.initCause(cause);
+        return failure;
     }
 
     private JsonData document(String source) {
@@ -327,13 +363,25 @@ public class QueryService {
     }
 
     public OperationStatus bulkIndexWithIds(String index, String[] source, String[] ids) {
+        DocumentOptions[] options = new DocumentOptions[source.length];
+        java.util.Arrays.fill(options, DocumentOptions.DEFAULT);
+        return bulkIndexWithIds(index, source, ids, options);
+    }
+
+    public OperationStatus bulkIndexWithIds(String index, String[] source, String[] ids, DocumentOptions[] options) {
+        if (source.length != options.length) throw new IllegalArgumentException("Each document needs an options slot");
         if (source.length != ids.length) throw new IllegalArgumentException("Each document needs an ID slot");
         if (source.length == 0) return new OperationStatus(java.util.Collections.emptyList());
         BulkRequest.Builder request = new BulkRequest.Builder();
         for (int i = 0; i < source.length; i++) {
             JsonData document = document(source[i]);
             String id = ids[i];
-            request.operations(op -> op.index(item -> item.index(index).id(id).document(document)));
+            DocumentOptions option = options[i];
+            validateOptions(id, option);
+            request.operations(op -> op.index(item -> item.index(index).id(id).document(document)
+                    .routing(option.getRouting()).ifSeqNo(option.getSequenceNumber()).ifPrimaryTerm(option.getPrimaryTerm())
+                    .version(option.getExternalVersion()).versionType(option.getExternalVersion() == null ? null
+                            : co.elastic.clients.elasticsearch._types.VersionType.External)));
         }
         try {
             BulkResponse response = client.bulk(request.build());
@@ -367,12 +415,25 @@ public class QueryService {
     }
 
     public OperationStatus deleteAll(String index, String[] ids) {
+        DocumentOptions[] options = new DocumentOptions[ids.length];
+        java.util.Arrays.fill(options, DocumentOptions.DEFAULT);
+        return deleteAll(index, ids, options);
+    }
+
+    public OperationStatus deleteAll(String index, String[] ids, DocumentOptions[] options) {
+        if (ids.length != options.length) throw new IllegalArgumentException("Each ID needs an options slot");
         java.util.Objects.requireNonNull(ids, "Document IDs");
         if (ids.length == 0) return new OperationStatus(java.util.Collections.emptyList());
         BulkRequest.Builder request = new BulkRequest.Builder();
-        for (String id : ids) {
+        for (int i = 0; i < ids.length; i++) {
+            String id = ids[i];
             requireId(id);
-            request.operations(op -> op.delete(d -> d.index(index).id(id)));
+            DocumentOptions option = options[i];
+            validateOptions(id, option);
+            request.operations(op -> op.delete(d -> d.index(index).id(id)
+                    .routing(option.getRouting()).ifSeqNo(option.getSequenceNumber()).ifPrimaryTerm(option.getPrimaryTerm())
+                    .version(option.getExternalVersion()).versionType(option.getExternalVersion() == null ? null
+                            : co.elastic.clients.elasticsearch._types.VersionType.External)));
         }
         try {
             BulkResponse response = client.bulk(request.build());
@@ -392,6 +453,11 @@ public class QueryService {
                 throw new IllegalStateException("Elasticsearch delete by query did not complete without failures");
             }
         } catch (IOException ex) { throw new java.io.UncheckedIOException("Elasticsearch delete by query failed", ex); }
+    }
+
+    private static void validateOptions(String id, DocumentOptions options) {
+        java.util.Objects.requireNonNull(options, "Document options");
+        if (options.getSequenceNumber() != null || options.getExternalVersion() != null) requireId(id);
     }
 
     private static void requireId(String id) {

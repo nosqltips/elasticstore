@@ -56,15 +56,15 @@ public class ReflectionUtil {
                 // TODO: maybe exception here? method cannot take arguments
                 return null;
             }
-            Object[] args = new Object[0];
-            if (m.invoke(o, args) == null) {
+            Object value = m.invoke(o);
+            if (value == null) {
                 return null;
             } else if ((returnType.equals(java.lang.String.class)) || (returnType.equals(java.lang.Object.class))) {
-                return m.invoke(o, args).toString();
+                return value.toString();
             } else if ((returnType.equals(java.lang.Long.class)) || (returnType.equals(long.class))) {
-                return Long.toString((Long)m.invoke(o, args));
+                return Long.toString((Long)value);
             } else if ((returnType.equals(java.lang.Integer.class)) || (returnType.equals(int.class))) {
-                return Integer.toString((Integer)m.invoke(o, args));
+                return Integer.toString((Integer)value);
             }
         } catch (SecurityException ex) {
             if (logger.isLoggable(Level.SEVERE)) {
