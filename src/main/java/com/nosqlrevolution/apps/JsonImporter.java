@@ -1,7 +1,7 @@
 package com.nosqlrevolution.apps;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nosqlrevolution.DocumentOptions;
 import com.nosqlrevolution.ElasticStore;
@@ -12,7 +12,7 @@ import java.util.concurrent.Callable;
 
 /** Imports raw JSON documents or explicitly selected metadata envelopes. */
 public class JsonImporter implements Callable<CountsAndBytes> {
-    private final ObjectMapper mapper = new ObjectMapper().enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
+    private static final ObjectMapper MAPPER = new ObjectMapper().enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
     private final QueryService service;
     private final String index, idField;
     private final List<String> data;
@@ -33,41 +33,39 @@ public class JsonImporter implements Callable<CountsAndBytes> {
 
     @Override
     public CountsAndBytes call() throws Exception {
-        String[] sources = new String[data.size()];
+        ObjectNode[] sources = new ObjectNode[data.size()];
         String[] ids = new String[data.size()];
         DocumentOptions[] options = new DocumentOptions[data.size()];
         long bytes = 0;
         // Validate the complete block before sending any writes from it.
         for (int i = 0; i < data.size(); i++) {
             String record = data.get(i);
-            JsonNode root = object(record);
+            ObjectNode root = object(record);
             options[i] = DocumentOptions.DEFAULT;
             if (modelMode) {
                 if (!root.path("id").isTextual() || root.path("id").asText().trim().isEmpty()
                         || !root.path("json").isTextual()) {
                     throw new IllegalArgumentException("Model record requires a nonblank string id and a JSON string");
                 }
-                ExportModel model = mapper.treeToValue(root, ExportModel.class);
-                sources[i] = model.getJson();
-                object(sources[i]);
+                ExportModel model = MAPPER.treeToValue(root, ExportModel.class);
+                sources[i] = object(model.getJson());
                 ids[i] = model.getId();
                 if (root.hasNonNull("routing")) {
                     if (!root.get("routing").isTextual()) throw new IllegalArgumentException("Model routing must be a string");
                     options[i] = options[i].routing(model.getRouting());
                 }
             } else {
-                sources[i] = record;
-                ids[i] = JsonUtil.getId(record, idField);
+                sources[i] = root;
+                ids[i] = JsonUtil.getIdFromDocument(root, idField);
             }
             bytes += record.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
         }
-        service.bulkIndexWithIds(index, sources, ids, options);
+        service.bulkIndexParsed(index, sources, ids, options);
         return new CountsAndBytes(data.size(), bytes);
     }
 
-    private JsonNode object(String json) throws Exception {
-        JsonNode node = mapper.readTree(json);
-        if (node == null || !node.isObject()) throw new IllegalArgumentException("Document must be a JSON object");
-        return node;
+    private static ObjectNode object(String json) throws java.io.IOException {
+        try { return JsonUtil.parseObject(json); }
+        catch (java.io.UncheckedIOException ex) { throw ex.getCause(); }
     }
 }

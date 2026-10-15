@@ -136,8 +136,79 @@ rejected bulk request may already have been written.
 
 `-s N` keeps every Nth document (starting with document N); `-l N` limits the number
 of selected documents. Elasticsearch paging uses one sequential `search_after`
-reader. Parallel sliced reads and throughput measurements against a live cluster
-remain separate work.
+reader. Parallel sliced reads remain separate work; local throughput measurements are
+recorded below.
+
+### Performance measurements and reproduction
+
+The write path reuses a strictly validated Jackson document tree for identity and
+serialization. Raw imports parse each document once with the default Jackson
+provider, instead of validating, extracting identity, removing metadata and parsing
+again for JSON-P. Model imports parse the envelope and inner source once each.
+Non-Jackson JSON-P clients retain a serialization/parsing fallback. Whole-block
+validation, top-level `_id` removal, nested IDs and decimal precision are preserved.
+
+Measurements on October 15, 2026 used an Apple M4 Pro, Temurin 11.0.26, Docker
+29.3.1 and Elasticsearch/client 8.19.23. The disposable server used one shard,
+zero replicas, a 512 MiB heap and a 2 GiB container limit. Production baseline:
+`fa21f0d`, using the same benchmark harness. Documents are about 890 UTF-8 bytes.
+
+The isolated preparation benchmark calls the real importer and bulk builder, but
+replaces HTTP/server work with a sink that serializes each document source and
+returns an empty successful bulk response. It excludes NDJSON action serialization,
+network and Elasticsearch work. With three warmups and five measured samples of
+100,000 documents, median throughput rose from **263,061 to 710,312 docs/sec
+(2.70×)**. Current-thread allocation fell from **13,946 to 5,780 bytes/document
+(59% less)**. These are preparation measurements, not end-to-end import rates.
+
+The full file-to-bulk benchmark used 10,000 documents, one warmup and three
+measured samples per configuration. Repeated imports update the same IDs; refresh
+and count validation run outside timing. Timing includes file counting and reader
+setup. Reads use a sequential paged cursor and discard output after serialization.
+Median docs/sec:
+
+| Operation | Block/page size | Workers | Baseline | Optimized |
+| --- | ---: | ---: | ---: | ---: |
+| Import | 250 | 1 | 18,300 | 19,636 |
+| Import | 250 | 4 | 49,312 | 50,023 |
+| Import | 1,000 | 1 | 26,918 | 29,048 |
+| Import | 1,000 | 4 | 58,942 | 54,409 |
+| Read | 250 | 1 | 60,358 | 54,331 |
+| Read | 1,000 | 1 | 91,324 | 87,935 |
+
+These small, separate-container runs include JIT, filesystem cache and server
+variation. Four-worker imports did not consistently improve. The reader code was
+unchanged; its variation is another reason not to infer a general throughput gain
+from these samples. CPU savings are clear in the isolated workload, while actual
+throughput still depends on server, document and request sizes. This workload does
+not justify adding reader slicing yet. Raw samples are in
+[benchmarks/](benchmarks/); Flight Recorder files stay under ignored `target/`.
+
+Opt-in benchmarks are skipped during normal verification. To measure preparation
+without a server (three warmups, five samples):
+
+```sh
+mvn test '-Dtest=PipelineBenchmarkTest#measurePreparationAndSerializationWithoutNetwork' \
+  -Delasticstore.benchmark=true -Delasticstore.benchmark.documents=100000
+```
+
+To measure the live reader/bulk matrix and preparation, using the Docker verifier:
+
+```sh
+./scripts/verify-docker.sh -Dtest=PipelineBenchmarkTest \
+  -Delasticstore.benchmark=true -DskipITs
+```
+
+CSV files go to `target/benchmarks/`. Override sample/document counts with
+`elasticstore.benchmark.samples` and `elasticstore.benchmark.documents`; override
+output files with `elasticstore.benchmark.output` and
+`elasticstore.benchmark.cpu.output`. For a Java Flight Recorder profile, first
+create `target/benchmarks/`, then add
+`'-DargLine=-XX:StartFlightRecording=filename=target/benchmarks/pipeline.jfr,settings=profile,dumponexit=true'`.
+The baseline recording identified repeated parsing in `JsonImporter`, `JsonUtil`
+and `QueryService`; the optimized recording contains one strict document parse on
+the Jackson import path. JFR startup output can produce a Surefire stream warning;
+the recording and test results are still available.
 
 Run the pipeline regression tests with Maven:
 

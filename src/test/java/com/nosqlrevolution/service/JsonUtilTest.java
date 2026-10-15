@@ -81,6 +81,24 @@ public class JsonUtilTest {
          org.junit.Assert.assertTrue(cleaned.contains("0.12345678901234567890123456789"));
      }
 
+     @Test public void parsedDocumentsPreservePrecisionAndDoNotMutateCallerTrees() throws Exception {
+         com.fasterxml.jackson.databind.node.ObjectNode root = JsonUtil.parseObject(
+                 "{\"_id\":\"metadata\",\"nested\":{\"_id\":\"child\"},\"decimal\":0.12345678901234567890123456789}");
+         for (co.elastic.clients.json.JsonpMapper mapper : new co.elastic.clients.json.JsonpMapper[] {
+                 new co.elastic.clients.json.jackson.JacksonJsonpMapper(), new co.elastic.clients.json.SimpleJsonpMapper() }) {
+             java.io.StringWriter output = new java.io.StringWriter();
+             try (jakarta.json.stream.JsonGenerator generator = mapper.jsonProvider().createGenerator(output)) {
+                 JsonUtil.document(root, mapper).serialize(generator, mapper);
+             }
+             String json = output.toString();
+             org.junit.Assert.assertTrue(json, json.contains("0.12345678901234567890123456789"));
+             com.fasterxml.jackson.databind.JsonNode document = new com.fasterxml.jackson.databind.ObjectMapper().readTree(json);
+             org.junit.Assert.assertFalse(document.has("_id"));
+             assertEquals("child", document.path("nested").path("_id").asText());
+             assertEquals("metadata", root.path("_id").asText());
+         }
+     }
+
      String id = "{\"id\": \"1234\"}";
      String _id = "{\"_id\": \"1234\"}";
      String ID = "{\"ID\": \"1234\"}";

@@ -198,6 +198,15 @@ public class CursorPayloadTest {
     }
 
     @Test(timeout = 5000)
+    public void trailingDocumentInLaterRecordRejectsWholeBlock() throws Exception {
+        JsonImporter importer = new JsonImporter(store(), "test", java.util.Arrays.asList(
+                "{\"id\":\"valid\"}", "{\"id\":\"bad\"} {}"), null);
+        try { importer.call(); fail("Expected trailing document rejection"); }
+        catch (IOException expected) { }
+        assertTrue(bulkSources.isEmpty());
+    }
+
+    @Test(timeout = 5000)
     public void closingStoreClosesHttpTransport() throws Exception {
         ElasticStore store = new ElasticStore().withClient(client, true);
         store.close();

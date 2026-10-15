@@ -3,6 +3,10 @@ package com.nosqlrevolution.util;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import co.elastic.clients.json.JsonData;
+import co.elastic.clients.json.JsonpMapper;
+import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 
 /**
  *
@@ -13,9 +17,15 @@ public class JsonUtil {
             .enable(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
             .enable(com.fasterxml.jackson.databind.DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS);
     
+    private static final JsonpMapper TREE_MAPPER = new JacksonJsonpMapper(MAPPER);
+
     /** Document identity is a top-level scalar; nested IDs belong to child objects. */
     public static String getId(String json, String idField) {
-        JsonNode root = object(json);
+        return getIdFromDocument(parseObject(json), idField);
+    }
+
+    public static String getIdFromDocument(ObjectNode root, String idField) {
+        java.util.Objects.requireNonNull(root, "Document");
         if (idField != null) return id(root.get(idField));
         for (String name : new String[] { "id", "_id", "Id", "_Id", "ID", "_ID", "iD", "_iD" }) {
             JsonNode value = root.get(name);
@@ -34,20 +44,38 @@ public class JsonUtil {
         return id;
     }
 
-    private static com.fasterxml.jackson.databind.node.ObjectNode object(String json) {
+    /** Strict parsing shared by validation, identity extraction and bulk serialization. */
+    public static ObjectNode parseObject(String json) {
+        if (json == null || json.trim().isEmpty()) throw new IllegalArgumentException("Document JSON is required");
         try {
             JsonNode root = MAPPER.readTree(json);
             if (root == null || !root.isObject()) throw new IllegalArgumentException("Document must be a JSON object");
-            return (com.fasterxml.jackson.databind.node.ObjectNode) root;
+            return (ObjectNode) root;
         } catch (IOException ex) {
             throw new java.io.UncheckedIOException("Cannot parse document JSON", ex);
         }
     }
 
     public static String removeIdFromSource(String source, String idField) {
-        com.fasterxml.jackson.databind.node.ObjectNode root = object(source);
+        ObjectNode root = parseObject(source);
         root.remove("_id");
         return root.toString();
+    }
+
+    /** Retains the validated tree; never removes metadata from the caller's tree. */
+    public static JsonData document(ObjectNode source, JsonpMapper mapper) {
+        java.util.Objects.requireNonNull(source, "Document");
+        ObjectNode payload = source;
+        if (source.has("_id")) {
+            payload = source.deepCopy();
+            payload.remove("_id");
+        }
+        if (mapper instanceof JacksonJsonpMapper) return JsonData.of(payload, TREE_MAPPER);
+        // Preserve support for clients using a non-Jackson JSON-P provider.
+        try (jakarta.json.stream.JsonParser parser = mapper.jsonProvider()
+                .createParser(new java.io.StringReader(payload.toString()))) {
+            return JsonData.from(parser, mapper);
+        }
     }
 
     public static String getIdFromSource(String s, String sourceField) {

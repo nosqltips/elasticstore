@@ -28,6 +28,7 @@ import co.elastic.clients.elasticsearch.core.search.HitsMetadata;
 import co.elastic.clients.elasticsearch.core.search.SourceFilter;
 import co.elastic.clients.elasticsearch.core.search.TrackHits;
 import co.elastic.clients.json.JsonData;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.nosqlrevolution.query.ElasticStoreQuery;
 import com.nosqlrevolution.OperationStatus;
 import com.nosqlrevolution.DocumentOptions;
@@ -343,11 +344,7 @@ public class QueryService {
     }
 
     private JsonData document(String source) {
-        if (source == null || source.trim().isEmpty()) throw new IllegalArgumentException("Document JSON is required");
-        try (jakarta.json.stream.JsonParser parser = client._jsonpMapper().jsonProvider()
-                .createParser(new java.io.StringReader(JsonUtil.removeIdFromSource(source, null)))) {
-            return JsonData.from(parser, client._jsonpMapper());
-        }
+        return JsonUtil.document(JsonUtil.parseObject(source), client._jsonpMapper());
     }
 
     /**
@@ -360,8 +357,14 @@ public class QueryService {
     public OperationStatus bulkIndex(String index, String[] source, String idField) {
         java.util.Objects.requireNonNull(source, "Documents");
         String[] ids = new String[source.length];
-        for (int i = 0; i < source.length; i++) ids[i] = JsonUtil.getId(source[i], idField);
-        return bulkIndexWithIds(index, source, ids);
+        ObjectNode[] documents = new ObjectNode[source.length];
+        for (int i = 0; i < source.length; i++) {
+            documents[i] = JsonUtil.parseObject(source[i]);
+            ids[i] = JsonUtil.getIdFromDocument(documents[i], idField);
+        }
+        DocumentOptions[] options = new DocumentOptions[source.length];
+        Arrays.fill(options, DocumentOptions.DEFAULT);
+        return bulkIndexParsed(index, documents, ids, options);
     }
 
     public OperationStatus bulkIndexWithIds(String index, String[] source, String[] ids) {
@@ -371,12 +374,20 @@ public class QueryService {
     }
 
     public OperationStatus bulkIndexWithIds(String index, String[] source, String[] ids, DocumentOptions[] options) {
+        java.util.Objects.requireNonNull(source, "Documents");
+        ObjectNode[] documents = new ObjectNode[source.length];
+        for (int i = 0; i < source.length; i++) documents[i] = JsonUtil.parseObject(source[i]);
+        return bulkIndexParsed(index, documents, ids, options);
+    }
+
+    /** Submits a previously validated block without parsing its JSON again. */
+    public OperationStatus bulkIndexParsed(String index, ObjectNode[] source, String[] ids, DocumentOptions[] options) {
         if (source.length != options.length) throw new IllegalArgumentException("Each document needs an options slot");
         if (source.length != ids.length) throw new IllegalArgumentException("Each document needs an ID slot");
         if (source.length == 0) return new OperationStatus(java.util.Collections.emptyList());
         BulkRequest.Builder request = new BulkRequest.Builder();
         for (int i = 0; i < source.length; i++) {
-            JsonData document = document(source[i]);
+            JsonData document = JsonUtil.document(source[i], client._jsonpMapper());
             String id = ids[i];
             DocumentOptions option = options[i];
             validateOptions(id, option);
