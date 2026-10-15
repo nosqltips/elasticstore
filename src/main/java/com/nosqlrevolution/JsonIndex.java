@@ -92,11 +92,11 @@ public class JsonIndex<T> extends Index<String> {
     }
     
     @Override
-    public Cursor<JsonData> findAll() {
+    public Cursor<String> findAll() {
         SearchRequest request = service.findAllScroll(getIndex());
         if (request != null) {
             try {
-                return new ScrollCursor<>(JsonData.class, request, client);
+                return new ScrollCursor<>(String.class, request, client);
             } catch (Exception e) {
                 throw new IllegalStateException("Failed to create document cursor", e);
             }
@@ -105,11 +105,11 @@ public class JsonIndex<T> extends Index<String> {
     }
 
     @Override
-    public Cursor<JsonData> findAllScroll(ElasticStoreQuery query) {
+    public Cursor<String> findAllScroll(ElasticStoreQuery query) {
         SearchRequest request = service.findAllScroll(query, getIndex());
         if (request != null) {
             try {
-                return new ScrollCursor<>(JsonData.class, request, client, query == null ? 0 : query.getSkip(), query == null ? 0 : query.getLimit());
+                return new ScrollCursor<>(String.class, request, client, query == null ? 0 : query.getSkip(), query == null ? 0 : query.getLimit());
             } catch (Exception e) {
                 throw new IllegalStateException("Failed to create document cursor", e);
             }
@@ -131,11 +131,11 @@ public class JsonIndex<T> extends Index<String> {
     }
 
     @Override
-    public Cursor<JsonData> findAll(ElasticStoreQuery query) {
+    public Cursor<String> findAll(ElasticStoreQuery query) {
         SearchRequest request = service.findAllScroll(query, getIndex());
         if (request != null) {
             try {
-                return new ScrollCursor<>(JsonData.class, request, client, query == null ? 0 : query.getSkip(), query == null ? 0 : query.getLimit());
+                return new ScrollCursor<>(String.class, request, client, query == null ? 0 : query.getSkip(), query == null ? 0 : query.getLimit());
             } catch (Exception e) {
                 throw new IllegalStateException("Failed to create document cursor", e);
             }
@@ -163,6 +163,7 @@ public class JsonIndex<T> extends Index<String> {
 
     @Override
     public OperationStatus write(List<? extends String> json, DocumentOptions options) {
+        java.util.Objects.requireNonNull(json, "Documents");
         java.util.Objects.requireNonNull(options, "Document options");
         if (options.getSequenceNumber() != null && json.size() != 1) {
             throw new IllegalArgumentException("Conditional write requires exactly one document");
@@ -193,13 +194,13 @@ public class JsonIndex<T> extends Index<String> {
     }
     
     @Override
-    public Cursor findAllById(String... ids) {
+    public Cursor<String> findAllById(String... ids) {
         String[] json = service.realTimeMultiGet(getIndex(), ids);
-        return new MultiGetCursor<>(JsonData.class, json);
+        return new MultiGetCursor<>(String.class, json);
     }
     
     @Override
-    public Cursor<String> findAllById(Class clazz, String... ids) {
+    public <E> Cursor<E> findAllById(Class<E> clazz, String... ids) {
         String[] json = service.realTimeMultiGet(getIndex(), ids);        
         return new MultiGetCursor<>(clazz, json);
     }

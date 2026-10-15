@@ -248,12 +248,45 @@ values. JSON writes use explicit options for routing/version constraints.
 when a model supplies an external version. Typed document deletion reads its
 routing metadata; version constraints on deletion must be passed explicitly.
 
+### Supported index APIs
+
+`getIndex(Document.class, name)` returns an `Index<Document>`;
+`getIndex(String.class, name)` reads and writes JSON strings; and
+`getIndex(JsonData.class, name)` reads and writes `JsonData`. Single reads, cursors,
+and multi-get now consistently return that selected type. Code that relied on
+string-index cursors returning `JsonData` should request `JsonData.class` instead.
+
+| Operation | Supported behavior |
+| --- | --- |
+| `write(...)`, `write(list, options)` | Single/bulk replacement writes with ordered results; typed annotations or explicit request constraints |
+| `addBulk(...)`, `flushBulk()` | Buffered writes; automatic flush at the configured size; explicit flush for the final partial block |
+| `find(...)`, `findById(...)` | One source object, or `null` if no match/document; optional conversion class |
+| `findAll(...)`, `findAllScroll(...)` | Closeable PIT cursors with projection, sorting, skip, limit, and page size |
+| `findAllScrollHit(...)` | Full hit cursor with Elasticsearch identity and routing metadata |
+| `findAllById(...)` | Ordered results with null slots for missing IDs; optional conversion class |
+| `findByIdWithRouting(...)`, `findAllByIdWithRouting(...)` | Routed reads with the same missing-document semantics |
+| `remove(...)`, `removeById(...)` | Delete by source identity, explicit IDs, or query; query deletion rejects pagination |
+| `exists()`, `refresh()`, `count(...)` | Index existence, search visibility refresh, and matching count (independent of pagination) |
+
+Cursors stream once and must be closed; collection mutations and membership
+operations are unsupported. Index handles and their bulk buffers are intended for
+one caller at a time. A failed bulk flush keeps its buffer; inspect partial results
+before retrying. JSON identity is taken only from a top-level ID field; child IDs
+never supply the parent document's identity. Null/missing IDs allow server-generated
+IDs, while invalid or blank IDs are rejected.
+
+`applyMapping(...)` now throws an explicit unsupported-operation error rather than
+silently doing nothing. Use `store.getClient().indices()` for index configuration
+until the schema plan is complete. The annotation-only `getIndex(Document.class)`
+overload still requires legacy `@Index` and `@IndexType`; the explicit name overload
+avoids that requirement.
+
 Schema generation and migration of the old embedded-cluster tests remain planned work. The default
 legacy test suite is not yet a supported green build. To run the current focused
 regression and live suites together:
 
 ```sh
-mvn test -Dtest=ModelImportTest,DocumentOptionsTest,OperationStatusTest,ConnectionTest,QueryTest,PipelineTest,PagingFailureTest,CursorPayloadTest,MappingUtilTest,JsonUtilTest,DocumentIdTest,LiveCrudTest,LiveQueryTest,LivePipelineTest,LiveMetadataTransferTest \
+mvn test -Dtest=ModelImportTest,DocumentOptionsTest,OperationStatusTest,ConnectionTest,QueryTest,PipelineTest,PagingFailureTest,CursorPayloadTest,MappingUtilTest,JsonUtilTest,DocumentIdTest,LiveCrudTest,LiveQueryTest,LivePipelineTest,LiveMetadataTransferTest,LiveApiContractTest \
   -Delasticstore.test.url=http://127.0.0.1:19200
 ```
 

@@ -2,6 +2,9 @@ package com.nosqlrevolution;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
+import co.elastic.clients.elasticsearch.core.search.Hit;
+import co.elastic.clients.json.JsonData;
+import com.nosqlrevolution.cursor.HitScrollCursor;
 import com.nosqlrevolution.cursor.MultiGetCursor;
 import com.nosqlrevolution.cursor.Cursor;
 import com.nosqlrevolution.cursor.ScrollCursor;
@@ -134,6 +137,21 @@ public class TypedIndex<T> extends Index<T> {
     }
 
     @Override
+    public Cursor<T> findAllScroll(ElasticStoreQuery query) {
+        return findAll(query);
+    }
+
+    @Override
+    public Cursor<Hit<JsonData>> findAllScrollHit(ElasticStoreQuery query) {
+        SearchRequest request = service.findAllScroll(query, getIndex());
+        try {
+            return new HitScrollCursor(request, client, query == null ? 0 : query.getSkip(), query == null ? 0 : query.getLimit());
+        } catch (Exception ex) {
+            throw new IllegalStateException("Failed to create metadata cursor", ex);
+        }
+    }
+
+    @Override
     public T findByIdWithRouting(String id, String routing) {
         return mapping.get(service.realTimeGet(getIndex(), id, routing), t);
     }
@@ -155,13 +173,13 @@ public class TypedIndex<T> extends Index<T> {
     }
 
     @Override
-    public Cursor findAllById(String... ids) {
+    public Cursor<T> findAllById(String... ids) {
         String[] json = service.realTimeMultiGet(getIndex(), ids);
         return new MultiGetCursor<>(t, json);
     }
     
     @Override
-    public Cursor<T> findAllById(Class<T> clazz, String... ids) {
+    public <E> Cursor<E> findAllById(Class<E> clazz, String... ids) {
         String[] json = service.realTimeMultiGet(getIndex(), ids);        
         return new MultiGetCursor<>(clazz, json);
     }
@@ -213,25 +231,30 @@ public class TypedIndex<T> extends Index<T> {
 
     @Override
     public OperationStatus write(List<? extends T> documents, DocumentOptions options) {
+        java.util.Objects.requireNonNull(documents, "Documents");
         java.util.Objects.requireNonNull(options, "Document options");
         if (options.getSequenceNumber() != null && documents.size() != 1) {
             throw new IllegalArgumentException("Conditional write requires exactly one document");
         }
-        java.util.Objects.requireNonNull(documents, "Documents");
         String[] sources = new String[documents.size()];
         String[] ids = new String[documents.size()];
         DocumentOptions[] all = new DocumentOptions[documents.size()];
         for (int i = 0; i < documents.size(); i++) {
             T document = java.util.Objects.requireNonNull(documents.get(i), "Document");
-            ids[i] = AnnotationHelper.getDocumentId(document, getIdField());
+            if (document instanceof JsonData) {
+                sources[i] = mapping.get(document);
+                ids[i] = com.nosqlrevolution.util.JsonUtil.getId(sources[i], getIdField());
+            } else {
+                ids[i] = AnnotationHelper.getDocumentId(document, getIdField());
+                sources[i] = mapping.get(document);
+            }
             all[i] = options;
-            String routing = AnnotationHelper.getRoutingValue(document, null);
-            String version = AnnotationHelper.getVersionValue(document, null);
+            String routing = document instanceof JsonData ? null : AnnotationHelper.getRoutingValue(document, null);
+            String version = document instanceof JsonData ? null : AnnotationHelper.getVersionValue(document, null);
             if (options.getRouting() == null && routing != null) all[i] = all[i].routing(routing);
             if (options.getExternalVersion() == null && version != null) {
                 all[i] = all[i].externalVersion(Long.parseLong(version));
             }
-            sources[i] = mapping.get(document);
         }
         return sources.length == 1 ? service.index(getIndex(), sources[0], ids[0], all[0])
                 : service.bulkIndexWithIds(getIndex(), sources, ids, all);

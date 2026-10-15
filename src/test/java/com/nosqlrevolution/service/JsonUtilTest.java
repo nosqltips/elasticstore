@@ -60,6 +60,27 @@ public class JsonUtilTest {
          assertNull(JsonUtil.getId(some, null));                 
      }
      
+     @Test public void identityUsesOnlyTopLevelFieldsAndAcceptsIntegerIds() {
+         assertNull(JsonUtil.getId("{\"child\":{\"id\":\"child-id\"}}", null));
+         assertNull(JsonUtil.getId("{\"id\":null}", null));
+         assertNull(JsonUtil.getId("{\"child\":{\"custom\":\"child-id\"}}", "custom"));
+         assertEquals("42", JsonUtil.getId("{\"id\":42}", null));
+     }
+     @Test public void invalidIdentitiesAndTrailingDocumentsAreRejected() {
+         String[] invalid = { "{\"id\":{}}", "{\"id\":[]}", "{\"id\":true}", "{\"id\":\" \"}", "{} {}", "[]", "null" };
+         for (String json : invalid) {
+             try { JsonUtil.getId(json, null); org.junit.Assert.fail(json); }
+             catch (IllegalArgumentException | java.io.UncheckedIOException expected) { }
+         }
+     }
+     @Test public void removingMetadataRetainsChildIdsAndNumericPrecision() {
+         String source = "{\"_id\":\"metadata\",\"child\":{\"id\":\"child-id\"},\"decimal\":0.12345678901234567890123456789}";
+         String cleaned = JsonUtil.removeIdFromSource(source, null);
+         org.junit.Assert.assertFalse(cleaned.contains("\"_id\""));
+         org.junit.Assert.assertTrue(cleaned.contains("child-id"));
+         org.junit.Assert.assertTrue(cleaned.contains("0.12345678901234567890123456789"));
+     }
+
      String id = "{\"id\": \"1234\"}";
      String _id = "{\"_id\": \"1234\"}";
      String ID = "{\"ID\": \"1234\"}";

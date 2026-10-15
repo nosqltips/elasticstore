@@ -115,13 +115,8 @@ public class CursorPayloadTest {
     }
 
     private ElasticStore store() {
-        return new ElasticStore() {
-            @Override public boolean isInitialized() { return true; }
-            @Override public ElasticsearchClient getClient() { return client; }
-            @Override public Index getIndex(Class type, String index) throws Exception {
-                return new JsonIndex<>(this, index);
-            }
-        };
+        // Exercise the real typed factory; this fixture owns and closes the transport.
+        return new ElasticStore().withClient(client);
     }
 
     @Test(timeout = 5000)

@@ -6,14 +6,18 @@ import java.io.IOException;
 
 /** Projects search hits into typed document sources. */
 public class ScrollCursorIterator<E> extends CursorIterator<E> implements AutoCloseable {
-    private final PitIterator<E> hitsIterator;
+    private final PitIterator<?> hitsIterator;
+    private final Class<E> documentType;
 
     protected ScrollCursorIterator(Class<E> documentType, SearchRequest request, ElasticsearchClient client) {
         this(documentType, request, client, 0, 0);
     }
 
     protected ScrollCursorIterator(Class<E> documentType, SearchRequest request, ElasticsearchClient client, long skip, long limit) {
-        hitsIterator = new PitIterator<>(documentType, request, client, skip, limit);
+        this.documentType = documentType;
+        hitsIterator = documentType == String.class
+                ? new PitIterator<>(co.elastic.clients.json.JsonData.class, request, client, skip, limit)
+                : new PitIterator<>(documentType, request, client, skip, limit);
         totalSize = hitsIterator.totalSize;
     }
 
@@ -22,9 +26,10 @@ public class ScrollCursorIterator<E> extends CursorIterator<E> implements AutoCl
 
     @Override
     public E next() {
-        E source = hitsIterator.next().source();
+        Object source = hitsIterator.next().source();
         if (source == null) throw new IllegalStateException("Search hit has no document source");
-        return source;
+        return documentType.cast(documentType == String.class
+                ? ((co.elastic.clients.json.JsonData) source).toJson().toString() : source);
     }
 
     public String getPitId() { return hitsIterator.getPitId(); }

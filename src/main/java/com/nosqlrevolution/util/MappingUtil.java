@@ -20,6 +20,7 @@ public class MappingUtil<T> {
     }
     public String get(T document) {
         Objects.requireNonNull(document, "Document");
+        if (document instanceof JsonData) return ((JsonData) document).toJson().toString();
         try { return MAPPER.writeValueAsString(document); }
         catch (IOException ex) { throw new UncheckedIOException("Cannot serialize document", ex); }
     }

@@ -233,17 +233,21 @@ public class ElasticStore implements AutoCloseable {
      * @throws Exception 
      */
     // TODO: Need to type the exception more strongly
-    public Index getIndex(Class clazz, String index) throws Exception {
+    @SuppressWarnings("unchecked")
+    public <T> Index<T> getIndex(Class<T> clazz, String index) throws Exception {
+        java.util.Objects.requireNonNull(clazz, "Document type");
+        if (index == null || index.trim().isEmpty()) throw new IllegalArgumentException("Index name is required");
         if (client == null) {
             throw new IllegalArgumentException("ElasticStore is not executed");
         }
 
-        if (clazz == String.class || clazz == JsonData.class) {
-            return new JsonIndex<>(this, index);
+        if (clazz == String.class) {
+            // This branch guarantees T is String; retain the legacy JsonIndex facade.
+            return (Index<T>) new JsonIndex<>(this, index);
         }
         
         // TODO: need to catch and throw an exception here
-        return new TypedIndex(clazz, this, index, client);
+        return new TypedIndex<>(clazz, this, index, client);
     }
 
     /**
@@ -255,7 +259,7 @@ public class ElasticStore implements AutoCloseable {
      * @throws Exception 
      */
     // TODO: Need to type the exception more strongly
-    public Index getIndex(Class clazz) throws Exception {
+    public <T> Index<T> getIndex(Class<T> clazz) throws Exception {
         if (client == null) {
             throw new IllegalArgumentException("ElasticStore is not executed");
         }
@@ -267,7 +271,7 @@ public class ElasticStore implements AutoCloseable {
         }
 
         // TODO: need to catch and throw an exception here
-        return new TypedIndex(clazz, this, index, client);
+        return new TypedIndex<>(clazz, this, index, client);
     }
 
 //    /**
@@ -318,19 +322,6 @@ public class ElasticStore implements AutoCloseable {
      * @param indexes
      */
     protected void applyMapping(String mapping, String... indexes) {
-        // Check to see if indexes exist and create if missing.
-        for (String index: indexes) {
-//            if (! client.admin().indices().exists(new IndicesExistsRequest(index)).actionGet().isExists()) {
-//                client.admin().indices().create(new CreateIndexRequest(index)).actionGet();
-//            }
-        }
-        
-//        // Apply the new mapping to the index
-//        client.admin()
-//                .indices()
-//                .putMapping(new PutMappingRequest(indexes)
-//                    .source(mapping)
-//                    .type(type)
-//                ).actionGet();
+        throw new UnsupportedOperationException("Mapping application is not implemented yet; use the Elasticsearch client indices API");
     }
 }

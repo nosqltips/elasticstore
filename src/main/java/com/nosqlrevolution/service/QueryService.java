@@ -79,6 +79,7 @@ public class QueryService {
 
             List<Hit<JsonData>> hits = response.hits().hits();
             for (Hit<JsonData> hit: hits) {
+                if (hit.source() == null) throw new IllegalStateException("Document source is unavailable");
                 return hit.source().toJson().toString();
             }
         } catch (IOException ex) {

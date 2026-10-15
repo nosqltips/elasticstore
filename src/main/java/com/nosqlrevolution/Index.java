@@ -100,7 +100,7 @@ public abstract class Index<T> {
      * 
      * @return 
      */
-    public Cursor findAll() {
+    public Cursor<T> findAll() {
         throw new UnsupportedOperationException();
     }
 
@@ -110,7 +110,7 @@ public abstract class Index<T> {
      * @param query
      * @return 
      */
-    public Cursor findAll(ElasticStoreQuery query) {
+    public Cursor<T> findAll(ElasticStoreQuery query) {
         throw new UnsupportedOperationException();
     }
 
@@ -120,7 +120,7 @@ public abstract class Index<T> {
      * @param query
      * @return 
      */
-    public Cursor findAllScroll(ElasticStoreQuery query) {
+    public Cursor<T> findAllScroll(ElasticStoreQuery query) {
         throw new UnsupportedOperationException();
     }
 
@@ -209,7 +209,7 @@ public abstract class Index<T> {
      * @param ids
      * @return 
      */
-    public Cursor findAllById(String... ids) {
+    public Cursor<T> findAllById(String... ids) {
         throw new UnsupportedOperationException();
     }
     
@@ -221,7 +221,7 @@ public abstract class Index<T> {
      * @param ids
      * @return 
      */
-    public Cursor<T> findAllById(Class<T> clazz, String... ids) {
+    public <E> Cursor<E> findAllById(Class<E> clazz, String... ids) {
         throw new UnsupportedOperationException();
     }
     
@@ -259,9 +259,10 @@ public abstract class Index<T> {
         for (int i = 0; i < documents.length; i++) {
             Object document = java.util.Objects.requireNonNull(documents[i], "Document");
             ids[i] = document instanceof String ? com.nosqlrevolution.util.JsonUtil.getId((String) document, idField)
+                    : document instanceof JsonData ? com.nosqlrevolution.util.JsonUtil.getId(((JsonData) document).toJson().toString(), idField)
                     : com.nosqlrevolution.util.AnnotationHelper.findDocumentId(document, idField);
             options[i] = DocumentOptions.DEFAULT;
-            if (!(document instanceof String)) {
+            if (!(document instanceof String) && !(document instanceof JsonData)) {
                 String routing = com.nosqlrevolution.util.AnnotationHelper.getRoutingValue(document, null);
                 if (routing != null) options[i] = options[i].routing(routing);
             }

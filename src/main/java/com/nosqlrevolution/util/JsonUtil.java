@@ -1,88 +1,55 @@
 package com.nosqlrevolution.util;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
  * @author cbrown
  */
 public class JsonUtil {    
-    private static final Logger LOGGER = Logger.getLogger(JsonUtil.class.getName());
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = new ObjectMapper()
+            .enable(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
+            .enable(com.fasterxml.jackson.databind.DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS);
     
-    public static String getId(String s, String idField) {
-        ObjectMapper mapper = new ObjectMapper();
+    /** Document identity is a top-level scalar; nested IDs belong to child objects. */
+    public static String getId(String json, String idField) {
+        JsonNode root = object(json);
+        if (idField != null) return id(root.get(idField));
+        for (String name : new String[] { "id", "_id", "Id", "_Id", "ID", "_ID", "iD", "_iD" }) {
+            JsonNode value = root.get(name);
+            if (value != null && !value.isNull()) return id(value);
+        }
+        return null;
+    }
+
+    private static String id(JsonNode value) {
+        if (value == null || value.isNull()) return null;
+        if (!value.isTextual() && !value.isIntegralNumber()) {
+            throw new IllegalArgumentException("Document ID must be a string or integer");
+        }
+        String id = value.asText();
+        if (id.trim().isEmpty()) throw new IllegalArgumentException("Document ID must not be blank");
+        return id;
+    }
+
+    private static com.fasterxml.jackson.databind.node.ObjectNode object(String json) {
         try {
-            JsonNode rootNode = mapper.readValue(s, JsonNode.class);
-            JsonNode id;
-            // Check the specified idField if available
-            if (idField != null) {
-                id = rootNode.findValue(idField);
-                if (id != null) {
-                    return id.asText();
-                }
-            // Check for variations of id or _id fields
-            } else {
-                id = rootNode.findValue("id");
-                if (id != null) {
-                    return id.asText();
-                } 
-                id = rootNode.findValue("_id");
-                if (id != null) {
-                    return id.asText();
-                } 
-                id = rootNode.findValue("Id");
-                if (id != null) {
-                    return id.asText();
-                } 
-                id = rootNode.findValue("_Id");
-                if (id != null) {
-                    return id.asText();
-                } 
-                id = rootNode.findValue("ID");
-                if (id != null) {
-                    return id.asText();
-                } 
-                id = rootNode.findValue("_ID");
-                if (id != null) {
-                    return id.asText();
-                } 
-                id = rootNode.findValue("iD");
-                if (id != null) {
-                    return id.asText();
-                } 
-                id = rootNode.findValue("_iD");
-                if (id != null) {
-                    return id.asText();
-                } 
-            }
+            JsonNode root = MAPPER.readTree(json);
+            if (root == null || !root.isObject()) throw new IllegalArgumentException("Document must be a JSON object");
+            return (com.fasterxml.jackson.databind.node.ObjectNode) root;
         } catch (IOException ex) {
             throw new java.io.UncheckedIOException("Cannot parse document JSON", ex);
         }
-                        
-        // No id found, return null
-        return null;
     }
-    
-    public static String removeIdFromSource(String source, String idField) {
-        try {
-            Map<String, Object> sourceMap = MAPPER.readValue(source, new TypeReference<HashMap<String, Object>>(){});
-            sourceMap.remove("_id");
-            //sourceMap.remove(idField);
-            return MAPPER.writeValueAsString(sourceMap);
-        } catch (IOException ie) {
-            throw new java.io.UncheckedIOException("Cannot parse document JSON", ie);
-        }
 
+    public static String removeIdFromSource(String source, String idField) {
+        com.fasterxml.jackson.databind.node.ObjectNode root = object(source);
+        root.remove("_id");
+        return root.toString();
     }
-    
+
     public static String getIdFromSource(String s, String sourceField) {
         ObjectMapper mapper = new ObjectMapper();
         try {
