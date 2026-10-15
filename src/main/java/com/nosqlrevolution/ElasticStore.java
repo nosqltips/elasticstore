@@ -3,279 +3,225 @@ package com.nosqlrevolution;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.json.JsonData;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
-import co.elastic.clients.transport.ElasticsearchTransport;
 import co.elastic.clients.transport.rest_client.RestClientTransport;
 import com.nosqlrevolution.util.AnnotationHelper;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.KeyStore;
+import java.security.cert.CertificateFactory;
+import java.time.Duration;
+import java.util.Objects;
+import javax.net.ssl.SSLContext;
 import org.apache.http.HttpHost;
+import org.apache.http.Header;
+import org.apache.http.message.BasicHeader;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
-import org.elasticsearch.client.RestClientBuilder;
+import org.apache.http.ssl.SSLContexts;
 import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestClientBuilder;
 
-/**
- *
- * @author cbrown
- */
+/** Connection configuration and client lifetime for Elasticsearch's REST API. */
 public class ElasticStore implements AutoCloseable {
-    private static final int DEFAULT_PORT = 9243;
-    private static final String DEFAULT_HOST = "127.0.0.1";
-    private static final String DEFAULT_TIMEOUT = "10s";
-    private static final String DEFAULT_CLUSTER_NAME = "elasticsearch";
-    private static boolean multicast = true;
-    private static boolean local = false;
-    private static boolean memory = false;
-    
-    private ElasticsearchClient client = null;
-    private String[] hosts = null;
-    private InetSocketAddress[] addresses = null;
-    private String clusterName = DEFAULT_CLUSTER_NAME;
-    private int port = DEFAULT_PORT;
-    private String timeout = DEFAULT_TIMEOUT;
-    
-    // for Elastic service
-    private String username = null;
-    private String password = null;
-    private String clusterId = null;
-    private String region = null;
-    private boolean enableSsl = false;
+    private ElasticsearchClient client;
+    private boolean ownsClient;
+    private String[] endpoints;
+    private String scheme = "http";
+    private int port = 9200;
+    private int connectTimeoutMillis = 20000;
+    private int socketTimeoutMillis = 300000;
+    private String username;
+    private String password;
+    private String apiKey;
+    private Path caCertificate;
+    private String expectedClusterName;
 
-    /**
-     * Run a local instance of ElasticSearch.
-     * This is useful for unit tests or running ElasticSearch as part of your application.
-     * 
-     * @return 
-     */
-    public ElasticStore asLocal() {
-        local = true;
+    public ElasticStore withEndpoints(String... endpoints) {
+        ensureConfigurable();
+        if (endpoints == null || endpoints.length == 0) throw new IllegalArgumentException("At least one endpoint is required");
+        for (String endpoint : endpoints) endpoint(endpoint);
+        this.endpoints = endpoints.clone();
         return this;
     }
 
-    /**
-     * Run a local instance of ElasticSearch as an in=memory store.
-     * This is useful for unit tests or running ElasticSearch as part of your application.
-     * 
-     * @return 
-     */
-    public ElasticStore asMemoryOnly() {
-        local = true;
-        memory = true;
+    /** A supplied client is borrowed unless ownership is explicitly transferred. */
+    public ElasticStore withClient(ElasticsearchClient client) { return withClient(client, false); }
+    public ElasticStore withClient(ElasticsearchClient client, boolean ownsClient) {
+        ensureConfigurable();
+        this.client = Objects.requireNonNull(client, "Client");
+        this.ownsClient = ownsClient;
         return this;
     }
 
-    /**
-     * Connect to the Elastic.co service. Requires usernamen and password.
-     * 
-     * @return 
-     */
-    public ElasticStore asElastic() {
-        enableSsl = true;
-        multicast = false;
-        return this;
+    @Deprecated public ElasticStore asLocal() { return withEndpoints("http://127.0.0.1:9200"); }
+    @Deprecated public ElasticStore asMemoryOnly() {
+        throw new UnsupportedOperationException("Embedded Elasticsearch is unsupported; start a test server and use withEndpoints()");
     }
-
-    /**
-     * Specify multicast connection to a localhost cluster.
-     * 
-     * @return 
-     */
-    public ElasticStore withMultiCast() {
-        multicast = true;
-        return this;
+    @Deprecated public ElasticStore withMultiCast() {
+        throw new UnsupportedOperationException("Multicast discovery is unsupported; use withEndpoints()");
     }
-
-    /**
-     * Specify unicast connection to a localhost cluster.
-     * 
-     * @return 
-     */
-    public ElasticStore withUnicast() {
-        multicast = false;
-        return this;
+    @Deprecated public ElasticStore withUnicast() { ensureConfigurable(); return this; }
+    /** Legacy shorthand for bare HTTP hosts; explicit URL schemes are retained. */
+    @Deprecated public ElasticStore withUnicast(String... hosts) {
+        ensureConfigurable();
+        if (hosts == null || hosts.length == 0) throw new IllegalArgumentException("At least one host is required");
+        String[] urls = new String[hosts.length];
+        for (int i = 0; i < hosts.length; i++) {
+            String host = Objects.requireNonNull(hosts[i], "Host");
+            if (host.contains("://")) urls[i] = host;
+            else {
+                endpoint(scheme + "://" + host);
+                URI parsed = URI.create(scheme + "://" + host);
+                if (parsed.getHost() == null) throw new IllegalArgumentException("Invalid host; bracket IPv6 addresses");
+                urls[i] = new HttpHost(parsed.getHost(), parsed.getPort() < 0 ? port : parsed.getPort(), scheme).toURI();
+            }
+        }
+        return withEndpoints(urls);
     }
-
-    /**
-     * Specify unicast connection with a list of nodes in the ElasticSearch cluster.
-     * 
-     * @param hosts
-     * @return 
-     */
-    public ElasticStore withUnicast(String... hosts) {
-        multicast = false;
-        this.hosts = hosts;
-        return this;
+    @Deprecated public ElasticStore withUnicast(InetSocketAddress... addresses) {
+        if (addresses == null || addresses.length == 0) throw new IllegalArgumentException("At least one address is required");
+        String[] urls = new String[addresses.length];
+        for (int i = 0; i < addresses.length; i++) {
+            InetSocketAddress address = Objects.requireNonNull(addresses[i], "Address");
+            urls[i] = new HttpHost(address.getHostString(), address.getPort(), scheme).toURI();
+        }
+        return withEndpoints(urls);
     }
-
-    /**
-     * Specify unicast connection with a list of nodes in the ElasticSearch cluster.
-     * 
-     * @param addresses
-     * @return 
-     */
-    public ElasticStore withUnicast(InetSocketAddress... addresses) {
-        multicast = false;
-        this.addresses = addresses;
-        return this;
-    }
-    
-    /**
-     * Specify the port of the ElasticSearch cluster to connect to.
-     * 
-     * @param port
-     * @return 
-     */
-    public ElasticStore withPort(int port) {
+    /** HTTPS defaults for legacy callers; prefer explicit endpoint URLs. */
+    @Deprecated public ElasticStore asElastic() { ensureConfigurable(); scheme = "https"; return this; }
+    @Deprecated public ElasticStore withPort(int port) {
+        ensureConfigurable();
+        if (port <= 0 || port > 65535) throw new IllegalArgumentException("Port must be between 1 and 65535");
+        if (endpoints != null) throw new IllegalStateException("Set the port in each endpoint URL");
         this.port = port;
         return this;
     }
-
-    /**
-     * Specify the name of the ElasticSearch cluster to connect to.
-     * 
-     * @param clusterName
-     * @return 
-     */
-    public ElasticStore withClusterName(String clusterName) {
-        this.clusterName = clusterName;
-        return this;
+    /** Optional readiness check against the reported cluster name. */
+    @Deprecated public ElasticStore withClusterName(String name) {
+        ensureConfigurable(); expectedClusterName = text(name, "Cluster name"); return this;
     }
-    
-    /**
-     * Specify a timeout when connecting to the ElasticSearch cluster.
-     * 
-     * @param timeout
-     * @return 
-     */
+    @Deprecated public ElasticStore withClusterId(String clusterId) {
+        throw new UnsupportedOperationException("Legacy cloud cluster IDs are unsupported; supply the deployment's HTTPS endpoint");
+    }
+    @Deprecated public ElasticStore withRegion(String region) {
+        throw new UnsupportedOperationException("Cloud region does not configure a REST endpoint; use withEndpoints()");
+    }
+
+    public ElasticStore withUsername(String username) { ensureConfigurable(); this.username = text(username, "Username"); return this; }
+    public ElasticStore withPassword(String password) { ensureConfigurable(); this.password = Objects.requireNonNull(password, "Password"); return this; }
+    /** The encoded API key, without an Authorization prefix. */
+    public ElasticStore withApiKey(String apiKey) { ensureConfigurable(); this.apiKey = text(apiKey, "API key"); return this; }
+    public ElasticStore withCaCertificate(Path certificate) {
+        ensureConfigurable(); caCertificate = Objects.requireNonNull(certificate, "CA certificate"); return this;
+    }
+    public ElasticStore withConnectTimeout(Duration timeout) {
+        ensureConfigurable(); connectTimeoutMillis = milliseconds(timeout); return this;
+    }
+    public ElasticStore withSocketTimeout(Duration timeout) {
+        ensureConfigurable(); socketTimeoutMillis = milliseconds(timeout); return this;
+    }
+    /** Legacy timeout applies to both connection and socket I/O; bare numbers mean seconds. */
     public ElasticStore withTimeout(String timeout) {
-        this.timeout = timeout;
-        return this;
-    }
-    
-    /**
-     * Specify a username to use with the Elastic.co service.
-     * 
-     * @param username
-     * @return 
-     */
-    public ElasticStore withUsername(String username) {
-        this.username = username;
-        return this;
-    }
-    
-    /**
-     * Specify a username to use with the Elastic.co service.
-     * 
-     * @param password
-     * @return 
-     */
-    public ElasticStore withPassword(String password) {
-        this.password = password;
-        return this;
-    }
-    
-    /**
-     * Specify a clusterId to use with the Elastic.co service.
-     * 
-     * @param clusterId
-     * @return 
-     */
-    public ElasticStore withClusterId(String clusterId) {
-        this.clusterId = clusterId;
-        return this;
-    }
-    
-    /**
-     * Specify a username to use with the Elastic.co service.
-     * 
-     * @param region
-     * @return 
-     */
-    public ElasticStore withRegion(String region) {
-        this.region = region;
-        return this;
+        java.util.regex.Matcher value = java.util.regex.Pattern.compile("([0-9]+)(ms|s|m)?").matcher(text(timeout, "Timeout"));
+        if (!value.matches()) throw new IllegalArgumentException("Timeout must be a positive number followed by ms, s or m");
+        long count = Long.parseLong(value.group(1));
+        String unit = value.group(2);
+        Duration duration = "ms".equals(unit) ? Duration.ofMillis(count)
+                : "m".equals(unit) ? Duration.ofMinutes(count) : Duration.ofSeconds(count);
+        return withConnectTimeout(duration).withSocketTimeout(duration);
     }
 
-    /**
-     * Create an ElasticStore instance.
-     * 
-     * @return 
-     * @throws java.lang.Exception 
-     */
-    public ElasticStore execute() throws Exception {        
-        HttpHost[] httpHosts = new HttpHost[addresses.length];
-        for (int i=0; i < addresses.length; i++) {
-            httpHosts[i] = new HttpHost(addresses[i].getHostName(), addresses[i].getPort(), "https");
-            System.out.println("hosts[i]=" +addresses[i].getHostName() + " port=" + addresses[i].getPort());
-        }
-
-        // Build the settings for our client.
-        if (username == null && password == null) {
-            throw new Exception("Elastic service not configured properly, aborting");
-        }
-
-        final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-        credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(username, password));
-
-        RestClientBuilder restClientBuilder = RestClient.builder(httpHosts)
-            .setRequestConfigCallback(
-                    (RequestConfig.Builder requestConfigBuilder) -> 
-                            requestConfigBuilder.setConnectTimeout(20000)
-                                    .setSocketTimeout(300000))
-            .setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
-                @Override
-                public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpClientBuilder) {
-                    return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
-                }
-            });
-
-//        // Create the low-level client
-//        RestClient restClient = RestClient.builder(httpHosts).build();
-
-        // Create the transport with a Jackson mapper
-        ElasticsearchTransport transport = new RestClientTransport(
-            restClientBuilder.build(), new JacksonJsonpMapper());
-
-        // And create the API client
-        client = new ElasticsearchClient(transport);
-        client.cluster().health();
-
-        return this;
-    }
-    
-    /**
-     * Check to see if ElasticStore has been initialized.
-     * @return 
-     */
-    public boolean isInitialized() {
-        return client != null;
-    }
-
-    /**
-     * Access the ElasticSearch REST client.
-     * 
-     * @return 
-     */
-    public ElasticsearchClient getClient() {
-        return client;
-    }
-  
-    /**
-     * Close ElasticStore
-     */
-    @Override
-    public void close() {
-        if (client != null) {
-            try { client._transport().close(); }
-            catch (java.io.IOException ex) {
-                throw new java.io.UncheckedIOException("Cannot close Elasticsearch client", ex);
+    public ElasticStore execute() throws Exception {
+        if (client != null) return this;
+        if ((username == null) != (password == null)) throw new IllegalStateException("Both username and password are required for basic authentication");
+        if (apiKey != null && username != null) throw new IllegalStateException("Choose basic authentication or an API key");
+        String[] urls = endpoints == null ? new String[] { scheme + "://127.0.0.1:" + port } : endpoints.clone();
+        HttpHost[] hosts = new HttpHost[urls.length];
+        for (int i = 0; i < urls.length; i++) hosts[i] = endpoint(urls[i]);
+        final SSLContext ssl = caCertificate == null ? null : trust(caCertificate);
+        if (ssl != null) {
+            for (HttpHost host : hosts) if (!"https".equals(host.getSchemeName())) {
+                throw new IllegalStateException("A CA certificate requires HTTPS endpoints");
             }
         }
+        RestClientBuilder builder = RestClient.builder(hosts)
+                .setRequestConfigCallback(config -> config.setConnectTimeout(connectTimeoutMillis).setSocketTimeout(socketTimeoutMillis))
+                .setHttpClientConfigCallback(config -> {
+                    if (username != null) {
+                        BasicCredentialsProvider credentials = new BasicCredentialsProvider();
+                        credentials.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(username, password));
+                        config.setDefaultCredentialsProvider(credentials);
+                    }
+                    if (ssl != null) config.setSSLContext(ssl);
+                    return config;
+                });
+        if (apiKey != null) builder.setDefaultHeaders(new Header[] { new BasicHeader("Authorization", "ApiKey " + apiKey) });
+        ElasticsearchClient candidate = new ElasticsearchClient(new RestClientTransport(builder.build(), new JacksonJsonpMapper()));
+        try {
+            String name = candidate.cluster().health().clusterName();
+            if (expectedClusterName != null && !expectedClusterName.equals(name)) {
+                throw new IllegalStateException("Connected cluster name does not match the configured name");
+            }
+            client = candidate;
+            ownsClient = true;
+        } catch (Exception | Error failure) {
+            try { candidate._transport().close(); } catch (Exception cleanup) { failure.addSuppressed(cleanup); }
+            throw failure;
+        }
+        return this;
+    }
+
+    private static HttpHost endpoint(String value) {
+        URI uri;
+        try { uri = URI.create(text(value, "Endpoint")); }
+        catch (IllegalArgumentException ex) { throw new IllegalArgumentException("Invalid endpoint URL"); }
+        if (!("http".equals(uri.getScheme()) || "https".equals(uri.getScheme())) || uri.getHost() == null
+                || uri.getUserInfo() != null || uri.getRawQuery() != null || uri.getRawFragment() != null
+                || !(uri.getPath() == null || uri.getPath().isEmpty() || "/".equals(uri.getPath()))
+                || uri.getPort() == 0 || uri.getPort() > 65535) {
+            throw new IllegalArgumentException("Endpoint must be an HTTP(S) URL without credentials, query, fragment or path");
+        }
+        return new HttpHost(uri.getHost(), uri.getPort() < 0 ? ("https".equals(uri.getScheme()) ? 443 : 80) : uri.getPort(), uri.getScheme());
+    }
+    private static String text(String value, String label) {
+        if (value == null || value.trim().isEmpty()) throw new IllegalArgumentException(label + " must not be blank");
+        return value;
+    }
+    private static int milliseconds(Duration value) {
+        Objects.requireNonNull(value, "Timeout");
+        long milliseconds = value.toMillis();
+        if (milliseconds <= 0 || milliseconds > Integer.MAX_VALUE) throw new IllegalArgumentException("Timeout must fit a positive millisecond int");
+        return (int) milliseconds;
+    }
+    private static SSLContext trust(Path certificate) throws Exception {
+        KeyStore store = KeyStore.getInstance(KeyStore.getDefaultType());
+        store.load(null, null);
+        try (InputStream input = Files.newInputStream(certificate)) {
+            int index = 0;
+            for (java.security.cert.Certificate ca : CertificateFactory.getInstance("X.509").generateCertificates(input)) {
+                store.setCertificateEntry("ca-" + index++, ca);
+            }
+            if (index == 0) throw new IllegalArgumentException("CA file contains no certificates");
+        }
+        return SSLContexts.custom().loadTrustMaterial(store, null).build();
+    }
+    private void ensureConfigurable() { if (client != null) throw new IllegalStateException("Close the store before reconfiguring it"); }
+    public boolean isInitialized() { return client != null; }
+    public ElasticsearchClient getClient() { return client; }
+    @Override public void close() {
+        ElasticsearchClient closing = client;
+        client = null;
+        if (closing != null && ownsClient) {
+            try { closing._transport().close(); }
+            catch (IOException ex) { throw new UncheckedIOException("Cannot close Elasticsearch client", ex); }
+        }
+        ownsClient = false;
     }
 
     /**

@@ -11,7 +11,7 @@ public class ImportOptions {
     private String hostname = "localhost";
     
     @Option(name="-c",usage="name of Elasticsearch cluster")
-    private String clustername = "elasticsearch";
+    private String clustername = null;
     
     @Option(name="-i",usage="index to use")
     private String index = null;
@@ -42,6 +42,13 @@ public class ImportOptions {
 
     @Option(name="-o",usage="other file input")
     private String otherField = null;
+
+    @Option(name="-ak", usage="encoded Elasticsearch API key")
+    private String apiKey;
+    @Option(name="-ca", usage="path to trusted Elasticsearch CA certificate")
+    private String caCertificate;
+    public String getApiKey() { return apiKey; }
+    public String getCaCertificate() { return caCertificate; }
 
     // For Elastic service
     @Option(name="-e",usage="connect to elastic service cluster")

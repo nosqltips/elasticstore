@@ -42,11 +42,8 @@ public class LivePipelineTest {
         Assume.assumeNotNull(endpoint);
         http = RestClient.builder(HttpHost.create(endpoint)).build();
         client = new ElasticsearchClient(new RestClientTransport(http, new JacksonJsonpMapper()));
-        // Inject the local HTTP client; the legacy CLI connector uses HTTPS and credentials.
-        store = new ElasticStore();
-        java.lang.reflect.Field field = ElasticStore.class.getDeclaredField("client");
-        field.setAccessible(true);
-        field.set(store, client);
+        // Explicitly transfer transport ownership to the store.
+        store = new ElasticStore().withClient(client, true);
     }
 
     @After

@@ -51,6 +51,7 @@ public class TypedIndex<T> extends Index<T> {
 
     @Override
     public boolean flushBulk() {
+        if (bulk == null || bulk.isEmpty()) return true;
         OperationStatus status = write(bulk);
         bulk.clear();
         return status.succeeded();
@@ -196,44 +197,26 @@ public class TypedIndex<T> extends Index<T> {
 //    }
     
     @Override
-    public OperationStatus write(T... t) {
-        // TODO: Need to gather results from index operation
-        OperationStatus status = new OperationStatus();
-        if (t.length == 1) {
-            service.index(getIndex(), mapping.get(t[0]), AnnotationHelper.getDocumentId(t[0], getIdField()));
-        } else if (t.length > 1) {
-            List<String> list = new ArrayList<>();
-            for (T o: t) {
-                list.add(mapping.get(o));
-                // TODO: what do we do with null ids? bail with exception? Report the error with OperationStatus?
-            }
-            service.bulkIndex(getIndex(), list.toArray(new String[list.size()]), getIdField());
-        }
-        status.setSucceeded(true);
-        return status;
+    public OperationStatus write(T... documents) {
+        return write(java.util.Arrays.asList(java.util.Objects.requireNonNull(documents, "Documents")));
     }
-    
+
     @Override
-    public OperationStatus write(List<? extends T> t) {
-        // TODO: need to gather operation results and return
-        OperationStatus status = new OperationStatus();
-        if (t.size() == 1) {
-            service.index(getIndex(), mapping.get(t.get(0)), AnnotationHelper.getDocumentId(t.get(0), getIdField()));
-        } else if (t.size() > 1) {
-            List<String> list = new ArrayList<>();
-            for (T o: t) {
-                list.add(mapping.get(o));
-                // TODO: what do we do with null ids? bail with exception? Report the error with OperationStatus?
-            }
-            service.bulkIndex(getIndex(), list.toArray(new String[list.size()]), getIdField());
+    public OperationStatus write(List<? extends T> documents) {
+        java.util.Objects.requireNonNull(documents, "Documents");
+        String[] sources = new String[documents.size()];
+        String[] ids = new String[documents.size()];
+        for (int i = 0; i < documents.size(); i++) {
+            T document = java.util.Objects.requireNonNull(documents.get(i), "Document");
+            ids[i] = AnnotationHelper.getDocumentId(document, getIdField());
+            sources[i] = mapping.get(document);
         }
-        status.setSucceeded(true);
-        return status;
+        return sources.length == 1 ? service.index(getIndex(), sources[0], ids[0])
+                : service.bulkIndexWithIds(getIndex(), sources, ids);
     }
 
     @Override
     public boolean exists() {
-//        return service.exists(getType(), getType());
-        return false;
+        return service.exists(getIndex());
     }
 }

@@ -1,59 +1,38 @@
 package com.nosqlrevolution.util;
 
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import co.elastic.clients.json.JsonData;
+import co.elastic.clients.json.JsonpMapper;
+import co.elastic.clients.json.jackson.JacksonJsonpMapper;
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.UncheckedIOException;
+import java.util.Objects;
 
-/**
- *
- * @author cbrown
- * @param <T>
- */
+/** Shared JSON conversion; malformed documents propagate instead of becoming null results. */
 public class MappingUtil<T> {
-    private static final Logger logger = Logger.getLogger(MappingUtil.class.getName());
-    ObjectMapper mapper = new ObjectMapper();
-    
-    public T get(T t, String s) {
-        if (s == null) { return null; }
-        
-        try {
-            if (t.getClass() == String.class) {
-                return (T) s;
-            }
-            return (T) mapper.readValue(s, t.getClass());
-        } catch (IOException e) {
-            if (logger.isLoggable(Level.WARNING)) {
-                logger.log(Level.SEVERE, null, e);
-            }
-            return null;
-        }
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final JsonpMapper JSON_MAPPER = new JacksonJsonpMapper(MAPPER);
+
+    public T get(T target, String json) {
+        Objects.requireNonNull(target, "Target");
+        return (T) get(json, target.getClass());
     }
-    
-    // TODO: probably need a throws here to bubble the exception up.
-    public String get(T t) {
-        try {
-            return mapper.writeValueAsString(t);
-        } catch (IOException ex) {
-            if (logger.isLoggable(Level.WARNING)) {
-                logger.log(Level.SEVERE, null, ex);
-            }
-            return null;
-        }
+    public String get(T document) {
+        Objects.requireNonNull(document, "Document");
+        try { return MAPPER.writeValueAsString(document); }
+        catch (IOException ex) { throw new UncheckedIOException("Cannot serialize document", ex); }
     }
-    
-    // TODO: probably need a throws here to bubble the exception up.
-    public <T>T get(String json, Class<T> clazz) {
-        try {
-            if (clazz == String.class) {
-                return (T) json;
+    public <E> E get(String json, Class<E> type) {
+        if (json == null) return null;
+        Objects.requireNonNull(type, "Document type");
+        if (type == String.class) return type.cast(json);
+        if (type == JsonData.class) {
+            try (jakarta.json.stream.JsonParser parser = JSON_MAPPER.jsonProvider().createParser(new StringReader(json))) {
+                return type.cast(JsonData.from(parser, JSON_MAPPER));
             }
-            return mapper.readValue(json, clazz);
-        } catch (Exception ex) {
-            if (logger.isLoggable(Level.WARNING)) {
-                logger.log(Level.SEVERE, null, ex);
-            }
-            return null;
         }
+        try { return MAPPER.readValue(json, type); }
+        catch (IOException ex) { throw new UncheckedIOException("Cannot deserialize document", ex); }
     }
 }

@@ -144,8 +144,63 @@ docker rm -f elasticstore-validation
 named test indices and deletes them afterward. The test verifies all 1,021 documents
 through import, export/reimport and transfer, including multiple search pages and a
 one-document final block, and checks failure cleanup after a real mapping rejection.
-It injects an HTTP client into the store for the isolated Docker test; the CLI's
-existing HTTPS connection and credential setup are unchanged.
+`LiveCrudTest` also exercises the public connection API and CLI against that URL.
+
+## Connections and document operations
+
+Supply explicit REST endpoints (port 9200), using HTTP for an unsecured local
+cluster or HTTPS for a secured deployment:
+
+```java
+try (ElasticStore store = new ElasticStore()
+        .withEndpoints("https://localhost:9200")
+        .withUsername("elastic").withPassword(password)
+        .withCaCertificate(java.nio.file.Paths.get("http_ca.crt"))
+        .withConnectTimeout(java.time.Duration.ofSeconds(20))
+        .withSocketTimeout(java.time.Duration.ofMinutes(5))
+        .execute()) {
+    // Access indices through store.getIndex(...).
+}
+```
+
+Authentication is optional. Use `withApiKey(encodedApiKey)` instead of basic
+authentication when needed. TLS certificate and hostname verification remain
+enabled; a CA file adds trust for a private certificate. Startup checks cluster
+health, so secured credentials need permission to read cluster health as well as
+the relevant index permissions. A store closes clients it creates. An injected
+`withClient(client)` is borrowed; `withClient(client, true)` transfers ownership.
+
+CLI import/export accept `-ak` for an encoded API key and `-ca` for a CA file;
+transfer uses `-sak`/`-dak` and `-sca`/`-dca`. Host arguments accept explicit URLs,
+and basic authentication works without a cloud cluster ID. Bare hosts default to
+HTTP port 9200; legacy `-e` selects HTTPS. Credentials are not printed. Embedded
+nodes, multicast discovery, and old cloud-ID/region setup now fail with migration
+instructions; use a running cluster's REST endpoint.
+
+Single and bulk writes send JSON objects and preserve annotated document IDs.
+Generated UUIDs are assigned before serialization and remain stable on updates.
+Missing gets return `null`; multi-get preserves input order with `null` slots for
+missing documents. Delete-by-ID is idempotent, and query deletion rejects skip or
+limit rather than silently ignoring them. Write and read failures propagate as
+exceptions; bulk writes can partially succeed before reporting an error.
+
+Writes and delete-by-ID return an `OperationStatus` with ordered `getItems()`
+results and success/failure counts. Items expose the index, document ID, result,
+HTTP status, version, sequence number, primary term, and error type/reason when
+available. Bulk item failures throw `OperationException`; `getStatus()` on that
+exception includes both successful and failed items. Inspect those results before
+retrying a partially successful request. Transport errors and rejected single
+requests retain their original exception behavior and have no completed item list.
+
+Schema generation, routing/concurrency request options,
+and migration of the old embedded-cluster tests remain planned work. The default
+legacy test suite is not yet a supported green build. To run the current focused
+regression and live suites together:
+
+```sh
+mvn test -Dtest=ConnectionTest,QueryTest,PipelineTest,PagingFailureTest,CursorPayloadTest,MappingUtilTest,JsonUtilTest,DocumentIdTest,LiveCrudTest,LiveQueryTest,LivePipelineTest \
+  -Delasticstore.test.url=http://127.0.0.1:19200
+```
 
 ## Fluent queries
 

@@ -29,6 +29,8 @@ import co.elastic.clients.elasticsearch.core.search.SourceFilter;
 import co.elastic.clients.elasticsearch.core.search.TrackHits;
 import co.elastic.clients.json.JsonData;
 import com.nosqlrevolution.query.ElasticStoreQuery;
+import com.nosqlrevolution.OperationStatus;
+import com.nosqlrevolution.OperationException;
 import com.nosqlrevolution.util.JsonUtil;
 import com.nosqlrevolution.util.QueryUtil;
 import java.io.IOException;
@@ -172,18 +174,14 @@ public class QueryService {
      * @return
      */
     public String realTimeGet(String index, String id) {
-        GetRequest.Builder getRequest = new GetRequest.Builder()
-                .index(index)
-                .id(id)
-                .realtime(Boolean.TRUE);
         try {
-            GetResponse<Hit> response = client.get(getRequest.build(), Hit.class);
-            return response.source().toString();
+            GetResponse<JsonData> response = client.get(r -> r.index(index).id(id).realtime(true), JsonData.class);
+            if (!response.found()) return null;
+            if (response.source() == null) throw new IllegalStateException("Document source is unavailable");
+            return response.source().toJson().toString();
         } catch (IOException ex) {
-            ex.printStackTrace();
+            throw new java.io.UncheckedIOException("Elasticsearch get failed", ex);
         }
-
-        return null;
     }
 
     /**
@@ -194,32 +192,25 @@ public class QueryService {
      * @return
      */
     public String[] realTimeMultiGet(String index, String[] ids) {
-//        MultiGetRequest multiRequest = null;
-//        try {
-//            multiRequest = new MultiGetRequest()
-//                    //.add(index, type, ids, new FetchSourceContext(false), null, null, false)
-//                    .realtime(Boolean.TRUE);
-//        } catch (Exception ie) {
-//            ie.printStackTrace();
-//        }
-//
-//        try {
-//            MultiGetResponse response = client.multiGet(multiRequest, RequestOptions.DEFAULT);
-//            MultiGetItemResponse[] responses = response.getResponses();
-//
-//            String[] out = new String[responses.length];
-//            for (int i=0; i<responses.length; i++) {
-//                if (responses[i].getResponse() != null) {
-//                    out[i] = responses[i].getResponse().getSourceAsString();
-//                }
-//            }
-//
-//            return out;
-//        } catch (IOException ie) {
-//            ie.printStackTrace();
-//        }
-
-        return null;
+        java.util.Objects.requireNonNull(ids, "Document IDs");
+        if (ids.length == 0) return new String[0];
+        for (String id : ids) requireId(id);
+        try {
+            co.elastic.clients.elasticsearch.core.MgetResponse<JsonData> response = client.mget(
+                    r -> r.index(index).ids(Arrays.asList(ids)), JsonData.class);
+            String[] result = new String[response.docs().size()];
+            for (int i = 0; i < result.length; i++) {
+                co.elastic.clients.elasticsearch.core.mget.MultiGetResponseItem<JsonData> item = response.docs().get(i);
+                if (item.isFailure()) throw new IllegalStateException("Elasticsearch multi-get item failed: " + item.failure().error());
+                if (item.result().found()) {
+                    if (item.result().source() == null) throw new IllegalStateException("Document source is unavailable");
+                    result[i] = item.result().source().toJson().toString();
+                }
+            }
+            return result;
+        } catch (IOException ex) {
+            throw new java.io.UncheckedIOException("Elasticsearch multi-get failed", ex);
+        }
     }
 
     /**
@@ -301,26 +292,26 @@ public class QueryService {
      * @param source
      * @param id
      */
-    public void index(String index, String source, String id) {
-        if (source != null && ! source.isEmpty()) {
-            IndexRequest.Builder request = new IndexRequest.Builder()
-                    .index(index)
-                    .document(source)
-                    .id(id);
-
-            try {
-                IndexResponse response = client.index(request.build());
-            } catch (IOException ie) {
-                ie.printStackTrace();
-            }
+    public OperationStatus index(String index, String source, String id) {
+        JsonData document = document(source);
+        try {
+            IndexResponse response = client.index(r -> r.index(index).id(id).document(document));
+            return new OperationStatus(java.util.Collections.singletonList(new OperationStatus.Item(
+                    response.index(), response.id(), response.result().jsonValue(),
+                    response.result() == Result.Created ? 201 : 200, response.version(),
+                    response.seqNo(), response.primaryTerm(), null, null)));
         }
-
-        // TODO: could return version of the object
-        //response.version();
-
-        // TODO: could return id of the object
-        //response.id();
+        catch (IOException ex) { throw new java.io.UncheckedIOException("Elasticsearch index failed", ex); }
     }
+
+    private JsonData document(String source) {
+        if (source == null || source.trim().isEmpty()) throw new IllegalArgumentException("Document JSON is required");
+        try (jakarta.json.stream.JsonParser parser = client._jsonpMapper().jsonProvider()
+                .createParser(new java.io.StringReader(JsonUtil.removeIdFromSource(source, null)))) {
+            return JsonData.from(parser, client._jsonpMapper());
+        }
+    }
+
     /**
      * Index a number of documents using the bulk indexing api
      *
@@ -328,36 +319,83 @@ public class QueryService {
      * @param source
      * @param idField
      */
-    public void bulkIndex(String index, String[] source, String idField) {
-        if (source != null && source.length > 0) {
-            BulkRequest.Builder bulkRequest = new BulkRequest.Builder();
+    public OperationStatus bulkIndex(String index, String[] source, String idField) {
+        java.util.Objects.requireNonNull(source, "Documents");
+        String[] ids = new String[source.length];
+        for (int i = 0; i < source.length; i++) ids[i] = JsonUtil.getId(source[i], idField);
+        return bulkIndexWithIds(index, source, ids);
+    }
 
-            for (String json: source) {
-                JsonData document;
-                try (jakarta.json.stream.JsonParser parser = client._jsonpMapper().jsonProvider()
-                        .createParser(new java.io.StringReader(JsonUtil.removeIdFromSource(json, idField)))) {
-                    document = JsonData.from(parser, client._jsonpMapper());
-                }
-                bulkRequest.operations(
-                    op -> op
-                    .index(idx -> idx
-                        .index(index)
-                        .id(JsonUtil.getId(json, idField))
-                        .document(document)
-                    )
-                );
-             }
-
-            try {
-                BulkResponse response = client.bulk(bulkRequest.build());
-                if (response.errors()) {
-                    throw new IllegalStateException("Elasticsearch bulk write failed: " + response.items());
-                }
-            } catch (IOException ie) {
-                throw new java.io.UncheckedIOException("Elasticsearch bulk write failed", ie);
-            }
+    public OperationStatus bulkIndexWithIds(String index, String[] source, String[] ids) {
+        if (source.length != ids.length) throw new IllegalArgumentException("Each document needs an ID slot");
+        if (source.length == 0) return new OperationStatus(java.util.Collections.emptyList());
+        BulkRequest.Builder request = new BulkRequest.Builder();
+        for (int i = 0; i < source.length; i++) {
+            JsonData document = document(source[i]);
+            String id = ids[i];
+            request.operations(op -> op.index(item -> item.index(index).id(id).document(document)));
         }
+        try {
+            BulkResponse response = client.bulk(request.build());
+            return bulkStatus(response, false);
+        } catch (IOException ex) { throw new java.io.UncheckedIOException("Elasticsearch bulk write failed", ex); }
+    }
 
+    private OperationStatus bulkStatus(BulkResponse response, boolean deleting) {
+        java.util.List<OperationStatus.Item> items = new java.util.ArrayList<>();
+        for (co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem item : response.items()) {
+            boolean missing = deleting && item.status() == 404 && "not_found".equals(item.result());
+            items.add(new OperationStatus.Item(item.index(), item.id(), item.result(), item.status(),
+                    item.version(), item.seqNo(), item.primaryTerm(),
+                    missing || item.error() == null ? null : item.error().type(),
+                    missing || item.error() == null ? null : item.error().reason()));
+        }
+        OperationStatus status = new OperationStatus(items);
+        if (!status.succeeded()) throw new OperationException(
+                "Elasticsearch bulk " + (deleting ? "delete" : "write") + " failed", status);
+        return status;
+    }
+
+    public boolean exists(String index) {
+        try { return client.indices().exists(r -> r.index(index)).value(); }
+        catch (IOException ex) { throw new java.io.UncheckedIOException("Elasticsearch index exists failed", ex); }
+    }
+
+    public void refresh(String index) {
+        try { client.indices().refresh(r -> r.index(index)); }
+        catch (IOException ex) { throw new java.io.UncheckedIOException("Elasticsearch refresh failed", ex); }
+    }
+
+    public OperationStatus deleteAll(String index, String[] ids) {
+        java.util.Objects.requireNonNull(ids, "Document IDs");
+        if (ids.length == 0) return new OperationStatus(java.util.Collections.emptyList());
+        BulkRequest.Builder request = new BulkRequest.Builder();
+        for (String id : ids) {
+            requireId(id);
+            request.operations(op -> op.delete(d -> d.index(index).id(id)));
+        }
+        try {
+            BulkResponse response = client.bulk(request.build());
+            return bulkStatus(response, true);
+        } catch (IOException ex) { throw new java.io.UncheckedIOException("Elasticsearch bulk delete failed", ex); }
+    }
+
+    public void deleteMatching(String index, ElasticStoreQuery query) {
+        if (query == null) throw new IllegalArgumentException("An explicit delete query is required");
+        if (query.getSkip() != 0 || query.getLimit() != 0) {
+            throw new IllegalArgumentException("Delete queries do not support skip or limit");
+        }
+        try {
+            co.elastic.clients.elasticsearch.core.DeleteByQueryResponse response = client.deleteByQuery(
+                    r -> r.index(index).query(query.toQuery()));
+            if (response.timedOut() || !response.failures().isEmpty() || response.versionConflicts() > 0) {
+                throw new IllegalStateException("Elasticsearch delete by query did not complete without failures");
+            }
+        } catch (IOException ex) { throw new java.io.UncheckedIOException("Elasticsearch delete by query failed", ex); }
+    }
+
+    private static void requireId(String id) {
+        if (id == null || id.trim().isEmpty()) throw new IllegalArgumentException("A document ID is required");
     }
 
     /**
@@ -375,10 +413,8 @@ public class QueryService {
             DeleteResponse response = client.delete(request.build());
             return response.result().equals(Result.Deleted);
         } catch (IOException ie) {
-            ie.printStackTrace();
+            throw new java.io.UncheckedIOException("Elasticsearch delete failed", ie);
         }
-
-        return false;
     }
 
     // Need to implement as a bulk operation.

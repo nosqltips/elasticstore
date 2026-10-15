@@ -13,13 +13,13 @@ public class MultiGetCursor<E> extends Cursor<E> {
     
     public MultiGetCursor(Class<E> e, String[] json) {
         // TODO: may need to check for null here.
-        this.e = e;
-        this.json = json;
+        this.e = java.util.Objects.requireNonNull(e, "Document type");
+        this.json = java.util.Objects.requireNonNull(json, "Documents").clone();
     }
     
     @Override
     public Iterator<E> iterator() {
-        return new MultiGetCursorIterator(e, json);
+        return new MultiGetCursorIterator<>(e, json);
     }
 
     @Override

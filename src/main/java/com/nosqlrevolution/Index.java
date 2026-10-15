@@ -198,7 +198,7 @@ public abstract class Index<T> {
      * @return 
      */
     public OperationStatus removeById(String... ids) {
-        throw new UnsupportedOperationException();
+        return new com.nosqlrevolution.service.QueryService(store.getClient()).deleteAll(index, ids);
     }
     
     /**
@@ -208,7 +208,7 @@ public abstract class Index<T> {
      * @return 
      */
     public OperationStatus removeById(List<String> ids) {
-        throw new UnsupportedOperationException();
+        return removeById(java.util.Objects.requireNonNull(ids, "IDs").toArray(new String[0]));
     }
     
     /**
@@ -219,8 +219,14 @@ public abstract class Index<T> {
      * @param t
      * @return 
      */
-    public OperationStatus remove(T... t) {
-        throw new UnsupportedOperationException();
+    public OperationStatus remove(T... documents) {
+        String[] ids = new String[documents.length];
+        for (int i = 0; i < documents.length; i++) {
+            Object document = java.util.Objects.requireNonNull(documents[i], "Document");
+            ids[i] = document instanceof String ? com.nosqlrevolution.util.JsonUtil.getId((String) document, idField)
+                    : com.nosqlrevolution.util.AnnotationHelper.findDocumentId(document, idField);
+        }
+        return removeById(ids);
     }
     
     /**
@@ -230,7 +236,8 @@ public abstract class Index<T> {
      * @return 
      */
     public OperationStatus remove(ElasticStoreQuery query) {
-        throw new UnsupportedOperationException();
+        new com.nosqlrevolution.service.QueryService(store.getClient()).deleteMatching(index, query);
+        return new OperationStatus().setSucceeded(true);
     }
     
     /**
@@ -265,16 +272,12 @@ public abstract class Index<T> {
     }
     
     public void refresh() {
-        // TODO: maybe do something better here.
-        try {
-            //store.refreshIndex(this);
-        } catch (Exception ex) {
-            Logger.getLogger(Index.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        new com.nosqlrevolution.service.QueryService(store.getClient()).refresh(index);
     }
 
     // Accessor methods
     public Index setBulkSize(int bulkSize) {
+        if (bulkSize <= 0) throw new IllegalArgumentException("Bulk size must be positive");
         this.bulkSize = bulkSize;
         return this;
     }

@@ -35,29 +35,19 @@ public class Transfer extends AbstractPoolRunner {
             return;
         }        
 
-        System.out.println("source hostname=" + options.getSourceHostname() + " source clustername=" + options.getSourceClustername() + 
-                " source index=" + options.getSourceIndex() + 
-                " threads=" + options.getThreads()+ " blockSize=" + options.getBlockSize());
-        System.out.println("destination hostname=" + options.getDestHostname() + " destination clustername=" + options.getDestClustername() +  
-                " destination index=" + options.getDestIndex());
-        System.out.println("source clusterId=" + options.getSourceClusterId() + " source region=" + options.getSourceRegion()+ " source username=" + options.getSourceUsername()+ " source password=" + options.getSourcePassword());
-        System.out.println("destination clusterId=" + options.getDestClusterId() + " destination region=" + options.getDestRegion()+ " destination username=" + options.getDestUsername()+ " destination password=" + options.getDestPassword());
-
         // Connect to ElasticSearch
         destStore = ElasticStoreUtil.createElasticStore(
                 options.getDestHostname(), options.getDestClustername(), options.getDestIndex(), options.isDestNode(), options.isDestElastic());
         try (ElasticStore destination = destStore) {
-            if (options.getDestClusterId() != null) {
-                destStore.asElastic().withClusterId(options.getDestClusterId()).withRegion(options.getDestRegion()).withUsername(options.getDestUsername()).withPassword(options.getDestPassword());
-            }
+            ElasticStoreUtil.configureAuthentication(destStore, options.getDestUsername(), options.getDestPassword(),
+                    options.getDestApiKey(), options.getDestCaCertificate(), options.getDestClusterId(), options.getDestRegion());
             destStore.execute();
 
             ElasticStore sourceStore = ElasticStoreUtil.createElasticStore(
                     options.getSourceHostname(), options.getSourceClustername(), options.getSourceIndex(), options.isSourceNode(), options.isSourceElastic());
             try (ElasticStore source = sourceStore) {
-                if (options.getSourceClusterId() != null) {
-                    sourceStore.asElastic().withClusterId(options.getSourceClusterId()).withRegion(options.getSourceRegion()).withUsername(options.getSourceUsername()).withPassword(options.getSourcePassword());
-                }
+                ElasticStoreUtil.configureAuthentication(sourceStore, options.getSourceUsername(), options.getSourcePassword(),
+                        options.getSourceApiKey(), options.getSourceCaCertificate(), options.getSourceClusterId(), options.getSourceRegion());
                 sourceStore.execute();
 
                 JsonBlocker blocker = new JsonBlocker(sourceStore, null, options.getSourceIndex(), options.getBlockSize(), options.getLimit(), options.getSample());

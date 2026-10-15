@@ -51,6 +51,7 @@ public class JsonIndex<T> extends Index<String> {
 
     @Override
     public boolean flushBulk() {
+        if (bulk == null || bulk.isEmpty()) return true;
         OperationStatus status = write(bulk);
         if (bulk != null) {
             bulk.clear();
@@ -221,8 +222,7 @@ public class JsonIndex<T> extends Index<String> {
 
     @Override
     public OperationStatus write(String... json) {
-        service.bulkIndex(getIndex(), json, getIdField());
-        return new OperationStatus().setSucceeded(true);
+        return service.bulkIndex(getIndex(), json, getIdField());
     }
 
     @Override
@@ -232,6 +232,6 @@ public class JsonIndex<T> extends Index<String> {
 
     @Override
     public boolean exists() {
-        return false;
+        return service.exists(getIndex());
     }
 }

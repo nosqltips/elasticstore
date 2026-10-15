@@ -36,10 +36,7 @@ public class LiveQueryTest {
         String endpoint = System.getProperty("elasticstore.test.url");
         Assume.assumeNotNull(endpoint);
         client = new ElasticsearchClient(new RestClientTransport(RestClient.builder(HttpHost.create(endpoint)).build(), new JacksonJsonpMapper()));
-        store = new ElasticStore();
-        java.lang.reflect.Field field = ElasticStore.class.getDeclaredField("client");
-        field.setAccessible(true);
-        field.set(store, client);
+        store = new ElasticStore().withClient(client, true);
         name = "elasticstore-dsl-" + UUID.randomUUID();
         client.indices().create(r -> r.index(name).settings(s -> s.numberOfShards("1").numberOfReplicas("0"))
                 .mappings(m -> m.properties("id", p -> p.keyword(k -> k))

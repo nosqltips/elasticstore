@@ -11,7 +11,7 @@ public class TransferOptions {
     private String sourceHostname = "localhost";
     
     @Option(name="-sc",usage="source name of Elasticsearch cluster")
-    private String sourceClustername = "elasticsearch";
+    private String sourceClustername = null;
     
     @Option(name="-si",usage="source index to use")
     private String sourceIndex = null;
@@ -23,7 +23,7 @@ public class TransferOptions {
     private String destHostname = "localhost";
     
     @Option(name="-dc",usage="destination name of Elasticsearch cluster")
-    private String destClustername = "elasticsearch";
+    private String destClustername = null;
     
     @Option(name="-di",usage="destination index to use")
     private String destIndex =  null;
@@ -48,6 +48,15 @@ public class TransferOptions {
 
     @Option(name="-f",usage="file reference")
     private String file = null;
+
+    @Option(name="-sak", usage="encoded source API key") private String sourceApiKey;
+    @Option(name="-dak", usage="encoded destination API key") private String destApiKey;
+    @Option(name="-sca", usage="path to source CA certificate") private String sourceCaCertificate;
+    @Option(name="-dca", usage="path to destination CA certificate") private String destCaCertificate;
+    public String getSourceApiKey() { return sourceApiKey; }
+    public String getDestApiKey() { return destApiKey; }
+    public String getSourceCaCertificate() { return sourceCaCertificate; }
+    public String getDestCaCertificate() { return destCaCertificate; }
 
     // For Elastic service
     @Option(name="-se",usage="connect to source elastic service cluster")

@@ -32,7 +32,7 @@ public class AnnotationHelper {
         // Inject a UUID if annotation is present
         for (Field f : fields) {
             UUIDProvider provider = f.getAnnotation(UUIDProvider.class);
-            if (provider != null) {
+            if (provider != null && ReflectionUtil.getFieldValue(f, o) == null) {
                 String uuid = null;
                 if (provider.value() == RANDOM) {
                     uuid = UUID.randomUUID().toString();
@@ -42,6 +42,11 @@ public class AnnotationHelper {
         }
 
         return getAnnotationValue(o, DocumentId.class, namedField, "id");
+    }
+
+    /** Reads identity without creating or replacing an ID. */
+    public static String findDocumentId(Object object, String namedField) {
+        return getAnnotationValue(object, DocumentId.class, namedField, "id");
     }
 
     /**

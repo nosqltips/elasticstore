@@ -64,9 +64,7 @@ public class JsonUtil {
                 } 
             }
         } catch (IOException ex) {
-            if (LOGGER.isLoggable(Level.WARNING)) {
-                LOGGER.log(Level.SEVERE, null, ex);
-            }
+            throw new java.io.UncheckedIOException("Cannot parse document JSON", ex);
         }
                         
         // No id found, return null
@@ -80,10 +78,9 @@ public class JsonUtil {
             //sourceMap.remove(idField);
             return MAPPER.writeValueAsString(sourceMap);
         } catch (IOException ie) {
-            ie.printStackTrace();
+            throw new java.io.UncheckedIOException("Cannot parse document JSON", ie);
         }
-        
-        return null;
+
     }
     
     public static String getIdFromSource(String s, String sourceField) {
@@ -108,9 +105,7 @@ public class JsonUtil {
                 } 
             }
         } catch (IOException ex) {
-            if (LOGGER.isLoggable(Level.WARNING)) {
-                LOGGER.log(Level.SEVERE, null, ex);
-            }
+            throw new java.io.UncheckedIOException("Cannot parse document JSON", ex);
         }
                         
         // No id found, return null

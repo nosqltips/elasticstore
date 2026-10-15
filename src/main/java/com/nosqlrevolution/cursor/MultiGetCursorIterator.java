@@ -21,6 +21,7 @@ public class MultiGetCursorIterator<E> extends CursorIterator<E> {
 
     @Override
     public E next() {
+        if (!hasNext()) throw new java.util.NoSuchElementException();
         E returnE = mapping.get(json[iter], e);
         iter ++;
         return returnE;

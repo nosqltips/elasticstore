@@ -204,10 +204,7 @@ public class CursorPayloadTest {
 
     @Test(timeout = 5000)
     public void closingStoreClosesHttpTransport() throws Exception {
-        ElasticStore store = new ElasticStore();
-        java.lang.reflect.Field field = ElasticStore.class.getDeclaredField("client");
-        field.setAccessible(true);
-        field.set(store, client);
+        ElasticStore store = new ElasticStore().withClient(client, true);
         store.close();
         try { client.search(request(), JsonData.class); fail("Expected closed transport"); }
         catch (RuntimeException expected) {
