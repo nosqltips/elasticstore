@@ -37,11 +37,12 @@ trap 'exit 143' TERM
 
 echo "Starting disposable Elasticsearch: $image"
 # The 8.2.2 image's old JVM crashes on some modern cgroup hosts. Apply this to
-# CLI JVMs too; heap size and Docker's memory limit remain explicitly bounded.
+# CLI JVMs too, using JDK_JAVA_OPTIONS because this launcher clears JAVA_TOOL_OPTIONS.
+# Heap size and Docker's memory limit remain explicitly bounded.
 docker run -d --cidfile "$work_dir/container.cid" --memory=2g \
     -p 127.0.0.1::9200 \
     -e discovery.type=single-node -e xpack.security.enabled=false \
-    -e ES_JAVA_OPTS='-Xms512m -Xmx512m'     -e JAVA_TOOL_OPTIONS='-XX:-UseContainerSupport' "$image" >/dev/null
+    -e ES_JAVA_OPTS='-Xms512m -Xmx512m'     -e JDK_JAVA_OPTIONS='-XX:-UseContainerSupport' "$image" >/dev/null
 container_id=$(cat "$work_dir/container.cid")
 address=$(docker port "$container_id" 9200/tcp)
 endpoint="http://$address"
