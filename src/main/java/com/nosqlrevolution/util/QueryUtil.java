@@ -81,10 +81,9 @@ public class QueryUtil {
     }    
         
     public static Query getGtRangeQuery(String field, String value) {
-        return RangeQuery.of(b -> b
-                .field(field)
+        return RangeQuery.of(r -> r.untyped(b -> b.field(field)
                 .gt(JsonData.of(value, mapper))
-            )._toQuery();
+            ))._toQuery();
     }
 
     public static Query getMatchQuery(String field, String term) {
@@ -219,25 +218,22 @@ public class QueryUtil {
         
         // Range <
         if (from == null) {
-            return RangeQuery.of(b -> b
-                .field(field)
+            return RangeQuery.of(r -> r.untyped(b -> b.field(field)
                 .lt(JsonData.of(to, mapper))
-              )._toQuery();
+              ))._toQuery();
         }
         
         // Range >
         if (to == null) {
-            return RangeQuery.of(b -> b
-                .field(field)
+            return RangeQuery.of(r -> r.untyped(b -> b.field(field)
                 .gt(JsonData.of(from, mapper))
-            )._toQuery();
+            ))._toQuery();
         }
         
         // Range inclusive
-        return RangeQuery.of(b -> b
-            .field(field)
+        return RangeQuery.of(r -> r.untyped(b -> b.field(field)
             .gte(JsonData.of(from, mapper))
             .lte(JsonData.of(to, mapper))
-        )._toQuery();
+        ))._toQuery();
     }
 }

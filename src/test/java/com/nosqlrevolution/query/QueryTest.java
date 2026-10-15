@@ -134,9 +134,9 @@ public class QueryTest {
     }
 
     @Test public void legacyRangeHelpersUseTheFieldAndProperBounds() {
-        assertEquals("age", QueryUtil.getGtRangeQuery("age", "18").range().field());
-        assertNotNull(QueryUtil.getGtRangeQuery("age", "18").range().gt());
-        assertNotNull(QueryUtil.getRangeQueryBuilder("age", null, "21").range().lt());
+        assertEquals("age", QueryUtil.getGtRangeQuery("age", "18").range().untyped().field());
+        assertNotNull(QueryUtil.getGtRangeQuery("age", "18").range().untyped().gt());
+        assertNotNull(QueryUtil.getRangeQueryBuilder("age", null, "21").range().untyped().lt());
     }
 
     @Test(expected = IllegalArgumentException.class) public void emptyMembershipIsRejected() { field("age").in(); }

@@ -1,5 +1,21 @@
 # ElasticStore
 
+## Requirements and compatibility
+
+- JDK 11 or newer to build and run; compilation uses `--release 11`.
+- Maven 3.6.3 or newer.
+- Elasticsearch 8.19 or newer. The tested server and Java client are 8.19.23.
+  Server 8.18 and older, including the previous 8.2.2 baseline, are rejected during
+  startup with a version message. Elasticsearch 9.x is not yet validated.
+- CI runs the default and full Elasticsearch-backed suites on Java 11, 17 and 21.
+
+Jackson 2 components are aligned through BOM 2.22.3. The alternative Jackson 3
+mapper dependencies are excluded to preserve the Java 11 runtime baseline; this
+library explicitly uses Jackson 2. Unused Guava, OpenCSV and SLF4J implementation
+libraries have been removed. args4j is updated to 2.37, and build plugin versions
+are pinned in the POM instead of depending on the local Maven installation.
+
+
 The main idea of ElasticStore is to create a new NoSQL database that is based on the ElasticSearch core. ElasticSearch is an incredible search engine with a very flexible search-oriented API.
 While the ElasticSearch API is very easy to use, it is a search API and as such, is somewhat foreign to someone coming from a traditional data background.
 The ElasticStore API presents a more familiar API while simplifying many of the search constructs to make them more accessible to the average developer.
@@ -26,7 +42,7 @@ The ElasticStore API presents a more familiar API while simplifying many of the 
 ## So... What does it look like?
 ```java
     ElasticStore elasticStore = new ElasticStore().asLocal().execute();
-    Index<Person> index = ElasticStore.getIndex(Person.class, "index", "type");
+    Index<Person> index = elasticStore.getIndex(Person.class, "index");
 
     // Create
     Person p = new Person()
@@ -158,15 +174,14 @@ For repeatable live validation, run:
 ./scripts/verify-docker.sh
 ```
 
-This requires Docker, curl, and Maven 3.6.3+ on `PATH`. It starts Elasticsearch 8.2.2 on
+This requires Docker, curl, and Maven 3.6.3+ on `PATH`. It starts Elasticsearch 8.19.23 on
 an automatically allocated loopback port, waits for cluster readiness, runs the
 entire Maven test suite, and removes its container on success or failure. The
 Elasticsearch log is retained at `target/elasticsearch-integration.log` and Maven
 reports at `target/surefire-reports/`.
 
-The verifier disables JVM container auto-detection inside this old Elasticsearch
-image to avoid its cgroup startup bug on modern hosts. Docker still limits the
-container to 2 GiB and the JVM heap is explicitly set to 512 MiB.
+Docker limits the test container to 2 GiB and the JVM heap is explicitly set to
+512 MiB. The old 8.2.2 JVM cgroup workaround is no longer needed.
 
 Use `MVN=/path/to/mvn` if Maven is elsewhere. `ES_IMAGE` selects another image and
 `ES_STARTUP_TIMEOUT` changes the 120-second startup deadline. Extra arguments are
@@ -181,7 +196,7 @@ docker run -d --name elasticstore-validation --memory=2g \
   -p 127.0.0.1:19200:9200 \
   -e discovery.type=single-node -e xpack.security.enabled=false \
   -e ES_JAVA_OPTS="-Xms512m -Xmx512m" \
-  docker.elastic.co/elasticsearch/elasticsearch:8.2.2
+  docker.elastic.co/elasticsearch/elasticsearch:8.19.23
 # Wait until curl http://127.0.0.1:19200/ responds, then run:
 mvn test -Delasticstore.test.url=http://127.0.0.1:19200
 docker rm -f elasticstore-validation
@@ -193,7 +208,7 @@ through import, export/reimport and transfer, including multiple search pages an
 one-document final block, and checks failure cleanup after a real mapping rejection.
 `LiveCrudTest` also exercises the public connection API and CLI against that URL.
 
-GitHub Actions runs on pushes and pull requests, with separate Java 11 jobs for
+GitHub Actions runs on pushes and pull requests, with Java 11, 17 and 21 jobs for
 the default server-free suite and the complete Docker-backed suite. The latter
 uses the same `verify-docker.sh` command. Both jobs retain test reports for seven
 days; the Docker job also retains the Elasticsearch log. The workflow is in
@@ -218,8 +233,8 @@ try (ElasticStore store = new ElasticStore()
 
 Authentication is optional. Use `withApiKey(encodedApiKey)` instead of basic
 authentication when needed. TLS certificate and hostname verification remain
-enabled; a CA file adds trust for a private certificate. Startup checks cluster
-health, so secured credentials need permission to read cluster health as well as
+enabled; a CA file adds trust for a private certificate. Startup checks the server
+version and cluster health, so secured credentials need permission to read cluster health as well as
 the relevant index permissions. A store closes clients it creates. An injected
 `withClient(client)` is borrowed; `withClient(client, true)` transfers ownership.
 

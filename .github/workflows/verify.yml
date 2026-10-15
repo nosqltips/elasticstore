@@ -14,9 +14,13 @@ concurrency:
 
 jobs:
   unit:
-    name: Default tests (Java 11)
+    name: Default tests (Java ${{ matrix.java }})
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        java: ['11', '17', '21']
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -24,20 +28,24 @@ jobs:
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
         with:
           distribution: temurin
-          java-version: '11'
+          java-version: ${{ matrix.java }}
           cache: maven
       - run: mvn --batch-mode test
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: always()
         with:
-          name: unit-reports
+          name: unit-reports-java-${{ matrix.java }}
           path: target/surefire-reports/
           retention-days: 7
 
   integration:
-    name: Full suite (Elasticsearch 8.2.2)
+    name: Full suite (Java ${{ matrix.java }}, Elasticsearch 8.19.23)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        java: ['11', '17', '21']
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -45,13 +53,13 @@ jobs:
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
         with:
           distribution: temurin
-          java-version: '11'
+          java-version: ${{ matrix.java }}
           cache: maven
       - run: ./scripts/verify-docker.sh
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: always()
         with:
-          name: integration-reports
+          name: integration-reports-java-${{ matrix.java }}
           path: |
             target/surefire-reports/
             target/elasticsearch-integration.log

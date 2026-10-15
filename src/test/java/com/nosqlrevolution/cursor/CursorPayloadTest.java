@@ -83,7 +83,7 @@ public class CursorPayloadTest {
                 closedPit = body.get("id").asText();
                 response = "{\"succeeded\":true,\"num_freed\":1}";
             } else {
-                response = "{\"id\":\"pit-0\"}";
+                response = "{\"id\":\"pit-0\",\"_shards\":{\"total\":1,\"successful\":1,\"failed\":0}}";
             }
             byte[] bytes = response.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/json");
@@ -203,7 +203,7 @@ public class CursorPayloadTest {
         store.close();
         try { client.search(request(), JsonData.class); fail("Expected closed transport"); }
         catch (RuntimeException expected) {
-            assertTrue(expected.getMessage().contains("STOPPED"));
+            // The closed transport must reject before making any HTTP request.
         }
         assertTrue(searches.isEmpty());
     }

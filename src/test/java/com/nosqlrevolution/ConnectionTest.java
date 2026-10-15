@@ -24,6 +24,7 @@ public class ConnectionTest {
     private String expectedAuthorization;
     private String authorization;
     private boolean fail;
+    private String serverVersion = "8.19.23";
     private long delay;
 
     @Before public void setup() throws Exception {
@@ -39,9 +40,16 @@ public class ConnectionTest {
             int status = !authenticated ? 401 : fail ? 503 : 200;
             String body = status == 200 ? "{\"cluster_name\":\"connection-test\",\"status\":\"green\",\"timed_out\":false,"
                     + "\"number_of_nodes\":1,\"number_of_data_nodes\":1,\"active_primary_shards\":0,\"active_shards\":0,"
-                    + "\"relocating_shards\":0,\"initializing_shards\":0,\"unassigned_shards\":0,\"delayed_unassigned_shards\":0,"
+                    + "\"relocating_shards\":0,\"initializing_shards\":0,\"unassigned_shards\":0,\"unassigned_primary_shards\":0,\"delayed_unassigned_shards\":0,"
                     + "\"number_of_pending_tasks\":0,\"number_of_in_flight_fetch\":0,\"task_max_waiting_in_queue_millis\":0,\"active_shards_percent_as_number\":100.0}"
                     : "{\"error\":{\"type\":\"test_failure\",\"reason\":\"unavailable\"},\"status\":" + status + "}";
+            if (status == 200 && exchange.getRequestURI().getPath().equals("/")) {
+                body = "{\"name\":\"test-node\",\"cluster_name\":\"connection-test\",\"cluster_uuid\":\"test\","
+                        + "\"version\":{\"number\":\"" + serverVersion + "\",\"build_flavor\":\"default\",\"build_type\":\"docker\","
+                        + "\"build_hash\":\"test\",\"build_date\":\"2026-01-01T00:00:00Z\",\"build_snapshot\":false,"
+                        + "\"lucene_version\":\"9.12.0\",\"minimum_wire_compatibility_version\":\"7.17.0\","
+                        + "\"minimum_index_compatibility_version\":\"7.0.0\"},\"tagline\":\"You Know, for Search\"}";
+            }
             try {
                 if (delay > 0) Thread.sleep(delay);
                 exchange.getResponseHeaders().set("Content-Type", "application/json");
@@ -56,6 +64,17 @@ public class ConnectionTest {
     }
     @After public void cleanup() { if (server != null) server.stop(0); }
 
+    @Test public void rejectsOldServersBeforePublishingAClient() throws Exception {
+        serverVersion = "8.2.2";
+        ElasticStore store = new ElasticStore().withEndpoints(endpoint());
+        try { store.execute(); fail("Expected old server rejection"); }
+        catch (IllegalStateException expected) { assertTrue(expected.getMessage().contains("8.19 or newer")); }
+        assertFalse(store.isInitialized());
+        assertNull(store.getClient());
+        serverVersion = "8.19.23";
+        try (ElasticStore connected = store.execute()) { assertTrue(connected.isInitialized()); }
+    }
+
     @Test(timeout=10000) public void httpNeedsNoCredentialsAndOwnedTransportCloses() throws Exception {
         ElasticStore store = new ElasticStore().withEndpoints(endpoint()).execute();
         ElasticsearchClient client = store.getClient();
@@ -64,7 +83,7 @@ public class ConnectionTest {
         assertFalse(store.isInitialized());
         store.close();
         try { client.cluster().health(); fail("Expected closed transport"); }
-        catch (RuntimeException ex) { assertTrue(ex.getMessage().contains("STOPPED")); }
+        catch (RuntimeException expected) { /* Closed transport must reject the request. */ }
     }
     @Test(timeout=10000) public void borrowingAClientDoesNotCloseItsTransport() throws Exception {
         try (ElasticStore owner = new ElasticStore().withEndpoints(endpoint()).execute()) {

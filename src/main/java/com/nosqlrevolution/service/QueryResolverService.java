@@ -63,7 +63,7 @@ public class QueryResolverService {
                 return operator == Operator.NOT_IN ? negate(terms) : terms;
             case GT: case GTE: case LT: case LTE:
                 if (values[0] instanceof Boolean) throw new IllegalArgumentException("Range bounds cannot be boolean");
-                RangeQuery.Builder range = new RangeQuery.Builder().field(field);
+                co.elastic.clients.elasticsearch._types.query_dsl.UntypedRangeQuery.Builder range = new co.elastic.clients.elasticsearch._types.query_dsl.UntypedRangeQuery.Builder().field(field);
                 JsonData bound = JsonData.of(values[0]);
                 switch (operator) {
                     case GT: range.gt(bound); break;
@@ -72,7 +72,7 @@ public class QueryResolverService {
                     case LTE: range.lte(bound); break;
                     default: throw new AssertionError(operator);
                 }
-                return range.build()._toQuery();
+                return RangeQuery.of(r -> r.untyped(range.build()))._toQuery();
             case EXISTS: return Query.of(q -> q.exists(e -> e.field(field)));
             case MATCH: return text(field, values[0], false);
             case MATCH_PHRASE: return Query.of(q -> q.matchPhrase(m -> m.field(field).query((String) values[0])));

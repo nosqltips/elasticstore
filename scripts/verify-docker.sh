@@ -5,7 +5,7 @@ set -euo pipefail
 repo_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 cd "$repo_dir"
 maven_bin=${MVN:-mvn}
-image=${ES_IMAGE:-docker.elastic.co/elasticsearch/elasticsearch:8.2.2}
+image=${ES_IMAGE:-docker.elastic.co/elasticsearch/elasticsearch:8.19.23}
 startup_timeout=${ES_STARTUP_TIMEOUT:-120}
 case "$startup_timeout" in ''|*[!0-9]*|0*) echo 'ES_STARTUP_TIMEOUT must be a positive number of seconds without leading zeros' >&2; exit 2;; esac
 for executable in docker curl "$maven_bin"; do
@@ -36,13 +36,10 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 
 echo "Starting disposable Elasticsearch: $image"
-# The 8.2.2 image's old JVM crashes on some modern cgroup hosts. Apply this to
-# CLI JVMs too, using JDK_JAVA_OPTIONS because this launcher clears JAVA_TOOL_OPTIONS.
-# Heap size and Docker's memory limit remain explicitly bounded.
 docker run -d --cidfile "$work_dir/container.cid" --memory=2g \
     -p 127.0.0.1::9200 \
     -e discovery.type=single-node -e xpack.security.enabled=false \
-    -e ES_JAVA_OPTS='-Xms512m -Xmx512m'     -e JDK_JAVA_OPTIONS='-XX:-UseContainerSupport' "$image" >/dev/null
+    -e ES_JAVA_OPTS='-Xms512m -Xmx512m' "$image" >/dev/null
 container_id=$(cat "$work_dir/container.cid")
 address=$(docker port "$container_id" 9200/tcp)
 endpoint="http://$address"

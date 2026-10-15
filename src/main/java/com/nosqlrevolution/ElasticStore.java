@@ -164,6 +164,12 @@ public class ElasticStore implements AutoCloseable {
         if (apiKey != null) builder.setDefaultHeaders(new Header[] { new BasicHeader("Authorization", "ApiKey " + apiKey) });
         ElasticsearchClient candidate = new ElasticsearchClient(new RestClientTransport(builder.build(), new JacksonJsonpMapper()));
         try {
+            String version = candidate.info().version().number();
+            String[] components = version.split("\\.");
+            int major = Integer.parseInt(components[0]), minor = Integer.parseInt(components[1]);
+            if (major < 8 || major == 8 && minor < 19) {
+                throw new IllegalStateException("Elasticsearch 8.19 or newer is required; server reports " + version);
+            }
             String name = candidate.cluster().health().clusterName();
             if (expectedClusterName != null && !expectedClusterName.equals(name)) {
                 throw new IllegalStateException("Connected cluster name does not match the configured name");
