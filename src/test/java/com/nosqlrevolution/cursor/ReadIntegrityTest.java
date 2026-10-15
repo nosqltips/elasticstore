@@ -168,11 +168,14 @@ public class ReadIntegrityTest {
     }
 
     @Test public void partialPitCreationClosesContextWhenClientExposesShardMetadata() {
+        // withJson uses a strict mapper: check capability before parsing the newer response shape.
+        Assume.assumeTrue(Arrays.stream(OpenPointInTimeResponse.class.getMethods())
+                .anyMatch(method -> method.getName().equals("shards")));
         Fixture fixture = new Fixture();
         fixture.opened = new OpenPointInTimeResponse.Builder().withJson(new StringReader(
                 "{\"id\":\"pit-partial\",\"_shards\":{\"total\":2,\"successful\":1,\"failed\":1}}")).build();
         // Older clients discard this field; Elasticsearch 8.19 still defaults PIT creation to strict.
-        Assume.assumeNotNull(ClientCompatibility.pitShards(fixture.opened));
+        assertNotNull(ClientCompatibility.pitShards(fixture.opened));
         RuntimeException error = failure(() -> new QueryService(fixture.client).findAllScroll("test"));
         assertTrue(error.getMessage().contains("shard failures"));
         assertEquals(Collections.singletonList("pit-partial"), fixture.closed);
