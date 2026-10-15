@@ -2,74 +2,29 @@ package com.nosqlrevolution;
 
 import com.nosqlrevolution.annotation.index.IndexType;
 import com.nosqlrevolution.model.PersonIndex;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.junit.*;
+import com.nosqlrevolution.support.StoreTestSupport;
+import org.junit.Test;
 import static org.junit.Assert.*;
 
-/**
- *
- * @author cbrown
- */
-public class TypedIndexTest {
-    private static ElasticStore elasticStore;
-    
-    @BeforeClass
-    public static void setUpClass() throws Exception {
-         elasticStore = new ElasticStore().asMemoryOnly().execute();
-         assertNotNull(elasticStore);
-         assertNotNull(elasticStore.getClient());
+public class TypedIndexTest extends StoreTestSupport {
+    @Test public void opensExplicitAndAnnotatedHandles() throws Exception {
+        Index<Object> explicit = elasticStore.getIndex(Object.class, "documents");
+        assertEquals("documents", explicit.getIndex());
+        assertEquals("test", elasticStore.getIndex(PersonIndex.class).getIndex());
     }
-
-    @AfterClass
-    public static void tearDownClass() throws Exception {
-         elasticStore.close();
+    @Test public void indexAnnotationNeedsNoObsoleteTypeMarker() throws Exception {
+        assertEquals("documents", elasticStore.getIndex(IndexOnly.class).getIndex());
     }
-    
-    @Test
-    public void createSingleIndex() {
-        try {
-            Index<Object> index = elasticStore.getIndex(Object.class, "index");
-            assertNotNull(index);
-            assertEquals("index",  index.getIndex());
-        } catch (Exception ex) {
-            Logger.getLogger(TypedIndexTest.class.getName()).log(Level.SEVERE, null, ex);
-        }
-     }
-    
-    @Test
-    public void createSingleIndexAnnotation() {
-        try {
-            Index<PersonIndex> index = elasticStore.getIndex(PersonIndex.class);
-            assertNotNull(index);
-            assertEquals("test",  index.getIndex());
-        } catch (Exception ex) {
-            Logger.getLogger(TypedIndexTest.class.getName()).log(Level.SEVERE, null, ex);
-            fail();
-        }
-     }
-    
-    @Test(expected=IllegalArgumentException.class)
-    public void testMissingType() throws Exception {
-        elasticStore.getIndex(TestMissingType.class);
+    @Test(expected=IllegalArgumentException.class) public void rejectsTypeWithoutIndex() throws Exception {
+        elasticStore.getIndex(TypeOnly.class);
     }
-
-    @Test(expected=IllegalArgumentException.class)
-    public void testMissingIndex1() throws Exception {
-        elasticStore.getIndex(TestMissingIndex1.class);
+    @Test(expected=IllegalArgumentException.class) public void rejectsEmptyIndexAnnotation() throws Exception {
+        elasticStore.getIndex(EmptyIndex.class);
     }
-
-    @Test(expected=IllegalArgumentException.class)
-    public void testMissingIndex2() throws Exception {
-        elasticStore.getIndex(TestMissingIndex2.class);
+    @Test(expected=IllegalArgumentException.class) public void rejectsBlankExplicitIndex() throws Exception {
+        elasticStore.getIndex(Object.class, " ");
     }
-
-    @com.nosqlrevolution.annotation.index.Index("test")
-    public class TestMissingType {}
-
-    @IndexType("person")
-    public class TestMissingIndex1 {}
-
-    @IndexType()
-    public class TestMissingIndex2 {}
+    @com.nosqlrevolution.annotation.index.Index("documents") public static class IndexOnly { }
+    @IndexType("person") public static class TypeOnly { }
+    @com.nosqlrevolution.annotation.index.Index("") public static class EmptyIndex { }
 }

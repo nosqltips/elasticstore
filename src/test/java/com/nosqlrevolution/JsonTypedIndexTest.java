@@ -2,35 +2,17 @@ package com.nosqlrevolution;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nosqlrevolution.model.Person;
-import org.junit.AfterClass;
 import static org.junit.Assert.*;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
  *
  * @author cbrown
  */
-public class JsonTypedIndexTest {
-    private static ElasticStore elasticStore;
-    private static Index<String> index;
-    
-    @BeforeClass
-    public static void setUpClass() throws Exception {
-         elasticStore = new ElasticStore().asMemoryOnly().execute();
-         assertNotNull(elasticStore);
-         assertNotNull(elasticStore.getClient());
-    }
-
-    @AfterClass
-    public static void tearDownClass() throws Exception {
-//        elasticStore.removeIndex(index);
-        elasticStore.close();
-    }
-    
-     @Test
+public class JsonTypedIndexTest extends com.nosqlrevolution.support.LiveIndexTestSupport {
+     @Test(timeout=30000)
      public void testCRUD() throws Exception {
-        index = elasticStore.getIndex(String.class, "json");
+        Index<String> index = elasticStore.getIndex(String.class, indexName);
         ObjectMapper mapper = new ObjectMapper();
 
         // Create

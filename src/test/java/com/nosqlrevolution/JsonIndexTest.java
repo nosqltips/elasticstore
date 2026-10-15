@@ -1,35 +1,18 @@
 package com.nosqlrevolution;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.junit.*;
+import co.elastic.clients.json.JsonData;
+import com.nosqlrevolution.support.StoreTestSupport;
+import org.junit.Test;
 import static org.junit.Assert.*;
 
-/**
- *
- * @author cbrown
- */
-public class JsonIndexTest {
-    private static ElasticStore elasticStore;
-    
-    @BeforeClass
-    public static void setUpClass() throws Exception {
-         elasticStore = new ElasticStore().asMemoryOnly().execute();
-         assertNotNull(elasticStore);
-         assertNotNull(elasticStore.getClient());
+/** Opening index handles does not require an Elasticsearch server. */
+public class JsonIndexTest extends StoreTestSupport {
+    @Test public void opensStringAndJsonDataHandlesWithoutCreatingIndices() throws Exception {
+        Index<String> strings = elasticStore.getIndex(String.class, "documents");
+        Index<JsonData> json = elasticStore.getIndex(JsonData.class, "documents");
+        assertTrue(strings instanceof JsonIndex);
+        assertTrue(json instanceof TypedIndex);
+        assertEquals("documents", strings.getIndex());
+        assertEquals("documents", json.getIndex());
     }
-
-    @AfterClass
-    public static void tearDownClass() throws Exception {
-         elasticStore.close();
-    }
-    
-     @Test
-     public void createSingleIndex() {
-        try {
-            Index<String> index = elasticStore.getIndex(String.class, "index");
-        } catch (Exception ex) {
-            Logger.getLogger(JsonIndexTest.class.getName()).log(Level.SEVERE, null, ex);
-        }
-     }
 }

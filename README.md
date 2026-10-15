@@ -148,7 +148,9 @@ mvn -Dtest=PipelineTest,PagingFailureTest,CursorPayloadTest test
 These tests cover cancellation, failure cleanup, partial blocks, sampling, concurrent
 JSON output, and real client serialization over a local HTTP fixture. They do not
 require Elasticsearch; `CursorPayloadTest` needs permission to bind to loopback.
-The older cluster-dependent tests need a separately configured Elasticsearch server.
+Live CRUD and integration tests use a separately configured Elasticsearch server.
+They skip unless `elasticstore.test.url` is supplied, create uniquely named indices,
+and delete only those indices afterward.
 
 For opt-in live validation, start an isolated Elasticsearch instance:
 
@@ -159,8 +161,7 @@ docker run -d --name elasticstore-validation --memory=2g \
   -e ES_JAVA_OPTS="-Xms512m -Xmx512m" \
   docker.elastic.co/elasticsearch/elasticsearch:8.2.2
 # Wait until curl http://127.0.0.1:19200/ responds, then run:
-mvn -Dtest=PipelineTest,PagingFailureTest,CursorPayloadTest,LivePipelineTest \
-  -Delasticstore.test.url=http://127.0.0.1:19200 test
+mvn test -Delasticstore.test.url=http://127.0.0.1:19200
 docker rm -f elasticstore-validation
 ```
 
@@ -280,14 +281,20 @@ IDs, while invalid or blank IDs are rejected.
 The annotation-only `getIndex(Document.class)` overload requires `@Index`;
 `@IndexType` is deprecated and no longer required.
 
-Migration of the old embedded-cluster tests remains planned work. The default
-legacy test suite is not yet a supported green build. To run the current focused
-regression and live suites together:
+The default Maven test suite runs without Elasticsearch. It includes unit tests,
+legacy helper compatibility checks, and local HTTP/HTTPS fixtures. A JDK with
+`keytool` and permission to bind to loopback are needed for the connection tests:
 
 ```sh
-mvn test -Dtest=SchemaServiceTest,LiveSchemaTest,ModelImportTest,DocumentOptionsTest,OperationStatusTest,ConnectionTest,QueryTest,PipelineTest,PagingFailureTest,CursorPayloadTest,MappingUtilTest,JsonUtilTest,DocumentIdTest,LiveCrudTest,LiveQueryTest,LivePipelineTest,LiveMetadataTransferTest,LiveApiContractTest \
-  -Delasticstore.test.url=http://127.0.0.1:19200
+mvn test
+# Enable all live tests as well, using the Docker instance described above:
+mvn test -Delasticstore.test.url=http://127.0.0.1:19200
 ```
+
+The former embedded-node tests now cover the current REST client lifecycle and
+index factories, or run as explicit live CRUD tests. They do not connect implicitly
+to localhost or reuse fixed shared indices. If a live URL is supplied but the
+server cannot be reached, the live tests fail rather than skip.
 
 ## Typeless mappings
 

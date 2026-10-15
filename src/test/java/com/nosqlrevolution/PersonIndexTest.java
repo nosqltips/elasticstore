@@ -1,35 +1,17 @@
 package com.nosqlrevolution;
 
 import com.nosqlrevolution.model.Person;
-import org.junit.AfterClass;
 import static org.junit.Assert.*;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
  *
  * @author cbrown
  */
-public class PersonIndexTest {
-    private static ElasticStore elasticStore;
-    private static Index<Person> index;
-    
-    @BeforeClass
-    public static void setUpClass() throws Exception {
-         elasticStore = new ElasticStore().asMemoryOnly().execute();
-         assertNotNull(elasticStore);
-         assertNotNull(elasticStore.getClient());
-    }
-
-    @AfterClass
-    public static void tearDownClass() throws Exception {
-//        elasticStore.removeIndex(index);
-        elasticStore.close();
-    }
-    
-     @Test
+public class PersonIndexTest extends com.nosqlrevolution.support.LiveIndexTestSupport {
+     @Test(timeout=30000)
      public void testCRUD() throws Exception {
-            index = elasticStore.getIndex(Person.class, "index");
+            Index<Person> index = elasticStore.getIndex(Person.class, indexName);
             
             // Create
             Person p = new Person()
@@ -58,7 +40,6 @@ public class PersonIndexTest {
             assertEquals(p3.getName(), "Marge Simpson");
             assertEquals(p3.getUsername(), "msimpson");   
             
-            System.out.println("p=" + p.getId());
             // Delete
             index.remove(p);
             Person p4 = index.findById("2");
