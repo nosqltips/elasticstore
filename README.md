@@ -152,7 +152,25 @@ Live CRUD and integration tests use a separately configured Elasticsearch server
 They skip unless `elasticstore.test.url` is supplied, create uniquely named indices,
 and delete only those indices afterward.
 
-For opt-in live validation, start an isolated Elasticsearch instance:
+For repeatable live validation, run:
+
+```sh
+./scripts/verify-docker.sh
+```
+
+This requires Docker, curl, and Maven on `PATH`. It starts Elasticsearch 8.2.2 on
+an automatically allocated loopback port, waits for cluster readiness, runs the
+entire Maven test suite, and removes its container on success or failure. The
+Elasticsearch log is retained at `target/elasticsearch-integration.log` and Maven
+reports at `target/surefire-reports/`.
+
+Use `MVN=/path/to/mvn` if Maven is elsewhere. `ES_IMAGE` selects another image and
+`ES_STARTUP_TIMEOUT` changes the 120-second startup deadline. Extra arguments are
+passed to Maven, for example `./scripts/verify-docker.sh -o` for an offline Maven
+run with cached dependencies. Use separate checkouts for concurrent verification
+because Maven reports share the same target directory.
+
+For manual debugging, start an isolated Elasticsearch instance:
 
 ```sh
 docker run -d --name elasticstore-validation --memory=2g \
@@ -170,6 +188,12 @@ named test indices and deletes them afterward. The test verifies all 1,021 docum
 through import, export/reimport and transfer, including multiple search pages and a
 one-document final block, and checks failure cleanup after a real mapping rejection.
 `LiveCrudTest` also exercises the public connection API and CLI against that URL.
+
+GitHub Actions runs on pushes and pull requests, with separate Java 11 jobs for
+the default server-free suite and the complete Docker-backed suite. The latter
+uses the same `verify-docker.sh` command. Both jobs retain test reports for seven
+days; the Docker job also retains the Elasticsearch log. The workflow is in
+`.github/workflows/verify.yml` and can also be started manually from Actions.
 
 ## Connections and document operations
 
