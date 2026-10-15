@@ -42,7 +42,6 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-
 /**
  *
  * @author cbrown
@@ -485,53 +484,6 @@ public class QueryService {
         }
     }
 
-    // Need to implement as a bulk operation.
-
-//    /**
-//     * Delete all documents as DeleteByQuery
-//     * Passes in a default WriteOperation
-//     *
-//     * @param index
-//     * @param ids
-//     * @return
-//     */
-//    public boolean deleteAll(String index, String[] ids) {
-//        return deleteAll(DEFAULT_WRITE, index, ids);
-//    }
-//    /**
-//     * Delete all documents as DeleteByQuery
-//     *
-//     * @param write
-//     * @param index
-//     * @param id
-//     * @return
-//     */
-//    public boolean deleteAll(WriteOperation write, String index String[] id) {
-//        DeleteByQueryRequestBuilder builder = client.prepareDeleteByQuery()
-//                .setIndices(index)
-//                .setQuery(QueryUtil.getIdQuery(id))
-//
-//                // Operations from WriteOperation
-//                .setConsistencyLevel(write.getConsistencyLevel());
-//
-//                // TODO: test no refresh for delete by query
-//                //.setRefresh(write.getRefresh());
-//
-//        DeleteByQueryResponse response = builder.execute().actionGet();
-//
-//        // TODO: Need to iterate through and return a response
-//        return true;
-//    }
-
-//    /**
-//     * Refresh the given index.
-//     *
-//     * @param index
-//     */
-//    public void refresh(String index) {
-//        client.admin().indices().refresh(new RefreshRequest(index)).actionGet();
-//    }
-
     /**
      * Execute a SearchRequestBuilder and get a SearchResponse.
      *
@@ -549,42 +501,4 @@ public class QueryService {
         return null;
     }
 
-//    /**
-//     * Execute a SearchRequestBuilder and get a SearchResponse.
-//     *
-//     * @param builder
-//     * @return
-//     */
-//    public SearchScrollRequestBuilder executeScroll(SearchRequestBuilder builder) {
-//        try {
-//            if (builder.request().searchType() == SearchType.QUERY_THEN_FETCH) {
-//                SearchResponse response = builder.execute().actionGet();
-//                return client.prepareSearchScroll(response.getScrollId()).setScroll(new TimeValue(600000));
-//            } else {
-//                throw new Exception("SearchRequest must be of type scan.");
-//            }
-//        } catch (Exception e) {}
-//
-//        return null;
-//    }
-
-//    /**
-//     * Check to see if indeces or types exists in the ElasticSearch cluster.
-//     *
-//     * @param index
-//     * @param type
-//     * @return
-//     */
-//    public boolean exists(String index, String type) {
-//        if (type == null) {
-//            IndicesExistsRequest indicesRequest = new IndicesExistsRequest(index);
-//            IndicesExistsResponse response = client.admin().indices().exists(indicesRequest).actionGet();
-//            return response.isExists();
-//        } else {
-//            String[] indices = new String[] {index};
-//            TypesExistsRequest typesRequest = new TypesExistsRequest(indices, type);
-//            TypesExistsResponse response = client.admin().indices().typesExists(typesRequest).actionGet();
-//            return response.isExists();
-//        }
-//    }
 }

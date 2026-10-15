@@ -3,7 +3,9 @@ package com.nosqlrevolution.apps;
 import com.nosqlrevolution.ElasticStore;
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -31,15 +33,14 @@ public class Export extends AbstractPoolRunner {
             }
         } catch( CmdLineException e ) {
             System.err.println(e.getMessage());
-            System.err.println("java -jar elasticstore.jar export [options...]");
+            System.err.println("java -jar elasticstore-4.0-cli.jar export [options...]");
             parser.printUsage(System.err);
-            return;
+            throw e;
         }        
         
         File outFile = new File(options.getOutfilename());
         if (outFile.exists()) {
-            System.out.println("File exists, exiting.");
-            return;
+            throw new IOException("Output file already exists: " + outFile);
         }
         
         // Connect to ElasticSearch
@@ -58,7 +59,7 @@ public class Export extends AbstractPoolRunner {
             }
 
             try (AbstractBlocker source = blocker;
-                    FileOutputStream fileStream = new FileOutputStream(outFile)) {
+                    OutputStream fileStream = Files.newOutputStream(outFile.toPath(), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)) {
                 java.io.OutputStream output = options.isGzip()
                         ? new GZIPOutputStream(fileStream) : fileStream;
                 try (BufferedOutputStream buffered = new BufferedOutputStream(output)) {

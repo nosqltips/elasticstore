@@ -30,12 +30,14 @@ jobs:
           distribution: temurin
           java-version: ${{ matrix.java }}
           cache: maven
-      - run: mvn --batch-mode test
+      - run: mvn --batch-mode verify
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: always()
         with:
           name: unit-reports-java-${{ matrix.java }}
-          path: target/surefire-reports/
+          path: |
+            target/surefire-reports/
+            target/failsafe-reports/
           retention-days: 7
 
   integration:
@@ -62,5 +64,6 @@ jobs:
           name: integration-reports-java-${{ matrix.java }}
           path: |
             target/surefire-reports/
+            target/failsafe-reports/
             target/elasticsearch-integration.log
           retention-days: 7

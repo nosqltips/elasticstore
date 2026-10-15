@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-
 /**
  * Accept and return strongly typed objects.
  * 
@@ -184,40 +183,7 @@ public class TypedIndex<T> extends Index<T> {
         return new MultiGetCursor<>(clazz, json);
     }
     
-//    @Override
-//    public OperationStatus removeById(String... ids) {
-//        OperationStatus status = new OperationStatus();
-//        status.setSucceeded(service.deleteAll(getIndex(), ids));
-//        return status;
-//    }
-//    
-//    @Override
-//    public OperationStatus removeById(List<String> ids) {
-//        OperationStatus status = new OperationStatus();
-//        status.setSucceeded(service.deleteAll(getIndex(), ids.toArray(new String[ids.size()])));
-//        return status;
-//    }
-//    
-//    @Override
-//    public OperationStatus remove(T... t) {
-//        OperationStatus status = new OperationStatus();
-//        if (t.length == 1) {
-//            status.setSucceeded(service.delete(getIndex(), AnnotationHelper.getDocumentId(t[0], getIdField())));
-//        } else if (t.length > 1) {
-//            List<String> list = new ArrayList<String>();
-//            for (T o: t) {
-//                list.add(AnnotationHelper.getDocumentId(o, getIdField()));
-//                // TODO: what do we do with null ids? bail with exception? Report the error with OperationStatus?
-//            }
-//            status.setSucceeded(service.deleteAll(getIndex(), list.toArray(new String[list.size()])));
-//        }
-//        return status;
-//    }
     
-//    @Override
-//    public OperationStatus remove(ElasticStoreQuery query) {
-//        return super.remove(query);
-//    }
     
     @Override
     public OperationStatus write(T... documents) {

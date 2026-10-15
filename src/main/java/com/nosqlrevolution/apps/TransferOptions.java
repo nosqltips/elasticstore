@@ -16,7 +16,7 @@ public class TransferOptions {
     @Option(name="-si",usage="source index to use")
     private String sourceIndex = null;
 
-    @Option(name="-sn",usage="connect to source cluster as node instead of as transport client")
+    @Option(name="-sn",usage="unsupported legacy source node mode; use an HTTP(S) endpoint")
     private boolean sourceNode = false;
 
     @Option(name="-dh",usage="destination hostname of Elasticsearch server")
@@ -28,7 +28,7 @@ public class TransferOptions {
     @Option(name="-di",usage="destination index to use")
     private String destIndex =  null;
 
-    @Option(name="-dn",usage="connect to destination cluster as node instead of as transport client")
+    @Option(name="-dn",usage="unsupported legacy destination node mode; use an HTTP(S) endpoint")
     private boolean destNode = false;
 
     @Option(name="-th",usage="number of threads for processing")
@@ -59,13 +59,13 @@ public class TransferOptions {
     public String getDestCaCertificate() { return destCaCertificate; }
 
     // For Elastic service
-    @Option(name="-se",usage="connect to source elastic service cluster")
+    @Option(name="-se",usage="unsupported legacy source cloud mode; use an HTTPS endpoint")
     private boolean sourceElastic = false;
 
-    @Option(name="-su",usage="source shield username")
+    @Option(name="-su",usage="source Elasticsearch basic-auth username")
     private String sourceUsername = null;
 
-    @Option(name="-sp",usage="source shield password")
+    @Option(name="-sp",usage="source Elasticsearch basic-auth password")
     private String sourcePassword = null;
 
     @Option(name="-sid",usage="source clusterId for Elastic")
@@ -74,13 +74,13 @@ public class TransferOptions {
     @Option(name="-sre",usage="source region for Elastic")
     private String sourceRegion = null;
     
-    @Option(name="-de",usage="connect to destination elastic service cluster")
+    @Option(name="-de",usage="unsupported legacy destination cloud mode; use an HTTPS endpoint")
     private boolean destElastic = false;
 
-    @Option(name="-du",usage="destination shield username")
+    @Option(name="-du",usage="destination Elasticsearch basic-auth username")
     private String destUsername = null;
 
-    @Option(name="-dp",usage="destination shield password")
+    @Option(name="-dp",usage="destination Elasticsearch basic-auth password")
     private String destPassword = null;
 
     @Option(name="-did",usage="destination clusterId for Elastic")

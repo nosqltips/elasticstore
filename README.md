@@ -16,94 +16,56 @@ libraries have been removed. args4j is updated to 2.37, and build plugin version
 are pinned in the POM instead of depending on the local Maven installation.
 
 
-The main idea of ElasticStore is to create a new NoSQL database that is based on the ElasticSearch core. ElasticSearch is an incredible search engine with a very flexible search-oriented API.
-While the ElasticSearch API is very easy to use, it is a search API and as such, is somewhat foreign to someone coming from a traditional data background.
-The ElasticStore API presents a more familiar API while simplifying many of the search constructs to make them more accessible to the average developer.
+ElasticStore is a Java library and CLI for Elasticsearch. It provides typed and JSON
+CRUD operations, annotation-based mappings, a query DSL, paged cursors, and bulk
+import, export and transfer. Connections use explicit HTTP(S) endpoints.
 
-## Why is ElasticSearch a great NoSQL engine?
-* Document oriented - schema-less, automatic, or defined schema
-* Very advanced search capabilities, no need to shunt data somewhere else for search
-* Very advanced indexing features - based on lucene and associated analyzers, filters, etc
-* Built-in scale - one or many nodes with auto-discovery(unicast, multicast), no changes to client or configuration
-* Built in cloud support - AWS auto-discovery
-* Durablility - shards and replicas defined per-index, shard placement policies
-* Advanced query routing - hit single shard for very fast performance
-
-## Why is ElasticStore a great NoSQL database?
-* Built on top of all of that ElasticSearch/Lucene goodness!
-* Simplified, document-oriented API
-* Provides strong object typing or json serialization
-* Provides many annotations for object mapping, object id and routing support
-* Provides Collection and Iterator support for easy paging of results
-* Easy bulk-loading of strongly typed of json objects
-* SQLish QueryBuilder for advanced queries and those coming from a SQL background
-* Lots of units tests, code examples and javadocs
-
-## So... What does it look like?
-```java
-    ElasticStore elasticStore = new ElasticStore().asLocal().execute();
-    Index<Person> index = elasticStore.getIndex(Person.class, "index");
-
-    // Create
-    Person p = new Person()
-        .setId("1")
-        .setName("Homer Simpson")
-        .setUsername("hsimpson");
-    index.write(p);
-            
-    // Read
-    Person p2 = index.findById("1");
-
-    // Update
-    p.setName("Marge Simpson");
-    p.setUsername("msimpson");
-    index.write(p);
-            
-    // Delete
-    index.remove(p);
-```
+## Library example
 
 ```java
+import com.nosqlrevolution.ElasticStore;
+import com.nosqlrevolution.Index;
+import com.nosqlrevolution.annotation.DocumentId;
+
+// Model class (public fields are serialized by Jackson).
 public class Person {
-    @DocumentId
-    private String id;
-    private String name;
-    private String username;
-
-    @JsonProperty
-    public String getId() {
-        return id;
-    }
-
-    @JsonProperty
-    public Person setId(String id) {
-        this.id = id;
-        return this;
-    }
-
-    @JsonProperty
-    public String getName() {
-        return name;
-    }
-
-    @JsonProperty
-    public Person setName(String name) {
-        this.name = name;
-        return this;
-    }
-
-    @JsonProperty
-    public String getUsername() {
-        return username;
-    }
-
-    @JsonProperty
-    public Person setUsername(String username) {
-        this.username = username;
-        return this;
-    }
+    @DocumentId public String id;
+    public String name;
 }
 ```
+
+```java
+try (ElasticStore store = new ElasticStore()
+        .withEndpoints("http://localhost:9200").execute()) {
+    Index<Person> people = store.getIndex(Person.class, "people");
+    Person person = new Person();
+    person.id = "1";
+    person.name = "Homer Simpson";
+    people.write(person);
+    Person loaded = people.findById("1");
+    person.name = "Marge Simpson";
+    people.write(person);
+    people.remove(person);
+}
+```
+
+Use `createIndex(Person.class, "people")` when creating an index with generated
+annotation mappings. Configure authentication as described below before `execute()`.
+
+## Build and run the CLI
+
+```sh
+mvn verify
+java -jar target/elasticstore-4.0-cli.jar --help
+java -jar target/elasticstore-4.0-cli.jar export --help
+```
+
+The build produces `elasticstore-4.0.jar` for library consumers and
+`elasticstore-4.0-cli.jar` with runtime dependencies for command-line use. `verify`
+runs subprocess tests against the packaged CLI; the Docker verifier also exercises
+import, export and transfer against Elasticsearch. Invalid arguments and file or
+operation failures exit with a nonzero status. Existing export files are never
+overwritten.
 
 ## Import, export and transfer pipeline
 
@@ -127,13 +89,12 @@ writers keep each document and its newline together. Bulk imports send JSON obje
 including blocks containing a single document; malformed JSON and rejected bulk
 items fail the run instead of being reported as successful.
 
-Use `export -m` and `import -m` for a metadata-preserving round trip. Pass these
-arguments to `com.nosqlrevolution.App` using your configured Java launch classpath:
+Use `export -m` and `import -m` for a metadata-preserving round trip. Run the packaged CLI:
 
-```text
-export -h http://localhost:9200 -i source -f documents.json.gz -m -g
-import -h http://localhost:9200 -i restored -f documents.json.gz -m
-transfer -sh http://localhost:9200 -dh http://localhost:9200 -si source -di copied
+```sh
+java -jar target/elasticstore-4.0-cli.jar export -h http://localhost:9200 -i source -f documents.json.gz -m -g
+java -jar target/elasticstore-4.0-cli.jar import -h http://localhost:9200 -i restored -f documents.json.gz -m
+java -jar target/elasticstore-4.0-cli.jar transfer -sh http://localhost:9200 -dh http://localhost:9200 -si source -di copied
 ```
 
 Transfers now preserve Elasticsearch IDs and routing automatically, including IDs
@@ -178,7 +139,7 @@ This requires Docker, curl, and Maven 3.6.3+ on `PATH`. It starts Elasticsearch 
 an automatically allocated loopback port, waits for cluster readiness, runs the
 entire Maven test suite, and removes its container on success or failure. The
 Elasticsearch log is retained at `target/elasticsearch-integration.log` and Maven
-reports at `target/surefire-reports/`.
+reports at `target/surefire-reports/` and `target/failsafe-reports/`.
 
 Docker limits the test container to 2 GiB and the JVM heap is explicitly set to
 512 MiB. The old 8.2.2 JVM cgroup workaround is no longer needed.

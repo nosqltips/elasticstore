@@ -63,5 +63,5 @@ if [[ $ready != true ]]; then
 fi
 
 echo "Running the full suite against $endpoint"
-"$maven_bin" --batch-mode test "$@" "-Delasticstore.test.url=$endpoint"
+"$maven_bin" --batch-mode verify "$@" "-Delasticstore.test.url=$endpoint"
 echo "Elasticsearch log: $log_file"

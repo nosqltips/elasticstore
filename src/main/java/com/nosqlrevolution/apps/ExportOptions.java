@@ -34,7 +34,7 @@ public class ExportOptions {
     @Option(name="-s",usage="keep only every Nth document")
     private int sample = -1;
 
-    @Option(name="-n",usage="connect to cluster as node instead of as transport client")
+    @Option(name="-n",usage="unsupported legacy node mode; use an HTTP(S) endpoint")
     private boolean node = false;
 
     @Option(name="-ak", usage="encoded Elasticsearch API key")
@@ -45,13 +45,13 @@ public class ExportOptions {
     public String getCaCertificate() { return caCertificate; }
 
     // For Elastic service
-    @Option(name="-e",usage="connect to elastic service cluster")
+    @Option(name="-e",usage="unsupported legacy cloud mode; use an HTTPS endpoint")
     private boolean elastic = false;
 
-    @Option(name="-su",usage="shield username")
+    @Option(name="-su",usage="Elasticsearch basic-auth username")
     private String shieldUsername = null;
 
-    @Option(name="-sp",usage="shield password")
+    @Option(name="-sp",usage="Elasticsearch basic-auth password")
     private String shieldPassword = null;
 
     @Option(name="-eid",usage="elastic clusterId for Elastic")

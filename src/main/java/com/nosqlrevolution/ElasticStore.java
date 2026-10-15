@@ -295,45 +295,6 @@ public class ElasticStore implements AutoCloseable {
         return new TypedIndex<>(clazz, this, index, client);
     }
 
-//    /**
-//     * Remove an index from ElasticStore as specified by an Index.
-//     * 
-//     * @param index
-//     * @throws Exception 
-//     */
-//    public void removeIndex(Index index) throws Exception {
-//        client.admin()
-//                .indices()
-//                .delete(new DeleteIndexRequest(index.getIndex()))
-//                .actionGet();
-//    }
-//
-//    /**
-//     * Remove an index from ElasticStore as specified by an index name..
-//     * 
-//     * @param index
-//     * @throws Exception 
-//     */
-//    public void removeIndex(String index) throws Exception {
-//        client.admin()
-//                .indices()
-//                .delete(new DeleteIndexRequest(index))
-//                .actionGet();
-//    }
-//
-//    /**
-//     * Refresh the index,
-//     * 
-//     * @param index
-//     * @throws Exception 
-//     */
-//    public void refreshIndex(Index index) throws Exception {
-//        client.admin()
-//                .indices()
-//                .refresh(new RefreshRequest(index.getIndex()))
-//                .actionGet();
-//    }
-
     /**
      * Apply type mapping to one or more indexes.
      * If ignoreConflicts is false, then the mapping will be rejected if there are conflicts.

@@ -33,9 +33,9 @@ public class Transfer extends AbstractPoolRunner {
             }
         } catch( CmdLineException e ) {
             System.err.println(e.getMessage());
-            System.err.println("java -jar elasticstore.jar transfer [options...]");
+            System.err.println("java -jar elasticstore-4.0-cli.jar transfer [options...]");
             parser.printUsage(System.err);
-            return;
+            throw e;
         }        
 
         // Connect to ElasticSearch

@@ -34,15 +34,14 @@ public class Import extends AbstractPoolRunner {
             }
         } catch(CmdLineException e) {
             System.err.println(e.getMessage());
-            System.err.println("java -jar elasticstore.jar import [options...]");
+            System.err.println("java -jar elasticstore-4.0-cli.jar import [options...]");
             parser.printUsage(System.err);
-            return;
+            throw e;
         }        
 
         File inFile = new File(options.getInfilename());
         if (! inFile.exists()) {
-            System.out.println("File does not exist, exiting.");
-            return;
+            throw new IOException("Input file does not exist: " + inFile);
         }
         
         // Connect to ElasticSearch
